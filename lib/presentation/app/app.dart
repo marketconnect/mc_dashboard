@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mc_dashboard/core/config.dart';
+import 'package:mc_dashboard/presentation/ChoosingNicheScreenScreen/ChoosingNicheScreenScreen.dart';
+import 'package:mc_dashboard/routes/main_navigation.dart';
 import 'package:mc_dashboard/theme/color_schemes.dart';
 import 'package:mc_dashboard/theme/dialog_theme.dart';
 
 class App extends StatefulWidget {
+  final ScreenFactory screenFactory;
+
+  const App({Key? key, required this.screenFactory}) : super(key: key);
+
   @override
   _AppState createState() => _AppState();
 }
@@ -30,6 +36,7 @@ class _AppState extends State<App> {
       themeMode: _isDarkTheme ? ThemeMode.dark : ThemeMode.light,
       home: MainScreen(
         isDarkTheme: _isDarkTheme,
+        screenFactory: widget.screenFactory,
         onThemeChanged: (value) {
           setState(() {
             _isDarkTheme = value;
@@ -57,9 +64,13 @@ class Subsection {
 class MainScreen extends StatefulWidget {
   final bool isDarkTheme;
   final ValueChanged<bool> onThemeChanged;
-
-  const MainScreen(
-      {super.key, required this.isDarkTheme, required this.onThemeChanged});
+  final ScreenFactory screenFactory;
+  const MainScreen({
+    super.key,
+    required this.isDarkTheme,
+    required this.onThemeChanged,
+    required this.screenFactory,
+  });
 
   @override
   // ignore: library_private_types_in_public_api
@@ -129,17 +140,33 @@ class _MainScreenState extends State<MainScreen> {
             // Body =====================================================
             child: Container(
               padding: const EdgeInsets.all(16),
-              child: Text(
-                _selectedSubsectionIndex != null
-                    ? 'Раздел: ${sections[_selectedSectionIndex].title} > ${sections[_selectedSectionIndex].subsections[_selectedSubsectionIndex!].title}'
-                    : 'Раздел: ${sections[_selectedSectionIndex].title}',
-                style: const TextStyle(fontSize: 24),
-              ),
+              child: _buildBodyContent(),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildBodyContent() {
+    // Если выбрана "Выбор ниши" (0-й раздел, 0-й подраздел)
+    if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 0) {
+      // Создаем экран через фабрику, которая уже внутри себя
+      // оборачивает экран в ChangeNotifierProvider с ViewModel
+      return widget.screenFactory.makeChoosingNicheScreen();
+    }
+
+    if (_selectedSubsectionIndex != null) {
+      return Text(
+        'Раздел: ${sections[_selectedSectionIndex].title} > ${sections[_selectedSectionIndex].subsections[_selectedSubsectionIndex!].title}',
+        style: const TextStyle(fontSize: 24),
+      );
+    } else {
+      return Text(
+        'Раздел: ${sections[_selectedSectionIndex].title}',
+        style: const TextStyle(fontSize: 24),
+      );
+    }
   }
 
   Widget buildSideMenu() {
