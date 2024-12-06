@@ -1,4 +1,4 @@
-import 'package:mc_dashboard/domain/entities/subjects_summary.dart';
+import 'package:mc_dashboard/domain/entities/subject_summary_item.dart';
 import 'package:retrofit/retrofit.dart';
 import 'package:dio/dio.dart';
 

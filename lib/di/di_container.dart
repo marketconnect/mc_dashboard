@@ -1,12 +1,12 @@
 import 'package:dio/dio.dart';
-import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
-import 'package:dio_cache_interceptor_hive_store/dio_cache_interceptor_hive_store.dart';
+
 import 'package:flutter/material.dart';
 import 'package:mc_dashboard/api/subjects_summary.dart';
-import 'package:mc_dashboard/domain/services/SubjectsSummaryService.dart';
+import 'package:mc_dashboard/core/dio/setup.dart';
+import 'package:mc_dashboard/domain/services/subjects_summary_service.dart';
 import 'package:mc_dashboard/main.dart';
-import 'package:mc_dashboard/presentation/ChoosingNicheScreenScreen/ChoosingNicheScreenScreen.dart';
-import 'package:mc_dashboard/presentation/ChoosingNicheScreenScreen/ChoosingNicheViewModel.dart';
+import 'package:mc_dashboard/presentation/choosing_niche_screen/choosing_niche_screen.dart';
+import 'package:mc_dashboard/presentation/choosing_niche_screen/choosing_niche_view_model.dart';
 import 'package:mc_dashboard/presentation/app/app.dart';
 import 'package:mc_dashboard/routes/main_navigation.dart';
 import 'package:provider/provider.dart';
@@ -17,21 +17,21 @@ class _AppFactoryDefault implements AppFactory {
   final _diContainer = _DIContainer();
 
   @override
-  Widget makeApp() {
+  Future<Widget> makeApp() async {
     final screenFactory = _diContainer._makeScreenFactory();
+    await _diContainer._initializeDio();
     return App(screenFactory: screenFactory);
   }
 }
 
 class _DIContainer {
+  late final Dio dio;
   _DIContainer();
+  Future<void> _initializeDio() async {
+    dio = await setupDio();
+  }
 
   ScreenFactory _makeScreenFactory() => ScreenFactoryDefault(this);
-
-  final dio = Dio()
-    ..interceptors.add(
-      DioCacheInterceptor(options: cacheOptions),
-    );
 
   SubjectsSummaryService _makeSubjectsSummaryService() =>
       SubjectsSummaryService(
@@ -52,7 +52,7 @@ class ScreenFactoryDefault implements ScreenFactory {
   Widget makeChoosingNicheScreen() {
     return ChangeNotifierProvider(
       create: (context) => _diContainer._makeChoosingNicheViewModel(),
-      child: const ChoosingNicheScreenScreen(),
+      child: const ChoosingNicheScreen(),
     );
   }
 }

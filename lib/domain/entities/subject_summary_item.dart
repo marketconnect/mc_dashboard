@@ -44,4 +44,26 @@ class SubjectSummaryItem {
       'skus_with_orders': skusWithOrders,
     };
   }
+
+  copyWith({
+    int? subjectId,
+    String? subjectName,
+    String? subjectParentName,
+    int? totalRevenue,
+    int? totalOrders,
+    int? totalSkus,
+    int? medianPrice,
+    int? skusWithOrders,
+  }) {
+    return SubjectSummaryItem(
+      subjectId: subjectId ?? this.subjectId,
+      subjectName: subjectName ?? this.subjectName,
+      subjectParentName: subjectParentName ?? this.subjectParentName,
+      totalRevenue: totalRevenue ?? this.totalRevenue,
+      totalOrders: totalOrders ?? this.totalOrders,
+      totalSkus: totalSkus ?? this.totalSkus,
+      medianPrice: medianPrice ?? this.medianPrice,
+      skusWithOrders: skusWithOrders ?? this.skusWithOrders,
+    );
+  }
 }
