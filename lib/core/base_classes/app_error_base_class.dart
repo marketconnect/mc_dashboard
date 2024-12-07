@@ -7,11 +7,11 @@ class AppErrorBase {
   final String? error;
   final String name;
   final String? stackTrace;
-  final bool sendToTg;
+  final bool sendTo;
 
   AppErrorBase(this.message,
       {required this.name,
-      required this.sendToTg,
+      required this.sendTo,
       this.args,
       this.source,
       this.error,
@@ -27,7 +27,7 @@ class AppErrorBase {
 class AppLogger {
   static void log(AppErrorBase error) {
     debugPrint(error.toString());
-    if (error.sendToTg) {
+    if (error.sendTo) {
       sendToTelegram(error);
     }
   }

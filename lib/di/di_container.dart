@@ -37,8 +37,9 @@ class _DIContainer {
       SubjectsSummaryService(
           subjectsSummaryApiClient: SubjectsSummaryApiClient(dio));
 
-  ChoosingNicheViewModel _makeChoosingNicheViewModel() =>
+  ChoosingNicheViewModel _makeChoosingNicheViewModel(BuildContext context) =>
       ChoosingNicheViewModel(
+          context: context,
           subjectsSummaryService: _makeSubjectsSummaryService());
 }
 
@@ -51,7 +52,7 @@ class ScreenFactoryDefault implements ScreenFactory {
   @override
   Widget makeChoosingNicheScreen() {
     return ChangeNotifierProvider(
-      create: (context) => _diContainer._makeChoosingNicheViewModel(),
+      create: (context) => _diContainer._makeChoosingNicheViewModel(context),
       child: const ChoosingNicheScreen(),
     );
   }

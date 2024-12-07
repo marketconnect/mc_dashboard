@@ -1,46 +1,63 @@
 import 'package:flutter/material.dart';
 import 'package:fpdart/fpdart.dart';
-import 'package:mc_dashboard/core/utils/app_error.dart';
+import 'package:material_table_view/material_table_view.dart';
+import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
+import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
 import 'package:mc_dashboard/domain/entities/subject_summary_item.dart';
 
 abstract class ChoosingNicheViewModelSubjectsSummaryService {
   Future<Either<AppErrorBase, List<SubjectSummaryItem>>> fetchSubjectsSummary();
 }
 
-class ChoosingNicheViewModel extends ChangeNotifier {
+class ChoosingNicheViewModel extends ViewModelBase {
   final ChoosingNicheViewModelSubjectsSummaryService subjectsSummaryService;
 
-  ChoosingNicheViewModel({required this.subjectsSummaryService}) {
+  ChoosingNicheViewModel(
+      {required super.context, required this.subjectsSummaryService}) {
     _asyncInit();
   }
 
   int? sortColumnIndex;
   bool isAscending = true;
+  List<SubjectSummaryItem> _originalSubjectsSummary = [];
+
   final List<SubjectSummaryItem> _subjectsSummary = [];
-  void set subjectsSummary(List<SubjectSummaryItem> value) {
+
+  List<SubjectSummaryItem> get subjectsSummary => _subjectsSummary;
+
+  Map<String, double> currentDataMap = {};
+
+  String? selectedParentName;
+
+  final TableViewController tableViewController = TableViewController();
+
+  String diagramHeader = "Выручка";
+
+  // Methods
+  _asyncInit() async {
+    setLoading();
+    final result = await subjectsSummaryService.fetchSubjectsSummary();
+    if (result.isRight()) {
+      subjectsSummary =
+          result.fold((l) => throw UnimplementedError(), (r) => r);
+      _updateTopParentRevenue();
+    } else {
+      setError("Сервер временно недоступен");
+    }
+
+    setLoaded();
+  }
+
+  set subjectsSummary(List<SubjectSummaryItem> value) {
+    _originalSubjectsSummary = List.from(value);
     _subjectsSummary.clear();
     for (var item in value) {
       final newSubject = item.copyWith(
         totalRevenue: (item.totalRevenue / 100).round(),
         medianPrice: (item.medianPrice / 100).round(),
       );
-
       _subjectsSummary.add(newSubject);
     }
-  }
-
-  List<SubjectSummaryItem> get subjectsSummary => _subjectsSummary;
-
-  Map<String, double> currentDataMap = {};
-
-  _asyncInit() async {
-    final result = await subjectsSummaryService.fetchSubjectsSummary();
-    if (result.isRight()) {
-      subjectsSummary =
-          result.fold((l) => throw UnimplementedError(), (r) => r);
-      _updateTopParentRevenue();
-    }
-    notifyListeners();
   }
 
   void sortData(int columnIndex) {
@@ -89,18 +106,41 @@ class ChoosingNicheViewModel extends ChangeNotifier {
     currentDataMap = _getTopEntries(parentRevenueMap, 10);
   }
 
-  void updateTopSubjectRevenue(String parentName) {
-    final subjectRevenueMap = <String, double>{};
+  void updateTopSubjectRevenue(String parentName, int columnIndex) {
+    selectedParentName = parentName;
+    final subjectMap = <String, double>{};
 
     for (var item in subjectsSummary) {
       if (item.subjectParentName == parentName) {
-        subjectRevenueMap[item.subjectName] =
-            (subjectRevenueMap[item.subjectName] ?? 0) +
+        switch (columnIndex) {
+          case 1:
+            diagramHeader = "Выручка";
+            subjectMap[item.subjectName] = (subjectMap[item.subjectName] ?? 0) +
                 item.totalRevenue.toDouble();
+            break;
+          case 2:
+            diagramHeader = "Количество товаров";
+            subjectMap[item.subjectName] =
+                (subjectMap[item.subjectName] ?? 0) + item.totalSkus.toDouble();
+            break;
+          case 3:
+            diagramHeader = "Количество заказов";
+            subjectMap[item.subjectName] = (subjectMap[item.subjectName] ?? 0) +
+                item.totalOrders.toDouble();
+            break;
+
+          case 5:
+            diagramHeader = "Товары с заказами";
+            subjectMap[item.subjectName] = (subjectMap[item.subjectName] ?? 0) +
+                item.skusWithOrders.toDouble();
+            break;
+          default:
+            break;
+        }
       }
     }
 
-    currentDataMap = _getTopEntries(subjectRevenueMap, 10);
+    currentDataMap = _getTopEntries(subjectMap, 10);
     notifyListeners();
   }
 
@@ -109,5 +149,64 @@ class ChoosingNicheViewModel extends ChangeNotifier {
       ..sort((a, b) => b.value.compareTo(a.value));
 
     return Map.fromEntries(sortedEntries.take(topCount));
+  }
+
+  void scrollToSubjectName(String subjectName) {
+    final index = subjectsSummary.indexWhere(
+      (item) => item.subjectName == subjectName,
+    );
+
+    if (index != -1) {
+      tableViewController.verticalScrollController.animateTo(
+        index * 48.0, // Высота строки (rowHeight) * индекс строки
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  void filterData({
+    int? minTotalRevenue,
+    int? maxTotalRevenue,
+    int? minTotalOrders,
+    int? maxTotalOrders,
+    int? minTotalSkus,
+    int? maxTotalSkus,
+    int? minMedianPrice,
+    int? maxMedianPrice,
+    int? minSkusWithOrders,
+    int? maxSkusWithOrders,
+  }) {
+    _subjectsSummary.clear();
+    _subjectsSummary.addAll(_originalSubjectsSummary.where((item) {
+      final withinRevenue =
+          (minTotalRevenue == null || item.totalRevenue >= minTotalRevenue) &&
+              (maxTotalRevenue == null || item.totalRevenue <= maxTotalRevenue);
+
+      final withinOrders =
+          (minTotalOrders == null || item.totalOrders >= minTotalOrders) &&
+              (maxTotalOrders == null || item.totalOrders <= maxTotalOrders);
+
+      final withinSkus =
+          (minTotalSkus == null || item.totalSkus >= minTotalSkus) &&
+              (maxTotalSkus == null || item.totalSkus <= maxTotalSkus);
+
+      final withinMedianPrice =
+          (minMedianPrice == null || item.medianPrice >= minMedianPrice) &&
+              (maxMedianPrice == null || item.medianPrice <= maxMedianPrice);
+
+      final withinSkusWithOrders = (minSkusWithOrders == null ||
+              item.skusWithOrders >= minSkusWithOrders) &&
+          (maxSkusWithOrders == null ||
+              item.skusWithOrders <= maxSkusWithOrders);
+
+      return withinRevenue &&
+          withinOrders &&
+          withinSkus &&
+          withinMedianPrice &&
+          withinSkusWithOrders;
+    }));
+
+    notifyListeners();
   }
 }

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mc_dashboard/core/config.dart';
 
 import 'package:mc_dashboard/routes/main_navigation.dart';
+import 'package:mc_dashboard/theme/adaptive_theme.dart';
 import 'package:mc_dashboard/theme/color_schemes.dart';
 import 'package:mc_dashboard/theme/dialog_theme.dart';
 
@@ -24,6 +26,11 @@ class _AppState extends State<App> {
       theme: ThemeData(
         useMaterial3: true,
         dialogTheme: dialogTheme,
+        textTheme: buildAdaptiveTextTheme(
+          context,
+          baseTextTheme:
+              ThemeData.light().textTheme, // Используем текущую тему как основу
+        ),
         colorScheme: lightColorScheme,
         fontFamily: GoogleFonts.roboto().fontFamily,
       ),
@@ -31,6 +38,11 @@ class _AppState extends State<App> {
           useMaterial3: true,
           colorScheme: darkColorScheme,
           dialogTheme: dialogTheme,
+          textTheme: buildAdaptiveTextTheme(
+            context,
+            baseTextTheme: ThemeData.dark()
+                .textTheme, // Используем тему для тёмного режима
+          ),
           fontFamily: GoogleFonts.roboto().fontFamily),
       debugShowCheckedModeBanner: false,
       themeMode: _isDarkTheme ? ThemeMode.dark : ThemeMode.light,
@@ -139,7 +151,7 @@ class _MainScreenState extends State<MainScreen> {
           Expanded(
             // Body =====================================================
             child: Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(8),
               child: _buildBodyContent(),
             ),
           ),
@@ -350,5 +362,5 @@ class _SideMenuDivider extends StatelessWidget {
 
 class Responsive {
   static bool isMobile(BuildContext context) =>
-      MediaQuery.of(context).size.width < 600;
+      MediaQuery.sizeOf(context).width < 600;
 }
