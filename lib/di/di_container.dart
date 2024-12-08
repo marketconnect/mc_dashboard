@@ -5,6 +5,7 @@ import 'package:mc_dashboard/api/subjects_summary.dart';
 import 'package:mc_dashboard/core/dio/setup.dart';
 import 'package:mc_dashboard/domain/services/subjects_summary_service.dart';
 import 'package:mc_dashboard/main.dart';
+import 'package:mc_dashboard/presentation/choosing_niche_screen/choosing_niche_screen_111.dart';
 import 'package:mc_dashboard/presentation/choosing_niche_screen/choosing_niche_screen.dart';
 import 'package:mc_dashboard/presentation/choosing_niche_screen/choosing_niche_view_model.dart';
 import 'package:mc_dashboard/presentation/app/app.dart';

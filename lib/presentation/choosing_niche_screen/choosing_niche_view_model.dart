@@ -22,6 +22,21 @@ class ChoosingNicheViewModel extends ViewModelBase {
   List<SubjectSummaryItem> _originalSubjectsSummary = [];
 
   final List<SubjectSummaryItem> _subjectsSummary = [];
+  void setSubjectsSummary(List<SubjectSummaryItem> value) {
+    for (var item in value) {
+      final newSubject = item.copyWith(
+        totalRevenue: (item.totalRevenue / 100).ceil(),
+        medianPrice: (item.medianPrice / 100).ceil(),
+      );
+      _subjectsSummary.add(newSubject);
+      _originalSubjectsSummary.add(newSubject);
+    }
+  }
+
+  String get tableHeaderText => _subjectsSummary.length ==
+          _originalSubjectsSummary.length
+      ? "Всего предметов: ${_subjectsSummary.length}"
+      : "Всего предметов: ${_subjectsSummary.length} из ${_originalSubjectsSummary.length}";
 
   List<SubjectSummaryItem> get subjectsSummary => _subjectsSummary;
 
@@ -31,16 +46,44 @@ class ChoosingNicheViewModel extends ViewModelBase {
 
   final TableViewController tableViewController = TableViewController();
 
-  String diagramHeader = "Выручка";
+  (String, String) _metric = ("Выручка", "₽");
+  void setMetric((String, String) value) => _metric = value;
+  (String, String) get metric => _metric;
+
+  final Map<String, Map<String, TextEditingController>> _filterControllers = {};
+
+  final double tableRowHeight = 48.0;
+
+  List<String> get filters => [
+        "Выручка (₽)",
+        "Кол-во заказов",
+        "Товары",
+        "Медианная цена (₽)",
+        "Процент тов. с заказами"
+      ];
+
+  List<String> get metrics => [
+        "Выручка",
+        "Количество товаров",
+        "Количество заказов",
+        "Товары с заказами",
+      ];
+
+  Map<String, Map<String, TextEditingController>> get filterControllers =>
+      _filterControllers;
 
   // Methods
   _asyncInit() async {
     setLoading();
     final result = await subjectsSummaryService.fetchSubjectsSummary();
+
     if (result.isRight()) {
-      subjectsSummary =
+      final fetchedSubjectsSummary =
           result.fold((l) => throw UnimplementedError(), (r) => r);
+
+      setSubjectsSummary(fetchedSubjectsSummary);
       _updateTopParentRevenue();
+      _initializeFilterControllers();
     } else {
       setError("Сервер временно недоступен");
     }
@@ -58,6 +101,35 @@ class ChoosingNicheViewModel extends ViewModelBase {
       );
       _subjectsSummary.add(newSubject);
     }
+  }
+
+  void _initializeFilterControllers() {
+    for (final filter in filters) {
+      _filterControllers[filter] = {
+        "min": TextEditingController(),
+        "max": TextEditingController(),
+      };
+    }
+  }
+
+  void clearFilterControllers() {
+    for (final controllerPair in _filterControllers.values) {
+      controllerPair["min"]?.clear();
+      controllerPair["max"]?.clear();
+    }
+    _subjectsSummary.clear();
+    _subjectsSummary.addAll(_originalSubjectsSummary);
+
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    for (final controllerPair in _filterControllers.values) {
+      controllerPair["min"]?.dispose();
+      controllerPair["max"]?.dispose();
+    }
+    super.dispose();
   }
 
   void sortData(int columnIndex) {
@@ -106,31 +178,61 @@ class ChoosingNicheViewModel extends ViewModelBase {
     currentDataMap = _getTopEntries(parentRevenueMap, 10);
   }
 
-  void updateTopSubjectRevenue(String parentName, int columnIndex) {
+  void updateModelMetric(String metric) {
+    int columnIndex;
+    switch (metric) {
+      case "Количество товаров":
+        columnIndex = 2;
+        break;
+      case "Количество заказов":
+        columnIndex = 3;
+        break;
+      case "Товары с заказами":
+        columnIndex = 5;
+        break;
+      case "Выручка":
+      default:
+        columnIndex = 1;
+        break;
+    }
+    if (selectedParentName != null) {
+      updateTopSubjectValue(selectedParentName!, columnIndex);
+    }
+  }
+
+  void updateTopSubjectValue(String parentName, int columnIndex) {
     selectedParentName = parentName;
     final subjectMap = <String, double>{};
 
     for (var item in subjectsSummary) {
       if (item.subjectParentName == parentName) {
         switch (columnIndex) {
+          case 0:
+            setMetric(("Выручка", "₽"));
+            subjectMap[item.subjectName] = (subjectMap[item.subjectName] ?? 0) +
+                item.totalRevenue.toDouble();
           case 1:
-            diagramHeader = "Выручка";
+            setMetric(("Выручка", "₽"));
             subjectMap[item.subjectName] = (subjectMap[item.subjectName] ?? 0) +
                 item.totalRevenue.toDouble();
             break;
           case 2:
-            diagramHeader = "Количество товаров";
+            setMetric(("Количество товаров", "шт."));
             subjectMap[item.subjectName] =
                 (subjectMap[item.subjectName] ?? 0) + item.totalSkus.toDouble();
             break;
           case 3:
-            diagramHeader = "Количество заказов";
+            setMetric(("Количество заказов", "шт."));
             subjectMap[item.subjectName] = (subjectMap[item.subjectName] ?? 0) +
                 item.totalOrders.toDouble();
             break;
+          case 4:
+            setMetric(("Выручка", "₽"));
+            subjectMap[item.subjectName] = (subjectMap[item.subjectName] ?? 0) +
+                item.totalRevenue.toDouble();
 
           case 5:
-            diagramHeader = "Товары с заказами";
+            setMetric(("Товары с заказами", "шт."));
             subjectMap[item.subjectName] = (subjectMap[item.subjectName] ?? 0) +
                 item.skusWithOrders.toDouble();
             break;
@@ -158,7 +260,7 @@ class ChoosingNicheViewModel extends ViewModelBase {
 
     if (index != -1) {
       tableViewController.verticalScrollController.animateTo(
-        index * 48.0, // Высота строки (rowHeight) * индекс строки
+        index * tableRowHeight,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );

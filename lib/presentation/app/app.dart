@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:mc_dashboard/core/config.dart';
 
 import 'package:mc_dashboard/routes/main_navigation.dart';
-import 'package:mc_dashboard/theme/adaptive_theme.dart';
+import 'package:mc_dashboard/theme/text_theme.dart';
 import 'package:mc_dashboard/theme/color_schemes.dart';
 import 'package:mc_dashboard/theme/dialog_theme.dart';
 
