@@ -11,7 +11,7 @@ import 'package:mc_dashboard/theme/dialog_theme.dart';
 class App extends StatefulWidget {
   final ScreenFactory screenFactory;
 
-  const App({Key? key, required this.screenFactory}) : super(key: key);
+  const App({super.key, required this.screenFactory});
 
   @override
   _AppState createState() => _AppState();
@@ -91,7 +91,12 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedSectionIndex = 0;
-  int? _selectedSubsectionIndex;
+  int? _selectedSubsectionIndex; // Stores the selected subsection index
+
+  int?
+      _currentSubjectId; // Stores the selected subject ID (for SubjectProductsScreen) look _buildBodyContent
+  String?
+      _currentSubjectName; // Stores the selected subject Name (for SubjectProductsScreen) look _buildBodyContent
 
   final List<Section> sections = [
     Section(
@@ -99,7 +104,7 @@ class _MainScreenState extends State<MainScreen> {
       icon: Icons.leaderboard,
       subsections: [
         Subsection(title: 'Выбор ниши'),
-        Subsection(title: 'Категории'),
+        Subsection(title: 'Категория'),
         Subsection(title: 'Продавцы'),
         Subsection(title: 'Бренды'),
       ],
@@ -115,6 +120,8 @@ class _MainScreenState extends State<MainScreen> {
     Section(title: 'Поиск по SKU', icon: Icons.search, subsections: []),
     Section(title: 'SEO', icon: Icons.query_stats, subsections: []),
     Section(title: 'Настройка рассылок', icon: Icons.settings, subsections: []),
+    // Section(title: 'Настройка', icon: Icons.settings, subsections: []),
+    // Section(title: 'Помощь', icon: Icons.help, subsections: []),
   ];
 
   @override
@@ -161,24 +168,35 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Widget _buildBodyContent() {
-    // Если выбрана "Выбор ниши" (0-й раздел, 0-й подраздел)
-    if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 0) {
-      // Создаем экран через фабрику, которая уже внутри себя
-      // оборачивает экран в ChangeNotifierProvider с ViewModel
-      return widget.screenFactory.makeChoosingNicheScreen();
+    print(
+        "_buildBodyContent  ${_currentSubjectId} ${_currentSubjectName} ${_selectedSectionIndex} ${_selectedSubsectionIndex} ${sections[_selectedSectionIndex].title}");
+    if (_selectedSectionIndex == 0) {
+      return widget.screenFactory.makeChoosingNicheScreen(
+        // to navigate from ChoosingNicheScreen to SubjectProductsScreen in MainScreen
+        onNavigateToSubjectProducts: (int subjectId, String subjectName) {
+          setState(() {
+            _selectedSectionIndex = 1;
+            _currentSubjectId = subjectId;
+            _currentSubjectName = subjectName;
+          });
+        },
+      );
     }
 
-    if (_selectedSubsectionIndex != null) {
-      return Text(
-        'Раздел: ${sections[_selectedSectionIndex].title} > ${sections[_selectedSectionIndex].subsections[_selectedSubsectionIndex!].title}',
-        style: const TextStyle(fontSize: 24),
-      );
-    } else {
-      return Text(
-        'Раздел: ${sections[_selectedSectionIndex].title}',
-        style: const TextStyle(fontSize: 24),
+    if (_selectedSectionIndex == 1 &&
+        _currentSubjectId != null &&
+        _currentSubjectName != null) {
+      return widget.screenFactory.makeSubjectProductsScreen(
+        _currentSubjectId!,
+        _currentSubjectName!,
       );
     }
+
+    // Default view if no screen selected
+    return Text(
+      'Раздел: ${sections[_selectedSectionIndex].title}',
+      style: const TextStyle(fontSize: 24),
+    );
   }
 
   Widget buildSideMenu() {
@@ -264,6 +282,7 @@ class _MainScreenState extends State<MainScreen> {
                         )),
                     selected: _selectedSectionIndex == sectionIndex,
                     onTap: () {
+                      // ROUTE /////////////////////////////////////////// ROUTE
                       setState(() {
                         _selectedSectionIndex = sectionIndex;
                         _selectedSubsectionIndex = null;

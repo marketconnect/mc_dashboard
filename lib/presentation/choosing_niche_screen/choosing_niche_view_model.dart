@@ -10,11 +10,33 @@ abstract class ChoosingNicheViewModelSubjectsSummaryService {
 }
 
 class ChoosingNicheViewModel extends ViewModelBase {
+  ChoosingNicheViewModel(
+      {required super.context,
+      required this.subjectsSummaryService,
+      required this.onNavigateToSubjectProducts}) {
+    _asyncInit();
+  }
+
+  final void Function(int subjectId, String subjectName)
+      onNavigateToSubjectProducts;
   final ChoosingNicheViewModelSubjectsSummaryService subjectsSummaryService;
 
-  ChoosingNicheViewModel(
-      {required super.context, required this.subjectsSummaryService}) {
-    _asyncInit();
+  // Fields ////////////////////////////////////////////////////////////////////
+
+  bool _expandedContainer = false;
+
+  bool get expandedContainer => _expandedContainer;
+
+  void toggleExpandedContainer() {
+    _expandedContainer = !_expandedContainer;
+    notifyListeners();
+  }
+
+  bool isFilterVisible = false;
+
+  void toggleFilterVisibility() {
+    isFilterVisible = !isFilterVisible;
+    notifyListeners();
   }
 
   int? sortColumnIndex;
@@ -44,7 +66,17 @@ class ChoosingNicheViewModel extends ViewModelBase {
 
   String? selectedParentName;
 
-  final TableViewController tableViewController = TableViewController();
+  // When in expanded BarChartWidgets container a user chooses a subject Name
+  // the tableViewController is null. So to save the selected subject Name
+  // we save it here. And in the TableWidget in the initState we use it to scroll
+  String? scrollToSubjectNameValue;
+  resetScrollToSubjectNameValue() => scrollToSubjectNameValue = null;
+
+  TableViewController? tableViewController;
+  void setTableViewController(TableViewController value) {
+    if (value == tableViewController) return;
+    tableViewController = value;
+  }
 
   (String, String) _metric = ("Выручка", "₽");
   void setMetric((String, String) value) => _metric = value;
@@ -175,7 +207,7 @@ class ChoosingNicheViewModel extends ViewModelBase {
           (parentRevenueMap[parentName] ?? 0) + item.totalRevenue.toDouble();
     }
 
-    currentDataMap = _getTopEntries(parentRevenueMap, 10);
+    currentDataMap = _getTopEntries(parentRevenueMap, 30);
   }
 
   void updateModelMetric(String metric) {
@@ -242,7 +274,7 @@ class ChoosingNicheViewModel extends ViewModelBase {
       }
     }
 
-    currentDataMap = _getTopEntries(subjectMap, 10);
+    currentDataMap = _getTopEntries(subjectMap, 30);
     notifyListeners();
   }
 
@@ -254,17 +286,24 @@ class ChoosingNicheViewModel extends ViewModelBase {
   }
 
   void scrollToSubjectName(String subjectName) {
-    final index = subjectsSummary.indexWhere(
-      (item) => item.subjectName == subjectName,
-    );
-
-    if (index != -1) {
-      tableViewController.verticalScrollController.animateTo(
-        index * tableRowHeight,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+    if (tableViewController == null || _expandedContainer) {
+      scrollToSubjectNameValue = subjectName;
+      return;
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final index = subjectsSummary.indexWhere(
+        (item) => item.subjectName == subjectName,
+      );
+
+      if (tableViewController!.verticalScrollController.hasClients &&
+          index != -1) {
+        tableViewController!.verticalScrollController.animateTo(
+          index * tableRowHeight,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      } else {}
+    });
   }
 
   void filterData({
