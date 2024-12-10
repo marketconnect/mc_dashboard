@@ -27,11 +27,15 @@ class _DetailedOrdersApiClient implements DetailedOrdersApiClient {
   Future<DetailedOrdersResponse> getDetailedOrders({
     int? subjectId,
     int? productId,
+    int? isFbs,
+    String? pageSize,
   }) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{
       r'subject_id': subjectId,
       r'product_id': productId,
+      r'is_fbs': isFbs,
+      r'page_size': pageSize,
     };
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};

@@ -59,20 +59,6 @@ class _AppState extends State<App> {
   }
 }
 
-class Section {
-  final String title;
-  final IconData icon;
-  final List<Subsection> subsections;
-
-  Section({required this.title, required this.icon, required this.subsections});
-}
-
-class Subsection {
-  final String title;
-
-  Subsection({required this.title});
-}
-
 class MainScreen extends StatefulWidget {
   final bool isDarkTheme;
   final ValueChanged<bool> onThemeChanged;
@@ -98,28 +84,29 @@ class _MainScreenState extends State<MainScreen> {
   String?
       _currentSubjectName; // Stores the selected subject Name (for SubjectProductsScreen) look _buildBodyContent
 
-  final List<Section> sections = [
-    Section(
+  final List<_Section> sections = [
+    _Section(
       title: 'Анализ рынка',
       icon: Icons.leaderboard,
       subsections: [
-        Subsection(title: 'Выбор ниши'),
-        Subsection(title: 'Категория'),
-        Subsection(title: 'Продавцы'),
-        Subsection(title: 'Бренды'),
+        _Subsection(title: 'Выбор ниши'),
+        _Subsection(title: 'Категория'),
+        _Subsection(title: 'Продавцы'),
+        _Subsection(title: 'Бренды'),
       ],
     ),
-    Section(
+    _Section(
       title: 'Рейтинги',
       icon: Icons.star,
       subsections: [
-        Subsection(title: 'Рейтинг брендов'),
-        Subsection(title: 'Рейтинг продавцов'),
+        _Subsection(title: 'Рейтинг брендов'),
+        _Subsection(title: 'Рейтинг продавцов'),
       ],
     ),
-    Section(title: 'Поиск по SKU', icon: Icons.search, subsections: []),
-    Section(title: 'SEO', icon: Icons.query_stats, subsections: []),
-    Section(title: 'Настройка рассылок', icon: Icons.settings, subsections: []),
+    _Section(title: 'Поиск по SKU', icon: Icons.search, subsections: []),
+    _Section(title: 'SEO', icon: Icons.query_stats, subsections: []),
+    _Section(
+        title: 'Настройка рассылок', icon: Icons.settings, subsections: []),
     // Section(title: 'Настройка', icon: Icons.settings, subsections: []),
     // Section(title: 'Помощь', icon: Icons.help, subsections: []),
   ];
@@ -168,27 +155,38 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Widget _buildBodyContent() {
+    String bodyWidgetName = "choosingNicheScreen";
+    if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 1) {
+      bodyWidgetName = "subjectProductsScreen";
+    } else if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 0) {
+      bodyWidgetName = "choosingNicheScreen";
+    }
     print(
-        "_buildBodyContent  ${_currentSubjectId} ${_currentSubjectName} ${_selectedSectionIndex} ${_selectedSubsectionIndex} ${sections[_selectedSectionIndex].title}");
-    if (_selectedSectionIndex == 0) {
+        "$bodyWidgetName _currentSubjectId ${_currentSubjectId} _currentSubjectName:${_currentSubjectName} _selectedSectionIndex:${_selectedSectionIndex} _selectedSubsectionIndex:${_selectedSubsectionIndex} ${sections[_selectedSectionIndex].title}");
+    if (bodyWidgetName == "choosingNicheScreen") {
       return widget.screenFactory.makeChoosingNicheScreen(
         // to navigate from ChoosingNicheScreen to SubjectProductsScreen in MainScreen
         onNavigateToSubjectProducts: (int subjectId, String subjectName) {
           setState(() {
-            _selectedSectionIndex = 1;
+            _selectedSectionIndex = 0;
+            _selectedSubsectionIndex = 1;
             _currentSubjectId = subjectId;
             _currentSubjectName = subjectName;
           });
         },
       );
-    }
-
-    if (_selectedSectionIndex == 1 &&
+    } else if (bodyWidgetName == "subjectProductsScreen" &&
         _currentSubjectId != null &&
         _currentSubjectName != null) {
       return widget.screenFactory.makeSubjectProductsScreen(
         _currentSubjectId!,
         _currentSubjectName!,
+      );
+    } else if (bodyWidgetName == "subjectProductsScreen" &&
+        (_currentSubjectId == null || _currentSubjectName == null)) {
+      return Text(
+        'Где id редмета?',
+        style: const TextStyle(fontSize: 24),
       );
     }
 
@@ -264,7 +262,7 @@ class _MainScreenState extends State<MainScreen> {
               _SideMenuDivider(theme: theme),
               ...sections.asMap().entries.map((entry) {
                 int sectionIndex = entry.key;
-                Section section = entry.value;
+                _Section section = entry.value;
 
                 if (section.subsections.isEmpty) {
                   return ListTile(
@@ -314,7 +312,7 @@ class _MainScreenState extends State<MainScreen> {
                     children:
                         section.subsections.asMap().entries.map((subEntry) {
                       int subIndex = subEntry.key;
-                      Subsection subsection = subEntry.value;
+                      _Subsection subsection = subEntry.value;
 
                       return ListTile(
                         title: Text(
@@ -382,4 +380,19 @@ class _SideMenuDivider extends StatelessWidget {
 class Responsive {
   static bool isMobile(BuildContext context) =>
       MediaQuery.sizeOf(context).width < 600;
+}
+
+class _Section {
+  final String title;
+  final IconData icon;
+  final List<_Subsection> subsections;
+
+  _Section(
+      {required this.title, required this.icon, required this.subsections});
+}
+
+class _Subsection {
+  final String title;
+
+  _Subsection({required this.title});
 }

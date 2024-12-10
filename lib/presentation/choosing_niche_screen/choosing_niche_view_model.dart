@@ -290,6 +290,7 @@ class ChoosingNicheViewModel extends ViewModelBase {
       scrollToSubjectNameValue = subjectName;
       return;
     }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final index = subjectsSummary.indexWhere(
         (item) => item.subjectName == subjectName,

@@ -15,11 +15,14 @@ class DetailedOrdersService
   Future<Either<AppErrorBase, List<DetailedOrderItem>>> fetchDetailedOrders({
     int? subjectId,
     int? productId,
+    int? isFbs,
   }) async {
     try {
       final result = await detailedOrdersApiClient.getDetailedOrders(
         subjectId: subjectId,
         productId: productId,
+        pageSize: '10000',
+        isFbs: isFbs,
       );
 
       return Right(result.detailedOrders);

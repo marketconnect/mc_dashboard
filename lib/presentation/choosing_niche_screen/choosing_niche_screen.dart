@@ -7,6 +7,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
 import 'package:mc_dashboard/presentation/choosing_niche_screen/choosing_niche_view_model.dart';
 
+// TODO Why the TableWidget scrolling is not working when click on the graph and scrolls only when a mouse above it?
 class ChoosingNicheScreen extends StatelessWidget {
   const ChoosingNicheScreen({super.key});
 
@@ -24,7 +25,7 @@ class ChoosingNicheScreen extends StatelessWidget {
         builder: (context, constraints) {
           final maxWidth = constraints.maxWidth;
           final maxHeight = constraints.maxHeight;
-          final isMobileOrLaptop = maxWidth < 1050 && maxHeight < 690;
+          final isMobileOrLaptop = maxWidth < 900 || maxHeight < 690;
 
           if (isMobileOrLaptop) {
             // Mobile and Laptop ///////////////////////////////////////////////
@@ -268,45 +269,6 @@ class ChoosingNicheScreen extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildExpandableBarCharts(
-      BuildContext context, Color backgroundColor) {
-    final model = context.watch<ChoosingNicheViewModel>();
-
-    return Stack(
-      children: [
-        Container(
-          margin: const EdgeInsets.all(8.0),
-          padding: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(8.0),
-          ),
-          child: Column(
-            children: [
-              SizedBox(
-                height: 200, // Укажите высоту для первой диаграммы
-                child: const BarChartWidget(isMedianPrice: true),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                height: 200, // Укажите высоту для второй диаграммы
-                child: const BarChartWidget(isMedianPrice: false),
-              ),
-            ],
-          ),
-        ),
-        Positioned(
-          top: 8,
-          right: 8,
-          child: IconButton(
-            onPressed: () => model.toggleExpandedContainer(),
-            icon: const Icon(Icons.fullscreen),
-          ),
-        ),
-      ],
     );
   }
 
@@ -556,7 +518,7 @@ class _TableWidgetState extends State<TableWidget> {
         final maxWidth = constraints.maxWidth;
         final maxHeight = constraints.maxHeight;
         final isMobile = maxWidth < 600 && maxHeight < 690;
-        final isMobileOrLaptop = maxWidth < 1050 && maxHeight < 690;
+        final isMobileOrLaptop = maxWidth < 900 && maxHeight < 690;
         final mobileMinColumnWidths = [
           100.0,
           80.0,
@@ -813,7 +775,7 @@ class _TableWidgetState extends State<TableWidget> {
       },
     );
   }
-} // PieChartWidget widget /////////////////////////////////////////////////////////////
+}
 
 class BarChartWidget extends StatelessWidget {
   const BarChartWidget({super.key, required this.isMedianPrice});
@@ -919,7 +881,7 @@ class BarChartWidget extends StatelessWidget {
                   }
                   return BarTooltipItem(
                     isMedianPrice
-                        ? "$subjectName\n$value"
+                        ? "$subjectName\n$value ₽"
                         : "$subjectName\n$value%",
                     const TextStyle(
                       color: Colors.black,

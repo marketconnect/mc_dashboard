@@ -47,6 +47,8 @@ dependencies:
   pie_chart: ^5.4.0
   material_table_view: ^5.0.0
   fl_chart: ^0.69.2
+  url_launcher: ^6.3.1
+
 
 
 

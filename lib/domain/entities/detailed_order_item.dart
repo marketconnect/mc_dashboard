@@ -4,7 +4,7 @@ class DetailedOrderItem {
   final int price;
   final int orders;
   final int isFbs;
-  final int basket;
+
   final int brandId;
   final String brand;
   final int supplierId;
@@ -16,7 +16,6 @@ class DetailedOrderItem {
     required this.price,
     required this.orders,
     required this.isFbs,
-    required this.basket,
     required this.brandId,
     required this.brand,
     required this.supplierId,
@@ -30,7 +29,6 @@ class DetailedOrderItem {
       price: json['price'] as int,
       orders: json['orders'] as int,
       isFbs: json['is_fbs'] as int,
-      basket: json['basket'] as int,
       brandId: json['brand_id'] as int,
       brand: json['brand'] as String,
       supplierId: json['supplier_id'] as int,
@@ -45,7 +43,6 @@ class DetailedOrderItem {
       'price': price,
       'orders': orders,
       'is_fbs': isFbs,
-      'basket': basket,
       'brand_id': brandId,
       'brand': brand,
       'supplier_id': supplierId,
@@ -59,7 +56,6 @@ class DetailedOrderItem {
     int? price,
     int? orders,
     int? isFbs,
-    int? basket,
     int? brandId,
     String? brand,
     int? supplierId,
@@ -71,7 +67,6 @@ class DetailedOrderItem {
       price: price ?? this.price,
       orders: orders ?? this.orders,
       isFbs: isFbs ?? this.isFbs,
-      basket: basket ?? this.basket,
       brandId: brandId ?? this.brandId,
       brand: brand ?? this.brand,
       supplierId: supplierId ?? this.supplierId,

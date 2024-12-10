@@ -14,5 +14,7 @@ abstract class DetailedOrdersApiClient {
   Future<DetailedOrdersResponse> getDetailedOrders({
     @Query("subject_id") int? subjectId,
     @Query("product_id") int? productId,
+    @Query("is_fbs") int? isFbs,
+    @Query("page_size") String? pageSize,
   });
 }
