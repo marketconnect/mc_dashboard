@@ -297,8 +297,9 @@ class SubjectProductsViewModel extends ViewModelBase {
 
   void _applySellerBrandFilters() {
     _filteredOrders = _originalDetailedOrders.where((item) {
-      if (_filteredSeller != null && item.supplier != _filteredSeller)
+      if (_filteredSeller != null && item.supplier != _filteredSeller) {
         return false;
+      }
       if (_filteredBrand != null && item.brand != _filteredBrand) return false;
       return true;
     }).toList();

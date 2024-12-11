@@ -286,25 +286,27 @@ class ChoosingNicheViewModel extends ViewModelBase {
   }
 
   void scrollToSubjectName(String subjectName) {
+    print("called scrollToSubjectName with $subjectName");
+
     if (tableViewController == null || _expandedContainer) {
       scrollToSubjectNameValue = subjectName;
+      print("Controller is null or expandedContainer is true. Saving value.");
       return;
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final index = subjectsSummary.indexWhere(
-        (item) => item.subjectName == subjectName,
-      );
+    final index = subjectsSummary.indexWhere(
+      (item) => item.subjectName == subjectName,
+    );
 
-      if (tableViewController!.verticalScrollController.hasClients &&
-          index != -1) {
-        tableViewController!.verticalScrollController.animateTo(
-          index * tableRowHeight,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
-      } else {}
-    });
+    if (index == -1) return;
+
+    if (tableViewController!.verticalScrollController.hasClients) {
+      tableViewController!.verticalScrollController.animateTo(
+        index * tableRowHeight,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
   }
 
   void filterData({

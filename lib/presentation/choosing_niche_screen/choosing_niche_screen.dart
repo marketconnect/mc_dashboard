@@ -480,14 +480,23 @@ class TableWidget extends StatefulWidget {
 class _TableWidgetState extends State<TableWidget> {
   late TableViewController tableViewController;
   @override
+  @override
+  // since the TableWidget destroys and re-creates when a screen dimension changes,
+  // we need to re-initialize the TableViewController
   void initState() {
-    // since the TableWidget destroys and re-creates when a screen dimension changes,
-    // we need to re-initialize the TableViewController
+    super.initState();
     tableViewController = TableViewController();
     final model = context.read<ChoosingNicheViewModel>();
     model.setTableViewController(tableViewController);
 
-    super.initState();
+    // Scroll to a clicked subject in the expanded CharBarWidget
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final subjectName = model.scrollToSubjectNameValue;
+      if (subjectName != null) {
+        model.scrollToSubjectName(subjectName);
+        model.resetScrollToSubjectNameValue(); // Очистка значения
+      }
+    });
   }
 
   void scrollToSubjectName() {
@@ -675,7 +684,6 @@ class _TableWidgetState extends State<TableWidget> {
                         child: GestureDetector(
                           onTap: () {
                             if (columnIndex == 6) {
-                              print("GO TO DETAILS with ${item.subjectId}");
                               onNavigateToSubjectProducts(
                                   item.subjectId, item.subjectName);
                               return;

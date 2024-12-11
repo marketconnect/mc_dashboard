@@ -1,3 +1,5 @@
+// ignore_for_file: library_private_types_in_public_api
+
 import 'package:flutter/material.dart';
 
 import 'package:google_fonts/google_fonts.dart';
@@ -71,6 +73,7 @@ class MainScreen extends StatefulWidget {
   });
 
   @override
+  // ignore: duplicate_ignore
   // ignore: library_private_types_in_public_api
   _MainScreenState createState() => _MainScreenState();
 }
@@ -161,8 +164,6 @@ class _MainScreenState extends State<MainScreen> {
     } else if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 0) {
       bodyWidgetName = "choosingNicheScreen";
     }
-    print(
-        "$bodyWidgetName _currentSubjectId ${_currentSubjectId} _currentSubjectName:${_currentSubjectName} _selectedSectionIndex:${_selectedSectionIndex} _selectedSubsectionIndex:${_selectedSubsectionIndex} ${sections[_selectedSectionIndex].title}");
     if (bodyWidgetName == "choosingNicheScreen") {
       return widget.screenFactory.makeChoosingNicheScreen(
         // to navigate from ChoosingNicheScreen to SubjectProductsScreen in MainScreen

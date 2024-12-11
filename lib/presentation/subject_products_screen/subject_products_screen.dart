@@ -318,7 +318,6 @@ class SubjectProductsScreen extends StatelessWidget {
 
   void _applyFilters(SubjectProductsViewModel model) {
     final ctrls = model.filterControllers;
-    print("APPLY FILTERS: $ctrls");
     model.filterData(
       minRevenue: _parseInt(ctrls["Выручка (₽)"]!["min"]!.text),
       maxRevenue: _parseInt(ctrls["Выручка (₽)"]!["max"]!.text),
