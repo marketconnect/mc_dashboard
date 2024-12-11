@@ -7,7 +7,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
 import 'package:mc_dashboard/presentation/choosing_niche_screen/choosing_niche_view_model.dart';
 
-// TODO Why the TableWidget scrolling is not working when click on the graph and scrolls only when a mouse above it?
 class ChoosingNicheScreen extends StatelessWidget {
   const ChoosingNicheScreen({super.key});
 
@@ -522,52 +521,105 @@ class _TableWidgetState extends State<TableWidget> {
     final theme = Theme.of(context);
     final toggleFilterVisibility = model.toggleFilterVisibility;
     final onNavigateToSubjectProducts = model.onNavigateToSubjectProducts;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final maxWidth = constraints.maxWidth;
-        final maxHeight = constraints.maxHeight;
-        final isMobile = maxWidth < 600 && maxHeight < 690;
-        final isMobileOrLaptop = maxWidth < 900 && maxHeight < 690;
-        final mobileMinColumnWidths = [
-          100.0,
-          80.0,
-          80.0,
-          80.0,
-          80.0,
-          80.0,
-          80.0
-        ];
+    return LayoutBuilder(builder: (context, constraints) {
+      final maxWidth = constraints.maxWidth;
+      final maxHeight = constraints.maxHeight;
+      final isMobile = maxWidth < 600 && maxHeight < 690;
+      final isMobileOrLaptop = maxWidth < 900 && maxHeight < 690;
+      final mobileMinColumnWidths = [100.0, 80.0, 80.0, 80.0, 80.0, 80.0, 80.0];
 
-        final columnProportions = [
-          0.2,
-          0.12,
-          0.12,
-          0.12,
-          0.12,
-          0.12,
-          0.12,
-        ];
+      final columnProportions = [
+        0.2,
+        0.12,
+        0.12,
+        0.12,
+        0.12,
+        0.12,
+        0.12,
+      ];
 
-        final columnWidths = isMobile
-            ? mobileMinColumnWidths
-            : columnProportions.map((p) => p * maxWidth).toList();
+      final columnWidths = isMobile
+          ? mobileMinColumnWidths
+          : columnProportions.map((p) => p * maxWidth).toList();
 
-        final columns = <TableColumn>[
-          TableColumn(width: columnWidths[0]),
-          TableColumn(width: columnWidths[1]),
-          TableColumn(width: columnWidths[2]),
-          TableColumn(width: columnWidths[3]),
-          TableColumn(width: columnWidths[4]),
-          TableColumn(width: columnWidths[5]),
-          TableColumn(width: columnWidths[6]),
-        ];
+      final columns = <TableColumn>[
+        TableColumn(width: columnWidths[0]),
+        TableColumn(width: columnWidths[1]),
+        TableColumn(width: columnWidths[2]),
+        TableColumn(width: columnWidths[3]),
+        TableColumn(width: columnWidths[4]),
+        TableColumn(width: columnWidths[5]),
+        TableColumn(width: columnWidths[6]),
+      ];
 
-        return Stack(
+      return Stack(children: [
+        Positioned.fill(
+            child: Column(
           children: [
-            Positioned.fill(
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    SizedBox(width: 16.0),
+                    Text(
+                      model.tableHeaderText,
+                      style: theme.textTheme.titleLarge!.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                TextButton(
+                  onPressed: () {
+                    toggleFilterVisibility();
+                  },
+                  child: Text(
+                    "Фильтры",
+                    style: TextStyle(
+                      fontSize: theme.textTheme.bodyMedium!.fontSize,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            if (model.isSearchVisible)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                          maxWidth: 400), // Ограничение ширины
+                      child: TextField(
+                        decoration: InputDecoration(
+                          labelText: 'Поиск по предметам',
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () {
+                              model.toggleSearchVisibility();
+                            },
+                          ),
+                          border: const OutlineInputBorder(),
+                        ),
+                        onChanged: (value) {
+                          model.setSearchQuery(value);
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+            Expanded(
               child: Container(
-                margin: const EdgeInsets.all(8.0),
-                padding: const EdgeInsets.fromLTRB(16.0, 50.0, 16.0, 16.0),
+                // margin: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8.0),
@@ -608,20 +660,50 @@ class _TableWidgetState extends State<TableWidget> {
                                 : MainAxisAlignment.center,
                             children: [
                               Flexible(
-                                child: Text(
-                                  headers[columnIndex],
-                                  textAlign: columnIndex == 0
-                                      ? TextAlign.left
-                                      : TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize:
-                                        theme.textTheme.bodyMedium!.fontSize,
-                                    color: theme.colorScheme.onSurface,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 2,
-                                  softWrap: true,
-                                ),
+                                child: columnIndex == 0
+                                    ? Row(
+                                        children: [
+                                          Text(
+                                            headers[columnIndex],
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              fontSize: theme.textTheme
+                                                  .bodyMedium!.fontSize,
+                                              color:
+                                                  theme.colorScheme.onSurface,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 2,
+                                            softWrap: true,
+                                          ),
+                                          IconButton(
+                                            icon: Icon(
+                                              model.isSearchVisible
+                                                  ? null
+                                                  : Icons.search,
+                                              color:
+                                                  theme.colorScheme.onSurface,
+                                              size: theme.textTheme.bodyMedium!
+                                                  .fontSize,
+                                            ),
+                                            onPressed: () {
+                                              model.toggleSearchVisibility();
+                                            },
+                                          ),
+                                        ],
+                                      )
+                                    : Text(
+                                        headers[columnIndex],
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontSize: theme
+                                              .textTheme.bodyMedium!.fontSize,
+                                          color: theme.colorScheme.onSurface,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 2,
+                                        softWrap: true,
+                                      ),
                               ),
                               if (columnIndex == sortColumnIndex)
                                 Padding(
@@ -750,38 +832,42 @@ class _TableWidgetState extends State<TableWidget> {
                 ),
               ),
             ),
-            Positioned(
-              right: 26,
-              top: 26,
-              child: TextButton(
-                onPressed: () {
-                  // _showFilterDialog(context, model);
-                  toggleFilterVisibility();
-                },
-                child: Text(
-                  "Фильтры",
-                  style: TextStyle(
-                    fontSize: theme.textTheme.bodyMedium!.fontSize,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              left: 26,
-              top: 26,
-              child: Text(
-                model.tableHeaderText,
-                style: TextStyle(
-                  fontSize: theme.textTheme.titleLarge!.fontSize,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+            // Positioned(
+            //   right: 26,
+            //   top: 26,
+            //   child: TextButton(
+            //     onPressed: () {
+            //       // _showFilterDialog(context, model);
+            //       toggleFilterVisibility();
+            //     },
+            //     child: Text(
+            //       "Фильтры",
+            //       style: TextStyle(
+            //         fontSize: theme.textTheme.bodyMedium!.fontSize,
+            //         color: theme.colorScheme.onSurface,
+            //       ),
+            //     ),
+            //   ),
+            // ),
+            // Positioned(
+            //   left: 26,
+            //   top: 26,
+            //   child: Row(
+            //     children: [
+            //       Text(
+            //         model.tableHeaderText,
+            //         style: TextStyle(
+            //           fontSize: theme.textTheme.titleLarge!.fontSize,
+            //           fontWeight: FontWeight.bold,
+            //         ),
+            //       ),
+            //     ],
+            //   ),
+            // ),
           ],
-        );
-      },
-    );
+        ))
+      ]);
+    });
   }
 }
 

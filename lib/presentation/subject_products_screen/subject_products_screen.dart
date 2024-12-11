@@ -440,11 +440,12 @@ class _PieChartWithList extends StatelessWidget {
         ),
         if (isClearButtonVisible)
           Positioned(
-            top: 10,
-            right: 10,
+            top: 0,
+            right: 0,
             child: IconButton(
               onPressed: () => clearFilter(),
-              icon: Icon(Icons.clear, color: theme.colorScheme.onSurface),
+              icon: Icon(Icons.filter_alt_off_outlined,
+                  color: theme.colorScheme.primary, size: 18),
             ),
           ),
       ],

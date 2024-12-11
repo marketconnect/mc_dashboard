@@ -104,6 +104,14 @@ class ChoosingNicheViewModel extends ViewModelBase {
   Map<String, Map<String, TextEditingController>> get filterControllers =>
       _filterControllers;
 
+  // Search fields
+  String _searchQuery = '';
+  bool _isSearchVisible = false;
+
+  bool get isSearchVisible => _isSearchVisible;
+
+  // Search end
+
   // Methods
   _asyncInit() async {
     setLoading();
@@ -351,6 +359,38 @@ class ChoosingNicheViewModel extends ViewModelBase {
           withinSkusWithOrders;
     }));
 
+    notifyListeners();
+  }
+
+  // Searching
+  void setSearchQuery(String query) {
+    _searchQuery = query;
+    filterBySubjectName(_searchQuery);
+  }
+
+  void filterBySubjectName(String query) {
+    if (query.isEmpty) {
+      // Если строка пустая, показываем все предметы
+      _subjectsSummary.clear();
+      _subjectsSummary.addAll(_originalSubjectsSummary);
+    } else {
+      final lowerQuery = query.toLowerCase();
+      _subjectsSummary.clear();
+      _subjectsSummary.addAll(_originalSubjectsSummary.where((item) {
+        final fullName =
+            '${item.subjectParentName ?? ''}/${item.subjectName}'.toLowerCase();
+        return fullName.contains(lowerQuery);
+      }));
+    }
+    notifyListeners();
+  }
+
+  void toggleSearchVisibility() {
+    _isSearchVisible = !_isSearchVisible;
+    if (!_isSearchVisible) {
+      // Очистим поиск, если поле скрывается
+      setSearchQuery('');
+    }
     notifyListeners();
   }
 }
