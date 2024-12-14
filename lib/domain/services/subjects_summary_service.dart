@@ -4,9 +4,12 @@ import 'package:mc_dashboard/api/subjects_summary.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/domain/entities/subject_summary_item.dart';
 import 'package:mc_dashboard/presentation/choosing_niche_screen/choosing_niche_view_model.dart';
+import 'package:mc_dashboard/presentation/empty_subjects_screen/empty_subjects_view_model.dart';
 
 class SubjectsSummaryService
-    implements ChoosingNicheViewModelSubjectsSummaryService {
+    implements
+        ChoosingNicheViewModelSubjectsSummaryService,
+        EmptySubjectViewModelSubjectsSummaryService {
   final SubjectsSummaryApiClient subjectsSummaryApiClient;
 
   SubjectsSummaryService({required this.subjectsSummaryApiClient});

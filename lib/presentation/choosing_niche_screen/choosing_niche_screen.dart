@@ -7,6 +7,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
 import 'package:mc_dashboard/presentation/choosing_niche_screen/choosing_niche_view_model.dart';
 
+// TODO if search open in the table, do not change graphs input
 class ChoosingNicheScreen extends StatelessWidget {
   const ChoosingNicheScreen({super.key});
 
@@ -585,7 +586,6 @@ class _TableWidgetState extends State<TableWidget> {
                 ),
               ],
             ),
-
             if (model.isSearchVisible)
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
@@ -615,7 +615,6 @@ class _TableWidgetState extends State<TableWidget> {
                   ),
                 ],
               ),
-
             Expanded(
               child: Container(
                 // margin: const EdgeInsets.all(8.0),
@@ -648,6 +647,9 @@ class _TableWidgetState extends State<TableWidget> {
 
                       return GestureDetector(
                         onTap: () {
+                          if (columnIndex == 6) {
+                            return;
+                          }
                           sortData(columnIndex);
                         },
                         child: Container(
@@ -832,38 +834,6 @@ class _TableWidgetState extends State<TableWidget> {
                 ),
               ),
             ),
-            // Positioned(
-            //   right: 26,
-            //   top: 26,
-            //   child: TextButton(
-            //     onPressed: () {
-            //       // _showFilterDialog(context, model);
-            //       toggleFilterVisibility();
-            //     },
-            //     child: Text(
-            //       "Фильтры",
-            //       style: TextStyle(
-            //         fontSize: theme.textTheme.bodyMedium!.fontSize,
-            //         color: theme.colorScheme.onSurface,
-            //       ),
-            //     ),
-            //   ),
-            // ),
-            // Positioned(
-            //   left: 26,
-            //   top: 26,
-            //   child: Row(
-            //     children: [
-            //       Text(
-            //         model.tableHeaderText,
-            //         style: TextStyle(
-            //           fontSize: theme.textTheme.titleLarge!.fontSize,
-            //           fontWeight: FontWeight.bold,
-            //         ),
-            //       ),
-            //     ],
-            //   ),
-            // ),
           ],
         ))
       ]);
@@ -871,6 +841,7 @@ class _TableWidgetState extends State<TableWidget> {
   }
 }
 
+// TODO add mouse hover cursor
 class BarChartWidget extends StatelessWidget {
   const BarChartWidget({super.key, required this.isMedianPrice});
 

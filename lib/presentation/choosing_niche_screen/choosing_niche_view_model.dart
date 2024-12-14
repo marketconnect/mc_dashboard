@@ -46,6 +46,9 @@ class ChoosingNicheViewModel extends ViewModelBase {
   final List<SubjectSummaryItem> _subjectsSummary = [];
   void setSubjectsSummary(List<SubjectSummaryItem> value) {
     for (var item in value) {
+      // if (item.totalOrders == 0) {
+      //   continue;
+      // }
       final newSubject = item.copyWith(
         totalRevenue: (item.totalRevenue / 100).ceil(),
         medianPrice: (item.medianPrice / 100).ceil(),
@@ -294,11 +297,8 @@ class ChoosingNicheViewModel extends ViewModelBase {
   }
 
   void scrollToSubjectName(String subjectName) {
-    print("called scrollToSubjectName with $subjectName");
-
     if (tableViewController == null || _expandedContainer) {
       scrollToSubjectNameValue = subjectName;
-      print("Controller is null or expandedContainer is true. Saving value.");
       return;
     }
 

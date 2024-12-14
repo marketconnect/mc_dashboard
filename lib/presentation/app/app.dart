@@ -87,6 +87,9 @@ class _MainScreenState extends State<MainScreen> {
   String?
       _currentSubjectName; // Stores the selected subject Name (for SubjectProductsScreen) look _buildBodyContent
 
+  int? _currentProductId;
+  int? _currentProductPrice;
+
   final List<_Section> sections = [
     _Section(
       title: 'Анализ рынка',
@@ -94,22 +97,21 @@ class _MainScreenState extends State<MainScreen> {
       subsections: [
         _Subsection(title: 'Выбор ниши'),
         _Subsection(title: 'Категория'),
-        _Subsection(title: 'Продавцы'),
-        _Subsection(title: 'Бренды'),
+        _Subsection(title: 'Товары'),
+        // _Subsection(title: 'Бренды'),
       ],
     ),
-    _Section(
-      title: 'Рейтинги',
-      icon: Icons.star,
-      subsections: [
-        _Subsection(title: 'Рейтинг брендов'),
-        _Subsection(title: 'Рейтинг продавцов'),
-      ],
-    ),
-    _Section(title: 'Поиск по SKU', icon: Icons.search, subsections: []),
-    _Section(title: 'SEO', icon: Icons.query_stats, subsections: []),
-    _Section(
-        title: 'Настройка рассылок', icon: Icons.settings, subsections: []),
+    // _Section(
+    //   title: 'Рейтинги',
+    //   icon: Icons.star,
+    //   subsections: [
+    //     _Subsection(title: 'Рейтинг брендов'),
+    //     _Subsection(title: 'Рейтинг продавцов'),
+    //   ],
+    // ),
+    // _Section(title: 'Поиск по SKU', icon: Icons.search, subsections: []),
+    // _Section(title: 'SEO', icon: Icons.query_stats, subsections: []),
+    // _Section(        title: 'Настройка рассылок', icon: Icons.settings, subsections: []),
     // Section(title: 'Настройка', icon: Icons.settings, subsections: []),
     // Section(title: 'Помощь', icon: Icons.help, subsections: []),
   ];
@@ -163,7 +165,10 @@ class _MainScreenState extends State<MainScreen> {
       bodyWidgetName = "subjectProductsScreen";
     } else if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 0) {
       bodyWidgetName = "choosingNicheScreen";
+    } else if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 2) {
+      bodyWidgetName = "productScreen";
     }
+
     if (bodyWidgetName == "choosingNicheScreen") {
       return widget.screenFactory.makeChoosingNicheScreen(
         // to navigate from ChoosingNicheScreen to SubjectProductsScreen in MainScreen
@@ -180,15 +185,44 @@ class _MainScreenState extends State<MainScreen> {
         _currentSubjectId != null &&
         _currentSubjectName != null) {
       return widget.screenFactory.makeSubjectProductsScreen(
-        _currentSubjectId!,
-        _currentSubjectName!,
-      );
+          subjectId: _currentSubjectId!,
+          subjectName: _currentSubjectName!,
+          onNavigateToProductScreen: (int productId, int productPrice) {
+            setState(() {
+              _selectedSectionIndex = 0;
+              _selectedSubsectionIndex = 2;
+              _currentProductId = productId;
+              _currentProductPrice = productPrice;
+            });
+          },
+          onNavigateToEmptySubject: () {
+            setState(() {
+              _selectedSectionIndex = 0;
+              _selectedSubsectionIndex = 1;
+              _currentSubjectId = null;
+              _currentSubjectName = null;
+            });
+          });
     } else if (bodyWidgetName == "subjectProductsScreen" &&
         (_currentSubjectId == null || _currentSubjectName == null)) {
-      return Text(
-        'Где id редмета?',
-        style: const TextStyle(fontSize: 24),
+      return widget.screenFactory.makeEmptySubjectProductsScreen(
+        // to navigate from ChoosingNicheScreen to SubjectProductsScreen in MainScreen
+        onNavigateToSubjectProducts: (int subjectId, String subjectName) {
+          setState(() {
+            _selectedSectionIndex = 0;
+            _selectedSubsectionIndex = 1;
+            _currentSubjectId = subjectId;
+            _currentSubjectName = subjectName;
+          });
+        },
       );
+    } else if (bodyWidgetName == "productScreen") {
+      // _currentProductId set in SubjectProductsScreen above
+      if (_currentProductId == null) {
+        return Container();
+      }
+      return widget.screenFactory.makeProductScreen(
+          productId: _currentProductId!, productPrice: _currentProductPrice!);
     }
 
     // Default view if no screen selected

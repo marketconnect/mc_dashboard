@@ -1,3 +1,8 @@
+import 'package:dio/dio.dart';
+
+import 'package:mc_dashboard/domain/entities/card_info.dart';
+import 'package:mc_dashboard/domain/entities/feedback_info.dart';
+
 String? getBasketNum(int productId) {
   if (productId >= 2088 && productId <= 14399999) {
     return '01';
@@ -35,5 +40,57 @@ String? getBasketNum(int productId) {
     return '17';
   } else {
     return null;
+  }
+}
+
+String calculateImageUrl(String? basket, int productId) {
+  if (basket == null) {
+    return "";
+  }
+  String vol = "vol${productId ~/ 100000}";
+  String part = "part${productId ~/ 1000}";
+  return "https://basket-${basket.padLeft(2, '0')}.wbbasket.ru/$vol/$part/$productId/images/c246x328/1.webp";
+}
+
+String calculateCardUrl(String? imageUrl) {
+  if (imageUrl == null) {
+    return "";
+  }
+  return imageUrl.replaceFirst("/images/c246x328/1.webp", "/info/ru/card.json");
+}
+
+Future<CardInfo> fetchCardInfo(String cardUrl) async {
+  try {
+    final response = await Dio().get(cardUrl);
+    return CardInfo.fromJson(response.data);
+  } catch (e) {
+    return CardInfo(imtName: "", imtId: 0, photoCount: 0);
+  }
+}
+
+Future<FeedbackInfo> fetchFeedbacks(int imtId) async {
+  final url = 'https://feedbacks2.wb.ru/feedbacks/v2/$imtId';
+
+  try {
+    final response = await Dio().get(url);
+    if (response.data['valuationDistributionPercent'] == null) {
+      final url = 'https://feedbacks1.wb.ru/feedbacks/v2/$imtId';
+      final response = await Dio().get(url);
+      return FeedbackInfo.fromJson(response.data);
+    }
+    return FeedbackInfo.fromJson(response.data);
+  } catch (e) {
+    return FeedbackInfo(
+      valuationDistributionPercent: {
+        '1': 0,
+        '2': 0,
+        '3': 0,
+        '4': 0,
+        '5': 0,
+      },
+      valuation: '0',
+      pros: [],
+      cons: [],
+    );
   }
 }

@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:material_table_view/material_table_view.dart';
 import 'package:mc_dashboard/core/utils/basket_num.dart';
@@ -9,6 +8,7 @@ import 'package:mc_dashboard/presentation/subject_products_screen/subject_produc
 import 'package:pie_chart/pie_chart.dart' as pie_chart;
 import 'package:url_launcher/url_launcher.dart';
 
+// TODO back button
 class SubjectProductsScreen extends StatelessWidget {
   const SubjectProductsScreen({super.key});
 
@@ -30,6 +30,7 @@ class SubjectProductsScreen extends StatelessWidget {
           final maxHeight = constraints.maxHeight;
           final isMobileOrLaptop = maxWidth < 900 || maxHeight < 690;
           final model = context.watch<SubjectProductsViewModel>();
+          final onNavigateToEmptySubject = model.onNavigateToEmptySubject;
           final clearSellerBrandFilter = model.clearSellerBrandFilter;
           final isFilteredBySeller = model.filteredSeller != null;
           final isFilteredByBrand = model.filteredBrand != null;
@@ -40,30 +41,12 @@ class SubjectProductsScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(mainAxisAlignment: MainAxisAlignment.start, children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0, vertical: 8.0),
-                      child: Text(subjectName,
-                          style: TextStyle(
-                            fontSize: theme.textTheme.titleLarge!.fontSize,
-                            fontWeight: FontWeight.bold,
-                          )),
-                    ),
-                    Transform.scale(
-                      scale: 0.5,
-                      child: Switch(
-                        value: isFbs,
-                        onChanged: (isFbs) => switchToFbs(),
-                        activeColor: theme.colorScheme.primary,
-                        inactiveThumbColor: theme.colorScheme.primaryContainer,
-                      ),
-                    ),
-                    Text(
-                      isFbs ? 'FBS' : 'FBW',
-                      style: theme.textTheme.bodySmall,
-                    )
-                  ]),
+                  _Header(
+                      subjectName: subjectName,
+                      theme: theme,
+                      isFbs: isFbs,
+                      switchToFbs: switchToFbs,
+                      onNavigateToEmptySubject: onNavigateToEmptySubject),
                   Container(
                     height: constraints.maxHeight * 0.3, // Height for graph
                     margin: const EdgeInsets.all(8.0),
@@ -115,30 +98,12 @@ class SubjectProductsScreen extends StatelessWidget {
           // Desktop //////////////////////////////////////////////////////////
           return Column(
             children: [
-              Row(mainAxisAlignment: MainAxisAlignment.start, children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0, vertical: 8.0),
-                  child: Text(subjectName,
-                      style: TextStyle(
-                        fontSize: theme.textTheme.titleLarge!.fontSize,
-                        fontWeight: FontWeight.bold,
-                      )),
-                ),
-                Transform.scale(
-                  scale: 0.5,
-                  child: Switch(
-                    value: isFbs,
-                    onChanged: (isFbs) => switchToFbs(),
-                    activeColor: theme.colorScheme.primary,
-                    inactiveThumbColor: theme.colorScheme.primaryContainer,
-                  ),
-                ),
-                Text(
-                  isFbs ? 'FBS' : 'FBW',
-                  style: theme.textTheme.bodySmall,
-                )
-              ]),
+              _Header(
+                  subjectName: subjectName,
+                  theme: theme,
+                  isFbs: isFbs,
+                  switchToFbs: switchToFbs,
+                  onNavigateToEmptySubject: onNavigateToEmptySubject),
               if (!isFilterVisible)
                 Flexible(
                   flex: 1,
@@ -331,6 +296,59 @@ class SubjectProductsScreen extends StatelessWidget {
   int? _parseInt(String value) => int.tryParse(value.isEmpty ? '' : value);
 }
 
+class _Header extends StatelessWidget {
+  const _Header({
+    required this.subjectName,
+    required this.theme,
+    required this.isFbs,
+    required this.switchToFbs,
+    required this.onNavigateToEmptySubject,
+  });
+
+  final String subjectName;
+  final ThemeData theme;
+  final bool isFbs;
+  final Future<void> Function() switchToFbs;
+  final void Function() onNavigateToEmptySubject;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(mainAxisAlignment: MainAxisAlignment.start, children: [
+          Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Text(subjectName,
+                style: TextStyle(
+                  fontSize: theme.textTheme.titleLarge!.fontSize,
+                  fontWeight: FontWeight.bold,
+                )),
+          ),
+          Transform.scale(
+            scale: 0.5,
+            child: Switch(
+              value: isFbs,
+              onChanged: (isFbs) => switchToFbs(),
+              activeColor: theme.colorScheme.primary,
+              inactiveThumbColor: theme.colorScheme.primaryContainer,
+            ),
+          ),
+          Text(
+            isFbs ? 'FBS' : 'FBW',
+            style: theme.textTheme.bodySmall,
+          )
+        ]),
+        IconButton(
+            onPressed: () => onNavigateToEmptySubject(),
+            icon: Icon(Icons.search_sharp, size: 24),
+            color: Colors.black),
+      ],
+    );
+  }
+}
+
 class _PieChartWithList extends StatelessWidget {
   final Map<String, double> dataMap;
   final String title;
@@ -461,6 +479,8 @@ class _PieChartWithList extends StatelessWidget {
   }
 }
 
+// TODO Align the supplier column content
+
 class _TableWidget extends StatefulWidget {
   const _TableWidget();
 
@@ -486,7 +506,7 @@ class _TableWidgetState extends State<_TableWidget> {
     final isAscending = model.isAscending;
     final theme = Theme.of(context);
     final toggleFilterVisibility = model.toggleFilterVisibility;
-
+    final navigateToProduct = model.onNavigateToProductScreen;
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxWidth = constraints.maxWidth;
@@ -547,7 +567,7 @@ class _TableWidgetState extends State<_TableWidget> {
 
                       return contentBuilder(context, (context, columnIndex) {
                         final headers = [
-                          "Предметы",
+                          "Товар",
                           "Выручка (₽)",
                           "Цена со скидкой (₽)",
                           "Продавец",
@@ -561,6 +581,9 @@ class _TableWidgetState extends State<_TableWidget> {
 
                         return GestureDetector(
                           onTap: () {
+                            if (columnIndex == 6) {
+                              return;
+                            }
                             sortData(columnIndex);
                           },
                           child: Container(
@@ -610,23 +633,6 @@ class _TableWidgetState extends State<_TableWidget> {
                     rowBuilder: (context, rowIndex, contentBuilder) {
                       final item = detailedOrders[rowIndex];
 
-                      String calculateImageUrl(String? basket, int productId) {
-                        if (basket == null) {
-                          return "";
-                        }
-                        String vol = "vol${productId ~/ 100000}";
-                        String part = "part${productId ~/ 1000}";
-                        return "https://basket-${basket.padLeft(2, '0')}.wbbasket.ru/$vol/$part/$productId/images/c246x328/1.webp";
-                      }
-
-                      String calculateCardUrl(String? imageUrl) {
-                        if (imageUrl == null) {
-                          return "";
-                        }
-                        return imageUrl.replaceFirst(
-                            "/images/c246x328/1.webp", "/info/ru/card.json");
-                      }
-
                       final basketNum = getBasketNum(item.productId);
                       final imageUrl =
                           calculateImageUrl(basketNum, item.productId);
@@ -648,7 +654,10 @@ class _TableWidgetState extends State<_TableWidget> {
                                     ],
                                   )
                                 : FutureBuilder<String>(
-                                    future: fetchImtName(cardUrl),
+                                    future:
+                                        fetchCardInfo(cardUrl).then((value) {
+                                      return value.imtName;
+                                    }),
                                     builder: (context, snapshot) {
                                       final description =
                                           snapshot.data ?? "Загрузка...";
@@ -781,29 +790,36 @@ class _TableWidgetState extends State<_TableWidget> {
                             break;
 
                           case 6:
-                            content = Container(
-                              alignment: Alignment.center,
-                              width: isMobileOrLaptop
-                                  ? columns[6].width * 0.7
-                                  : columns[6].width * 0.35,
-                              height: isMobileOrLaptop
-                                  ? columns[6].width * 0.3
-                                  : columns[6].width * 0.15,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(4.0),
-                                border: Border.all(
-                                  color: theme.colorScheme.primary,
-                                  width: 1.0,
+                            content = MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: GestureDetector(
+                                onTap: () => navigateToProduct(
+                                    item.productId, item.price),
+                                child: Container(
+                                  alignment: Alignment.center,
+                                  width: isMobileOrLaptop
+                                      ? columns[6].width * 0.7
+                                      : columns[6].width * 0.35,
+                                  height: isMobileOrLaptop
+                                      ? columns[6].width * 0.3
+                                      : columns[6].width * 0.15,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(4.0),
+                                    border: Border.all(
+                                      color: theme.colorScheme.primary,
+                                      width: 1.0,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Перейти',
+                                    style: TextStyle(
+                                        // fontWeight: FontWeight.w600,
+                                        color: theme.colorScheme.primary,
+                                        fontSize: isMobileOrLaptop
+                                            ? columns[6].width * 0.12
+                                            : columns[6].width * 0.06),
+                                  ),
                                 ),
-                              ),
-                              child: Text(
-                                'Перейти',
-                                style: TextStyle(
-                                    // fontWeight: FontWeight.w600,
-                                    color: theme.colorScheme.primary,
-                                    fontSize: isMobileOrLaptop
-                                        ? columns[6].width * 0.12
-                                        : columns[6].width * 0.06),
                               ),
                             );
                           default:
@@ -861,14 +877,5 @@ class _TableWidgetState extends State<_TableWidget> {
         );
       },
     );
-  }
-
-  Future<String> fetchImtName(String cardUrl) async {
-    try {
-      final response = await Dio().get(cardUrl);
-      return response.data['imt_name'] as String;
-    } catch (e) {
-      return "Ошибка загрузки";
-    }
   }
 }

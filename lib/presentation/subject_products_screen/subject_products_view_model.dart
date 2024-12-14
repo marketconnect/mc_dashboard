@@ -13,10 +13,15 @@ abstract class SubjectProductsViewModelDetailedOrdersService {
 class SubjectProductsViewModel extends ViewModelBase {
   final int subjectId;
   final String subjectName;
+  final void Function() onNavigateToEmptySubject;
+  final void Function(int productId, int productPrice)
+      onNavigateToProductScreen;
   SubjectProductsViewModel({
     required super.context,
     required this.subjectId,
     required this.subjectName,
+    required this.onNavigateToEmptySubject,
+    required this.onNavigateToProductScreen,
     required this.detailedOrdersService,
   }) {
     _asyncInit();
@@ -101,6 +106,9 @@ class SubjectProductsViewModel extends ViewModelBase {
   List<DetailedOrderItem> _originalDetailedOrders = [];
 
   void setDetailedOrders(List<DetailedOrderItem> value) {
+    // filter out fake orders and zero orders
+    value = value.where((order) => order.orders < 1000000).toList();
+
     //  since price is in kopeks, we need to convert it to rubles
     value = value
         .map((item) => item.copyWith(price: (item.price / 100).ceil()))
