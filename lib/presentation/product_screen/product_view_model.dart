@@ -5,6 +5,7 @@ import 'package:mc_dashboard/domain/entities/card_info.dart';
 import 'package:mc_dashboard/domain/entities/order.dart';
 import 'package:mc_dashboard/domain/entities/stock.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
+import 'package:mc_dashboard/domain/entities/warehouse.dart';
 
 abstract class ProductViewModelStocksService {
   Future<Either<AppErrorBase, List<Stock>>> getLastDayStocks({
@@ -18,15 +19,23 @@ abstract class ProductViewModelOrderService {
   });
 }
 
+abstract class ProductViewModelWhService {
+  Future<Either<AppErrorBase, List<Warehouse>>> getWarehouses({
+    required List<int> ids,
+  });
+}
+
 class ProductViewModel extends ViewModelBase {
   final int productId;
   final int productPrice;
   final ProductViewModelStocksService stocksService;
   final ProductViewModelOrderService ordersService;
+  final ProductViewModelWhService whService;
   ProductViewModel(
       {required super.context,
       required this.productId,
       required this.stocksService,
+      required this.whService,
       required this.ordersService,
       required this.productPrice}) {
     _asyncInit();
@@ -59,6 +68,7 @@ class ProductViewModel extends ViewModelBase {
 
   // warehouses
   Map<String, double> _warehousesOrdersSum = {};
+
   Map<String, double> get warehousesOrdersSum => _warehousesOrdersSum;
   void setPros(List<String> value) {
     // lowercase
@@ -71,7 +81,9 @@ class ProductViewModel extends ViewModelBase {
   void setCons(List<String> value) {
     // lowercase
     value = value.map((e) => e.toLowerCase()).toList();
-    Set<String> set = Set.from(value.sublist(0, 30));
+    final n = value.length > 30 ? 30 : value.length;
+    ;
+    Set<String> set = Set.from(value.sublist(0, n));
     cons = set.toList();
   }
 
@@ -86,15 +98,16 @@ class ProductViewModel extends ViewModelBase {
     ]);
     final cardInfo = values[0] as CardInfo;
     final feedbackInfo = await fetchFeedbacks(cardInfo.imtId);
-
+    List<int> whIds = [];
     // Orders
     final ordersEither = values[1] as Either<AppErrorBase, List<OrderWb>>;
+    List<OrderWb> orders = [];
     if (ordersEither.isRight()) {
-      final orders = ordersEither.fold((l) => <OrderWb>[], (r) => r);
+      orders = ordersEither.fold((l) => <OrderWb>[], (r) => r);
       _orders = aggregateOrdersByDay(orders);
       _priceHistory = aggregatePricesByDay(orders);
-      _warehousesOrdersSum = transformMap(getTotalOrdersByWarehouse(orders));
 
+      whIds.addAll(orders.map((e) => e.warehouseId));
       // sum all orders
       orders30d = getTotalOrders(orders);
       // _orders.map((e) => (e['totalOrders'] as int));
@@ -102,11 +115,19 @@ class ProductViewModel extends ViewModelBase {
 
     // Stocks
     final stocksOrEither = values[2] as Either<AppErrorBase, List<Stock>>;
-
+    List<Stock> stocks = [];
     if (stocksOrEither.isRight()) {
-      final stocks = stocksOrEither.fold((l) => <Stock>[], (r) => r);
-      _warehouseShares = calculateWarehouseShares(stocks);
-      print(_warehouseShares);
+      stocks = stocksOrEither.fold((l) => <Stock>[], (r) => r);
+      whIds.addAll(stocks.map((e) => e.warehouseId));
+    }
+
+    final whOrEither =
+        await whService.getWarehouses(ids: whIds.toSet().toList());
+    if (whOrEither.isRight()) {
+      final warehousesList =
+          whOrEither.fold((l) => throw UnimplementedError, (r) => r);
+      _warehouseShares = calculateWarehouseShares(stocks, warehousesList);
+      _warehousesOrdersSum = getTotalOrdersByWarehouse(orders, warehousesList);
     }
 
     _pics = cardInfo.photoCount;

@@ -2,12 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mc_dashboard/api/orders.dart';
 
-import 'package:mc_dashboard/api/stocks.dart';
-
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/domain/entities/order.dart';
 
-import 'package:mc_dashboard/domain/entities/stock.dart';
 import 'package:mc_dashboard/presentation/product_screen/product_view_model.dart';
 
 class OrderService implements ProductViewModelOrderService {
@@ -36,10 +33,16 @@ class OrderService implements ProductViewModelOrderService {
 
       return Right(result.orders);
     } on DioException catch (e, stackTrace) {
+      // Обработка 404 ошибки: возвращаем пустой список
+      if (e.response?.statusCode == 404) {
+        return const Right([]);
+      }
+
+      // Обработка остальных ошибок
       final responseMessage = e.response?.data?['message'] ?? e.message;
       final error = AppErrorBase(
         'DioException: $responseMessage',
-        name: 'getOneMonthStocks',
+        name: 'getOneMonthOrders',
         sendTo: true,
         source: 'OrderService',
         args: [
@@ -52,7 +55,7 @@ class OrderService implements ProductViewModelOrderService {
     } catch (e, stackTrace) {
       final error = AppErrorBase(
         'Unexpected error: $e',
-        name: 'getOneMonthStocks',
+        name: 'getOneMonthOrders',
         sendTo: true,
         source: 'OrderService',
         args: [

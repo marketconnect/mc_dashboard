@@ -7,69 +7,6 @@ import 'dart:math' as math;
 
 import 'package:provider/provider.dart';
 
-final Map<String, dynamic> mockData = {
-  "name": "Пример товара",
-  "id": "12345",
-  "images": ["assets/image1.jpg", "assets/image2.jpg"],
-  "price": 1500,
-  "sales30d": 250,
-  "rating": 4.7,
-  "salesData": [
-    {"date": "2024-10-26", "sales": 10, "revenue": 15000},
-    {"date": "2024-10-27", "sales": 12, "revenue": 18000},
-    {"date": "2024-10-28", "sales": 15, "revenue": 22500},
-    {"date": "2024-10-29", "sales": 20, "revenue": 30000},
-    {"date": "2024-10-30", "sales": 18, "revenue": 27000},
-    {"date": "2024-10-31", "sales": 22, "revenue": 33000},
-    {"date": "2024-11-01", "sales": 25, "revenue": 37500},
-  ],
-  "priceHistory": [
-    {"date": "2024-10-26", "price": 1500},
-    {"date": "2024-10-27", "price": 1490},
-    {"date": "2024-10-28", "price": 1520},
-    {"date": "2024-10-29", "price": 1500},
-    {"date": "2024-10-30", "price": 1480},
-    {"date": "2024-10-31", "price": 1510},
-    {"date": "2024-11-01", "price": 1500},
-  ],
-  "ratingDistribution": [
-    {"rating": 1, "count": 5},
-    {"rating": 2, "count": 10},
-    {"rating": 3, "count": 20},
-    {"rating": 4, "count": 50},
-    {"rating": 5, "count": 100}
-  ],
-  "warehouseShares": [
-    {"name": "Склад 1", "value": 30},
-    {"name": "Склад 2", "value": 70}
-  ],
-  "competitors": [
-    {"name": "Конкурент 1", "price": 1600, "sales": 200, "rating": 4.5},
-    {"name": "Конкурент 2", "price": 1400, "sales": 180, "rating": 4.3},
-    {"name": "Конкурент 3", "price": 1550, "sales": 210, "rating": 4.6},
-  ],
-  "reviews": [
-    {
-      "author": "Иван",
-      "date": "2024-10-27",
-      "rating": 5,
-      "text": "Отличный товар!"
-    },
-    {
-      "author": "Мария",
-      "date": "2024-10-28",
-      "rating": 4,
-      "text": "Хороший товар, но доставка задержалась."
-    },
-    {
-      "author": "Сергей",
-      "date": "2024-10-29",
-      "rating": 3,
-      "text": "Среднее качество, ожидал большего."
-    },
-  ]
-};
-
 // TODO back button
 // TODO scrolling for images
 class ProductScreen extends StatefulWidget {
@@ -81,30 +18,8 @@ class ProductScreen extends StatefulWidget {
 
 class _ProductScreenState extends State<ProductScreen> {
   String selectedPeriod = '30 дней';
-  bool _prosExpanded = false;
-  bool _consExpanded = false;
+
   final List<String> periods = ['7 дней', '30 дней', '90 дней', 'год'];
-
-  Map<String, dynamic> get data => mockData;
-
-  List<Map<String, dynamic>> get filteredSalesData {
-    if (selectedPeriod == '7 дней') {
-      final salesData = data["salesData"] as List<Map<String, dynamic>>?;
-      if (salesData == null) return [];
-      return salesData.sublist(math.max(0, salesData.length - 7));
-    } else if (selectedPeriod == '30 дней') {
-      return data["salesData"];
-    } else if (selectedPeriod == '90 дней') {
-      return data["salesData"];
-    } else if (selectedPeriod == 'год') {
-      return data["salesData"];
-    }
-    return data["salesData"];
-  }
-
-  List<Map<String, dynamic>> get filteredPriceHistory {
-    return data["priceHistory"];
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -113,7 +28,6 @@ class _ProductScreenState extends State<ProductScreen> {
 
     final name = model.name;
     final images = model.images;
-    final ratingDistribution = model.ratingDistribution;
 
     final price = model.productPrice;
     final rating = model.rating;
@@ -128,9 +42,6 @@ class _ProductScreenState extends State<ProductScreen> {
     final priceHistoryData = model.priceHistory;
     final warehouseShares = model.warehouseShares;
 
-    // final salesDataList = filteredSalesData;
-    // final priceHistoryData = filteredPriceHistory;
-    print("orders length ${orders.length}");
     List<DateTime> ordersDates =
         orders.map((e) => e['date'] as DateTime).toList();
     List<double> salesValues =
@@ -140,26 +51,6 @@ class _ProductScreenState extends State<ProductScreen> {
         priceHistoryData.map((e) => e['date'] as DateTime).toList();
     List<double> priceValues =
         priceHistoryData.map((e) => (e["price"] as num).toDouble()).toList();
-
-    List<BarChartGroupData> ratingBars = ratingDistribution.keys.map((key) {
-      final rateValue = int.parse(key);
-      final count = ratingDistribution[key] as int;
-      return BarChartGroupData(
-        x: rateValue,
-        barRods: [
-          BarChartRodData(
-            toY: count.toDouble(),
-            color: Colors.blue,
-            width: 20,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ],
-      );
-    }).toList();
-
-    // bool hasSalesData = ordersDates.isNotEmpty;
-    // bool hasCompetitorsData = competitors.isNotEmpty;
-    // bool hasReviewsData = reviews.isNotEmpty;
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -261,28 +152,6 @@ class _ProductScreenState extends State<ProductScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  // Row(
-                  //   children: [
-                  //     const Text('Период:'),
-                  //     const SizedBox(width: 8),
-                  //     DropdownButton<String>(
-                  //       value: selectedPeriod,
-                  //       items: periods.map((period) {
-                  //         return DropdownMenuItem(
-                  //           value: period,
-                  //           child: Text(period),
-                  //         );
-                  //       }).toList(),
-                  //       onChanged: (val) {
-                  //         if (val != null) {
-                  //           setState(() {
-                  //             selectedPeriod = val;
-                  //           });
-                  //         }
-                  //       },
-                  //     ),
-                  //   ],
-                  // ),
                   const SizedBox(height: 24),
                   Wrap(
                     spacing: 16,
@@ -316,189 +185,111 @@ class _ProductScreenState extends State<ProductScreen> {
                         child: _buildLineChart(priceDates, priceValues,
                             isSales: false),
                       ),
-                      _buildChartContainer(
-                        title: 'Распределение оценок',
-                        child: _buildBarChart(ratingBars),
-                      ),
+                      // _buildChartContainer(
+                      //   title: 'Распределение оценок',
+                      //   child: _buildBarChart(ratingBars),
+                      // ),
                       _buildChartContainer(
                         title: 'Доля продаж по складам',
                         child: _buildPieChart(pieDataMap),
                       ),
                     ],
                   ),
-                  if (model.pros.isNotEmpty || model.cons.isNotEmpty) ...[
-                    const SizedBox(height: 24),
-                    Text(
-                      'Плюсы и минусы',
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleLarge
-                          ?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    if (model.pros.isNotEmpty) ...[
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _prosExpanded = !_prosExpanded;
-                          });
-                        },
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Плюсы:',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                            Icon(
-                              _prosExpanded
-                                  ? Icons.keyboard_arrow_up
-                                  : Icons.keyboard_arrow_down,
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (_prosExpanded)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: model.pros.map((pro) {
-                            return Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Icon(Icons.add,
-                                    color: Colors.green, size: 16),
-                                const SizedBox(width: 8),
-                                Expanded(child: Text(pro)),
-                              ],
-                            );
-                          }).toList(),
-                        ),
-                    ],
-                    const SizedBox(height: 16),
-                    if (model.cons.isNotEmpty) ...[
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _consExpanded = !_consExpanded;
-                          });
-                        },
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Минусы:',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                            Icon(
-                              _consExpanded
-                                  ? Icons.keyboard_arrow_up
-                                  : Icons.keyboard_arrow_down,
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (_consExpanded)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: model.cons.map((con) {
-                            return Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Icon(Icons.remove,
-                                    color: Colors.red, size: 16),
-                                const SizedBox(width: 8),
-                                Expanded(child: Text(con)),
-                              ],
-                            );
-                          }).toList(),
-                        ),
-                    ],
-                  ],
+                  // if (model.pros.isNotEmpty || model.cons.isNotEmpty) ...[
+                  //   const SizedBox(height: 24),
+                  //   Text(
+                  //     'Плюсы и минусы',
+                  //     style: Theme.of(context)
+                  //         .textTheme
+                  //         .titleLarge
+                  //         ?.copyWith(fontWeight: FontWeight.bold),
+                  //   ),
+                  //   const SizedBox(height: 8),
+                  //   if (model.pros.isNotEmpty) ...[
+                  //     GestureDetector(
+                  //       onTap: () {
+                  //         setState(() {
+                  //           _prosExpanded = !_prosExpanded;
+                  //         });
+                  //       },
+                  //       child: Row(
+                  //         mainAxisAlignment: MainAxisAlignment.start,
+                  //         children: [
+                  //           Text(
+                  //             'Плюсы:',
+                  //             style: Theme.of(context)
+                  //                 .textTheme
+                  //                 .titleMedium
+                  //                 ?.copyWith(fontWeight: FontWeight.bold),
+                  //           ),
+                  //           Icon(
+                  //             _prosExpanded
+                  //                 ? Icons.keyboard_arrow_up
+                  //                 : Icons.keyboard_arrow_down,
+                  //           ),
+                  //         ],
+                  //       ),
+                  //     ),
+                  //     if (_prosExpanded)
+                  //       Column(
+                  //         crossAxisAlignment: CrossAxisAlignment.start,
+                  //         children: model.pros.map((pro) {
+                  //           return Row(
+                  //             crossAxisAlignment: CrossAxisAlignment.start,
+                  //             children: [
+                  //               const Icon(Icons.add,
+                  //                   color: Colors.green, size: 16),
+                  //               const SizedBox(width: 8),
+                  //               Expanded(child: Text(pro)),
+                  //             ],
+                  //           );
+                  //         }).toList(),
+                  //       ),
+                  //   ],
+                  //   const SizedBox(height: 16),
+                  //   if (model.cons.isNotEmpty) ...[
+                  //     GestureDetector(
+                  //       onTap: () {
+                  //         setState(() {
+                  //           _consExpanded = !_consExpanded;
+                  //         });
+                  //       },
+                  //       child: Row(
+                  //         mainAxisAlignment: MainAxisAlignment.start,
+                  //         children: [
+                  //           Text(
+                  //             'Минусы:',
+                  //             style: Theme.of(context)
+                  //                 .textTheme
+                  //                 .titleMedium
+                  //                 ?.copyWith(fontWeight: FontWeight.bold),
+                  //           ),
+                  //           Icon(
+                  //             _consExpanded
+                  //                 ? Icons.keyboard_arrow_up
+                  //                 : Icons.keyboard_arrow_down,
+                  //           ),
+                  //         ],
+                  //       ),
+                  //     ),
+                  //     if (_consExpanded)
+                  //       Column(
+                  //         crossAxisAlignment: CrossAxisAlignment.start,
+                  //         children: model.cons.map((con) {
+                  //           return Row(
+                  //             crossAxisAlignment: CrossAxisAlignment.start,
+                  //             children: [
+                  //               const Icon(Icons.remove,
+                  //                   color: Colors.red, size: 16),
+                  //               const SizedBox(width: 8),
+                  //               Expanded(child: Text(con)),
+                  //             ],
+                  //           );
+                  //         }).toList(),
+                  //       ),
+                  //   ],
+                  // ],
                   const SizedBox(height: 24),
-                  // Text(
-                  //   'Подробная информация о продажах',
-                  //   style: Theme.of(context)
-                  //       .textTheme
-                  //       .titleLarge
-                  //       ?.copyWith(fontWeight: FontWeight.bold),
-                  // ),
-                  // const SizedBox(height: 8),
-                  // hasSalesData
-                  //     ? _buildTable(
-                  //         columns: const [
-                  //           'Дата',
-                  //           'Количество продаж',
-                  //           'Выручка'
-                  //         ],
-                  //         rows: orders.map((e) {
-                  //           return [
-                  //             e["date"] as String,
-                  //             '${e["totalOrders"]} шт.',
-                  //             '${_formatPrice(e["revenue"])} ₽'
-                  //           ];
-                  //         }).toList(),
-                  //       )
-                  //     : _noDataPlaceholder(),
-                  // const SizedBox(height: 24),
-                  // Text(
-                  //   'Информация о конкурентах',
-                  //   style: Theme.of(context)
-                  //       .textTheme
-                  //       .titleLarge
-                  //       ?.copyWith(fontWeight: FontWeight.bold),
-                  // ),
-                  // const SizedBox(height: 8),
-                  // hasCompetitorsData
-                  //     ? _buildTable(
-                  //         columns: const [
-                  //           'Название конкурента',
-                  //           'Цена',
-                  //           'Продажи',
-                  //           'Рейтинг'
-                  //         ],
-                  //         rows: competitors.map((c) {
-                  //           return [
-                  //             c["name"] as String,
-                  //             '${_formatPrice(c["price"])} ₽',
-                  //             '${c["sales"]} шт.',
-                  //             '${c["rating"]} ★'
-                  //           ];
-                  //         }).toList(),
-                  //       )
-                  //     : _noDataPlaceholder(),
-                  // const SizedBox(height: 24),
-                  // Text(
-                  //   'Отзывы',
-                  //   style: Theme.of(context)
-                  //       .textTheme
-                  //       .titleLarge
-                  //       ?.copyWith(fontWeight: FontWeight.bold),
-                  // ),
-                  // const SizedBox(height: 8),
-                  // hasReviewsData
-                  //     ? _buildTable(
-                  //         columns: const [
-                  //           'Автор',
-                  //           'Дата',
-                  //           'Оценка',
-                  //           'Текст отзыва'
-                  //         ],
-                  //         rows: reviews.map((r) {
-                  //           return [
-                  //             r["author"] as String,
-                  //             r["date"] as String,
-                  //             '${r["rating"]} ★',
-                  //             r["text"] as String,
-                  //           ];
-                  //         }).toList(),
-                  //       )
-                  //     : _noDataPlaceholder(),
                   Text(
                     'Остатки',
                     style: Theme.of(context)
@@ -506,7 +297,6 @@ class _ProductScreenState extends State<ProductScreen> {
                         .titleLarge
                         ?.copyWith(fontWeight: FontWeight.bold),
                   ),
-
                   const SizedBox(height: 8),
                   warehouseShares.isNotEmpty
                       ? _buildTable(
@@ -519,22 +309,15 @@ class _ProductScreenState extends State<ProductScreen> {
                           }).toList(),
                         )
                       : _noDataPlaceholder(),
+
+                  const SizedBox(height: 24),
+                  _Feedback()
                 ],
               ),
             ),
           ),
         ),
       ),
-    );
-  }
-
-  Widget _noDataPlaceholder() {
-    return Row(
-      children: const [
-        Icon(Icons.info, color: Colors.grey),
-        SizedBox(width: 8),
-        Text('Нет данных для отображения'),
-      ],
     );
   }
 
@@ -667,42 +450,26 @@ class _ProductScreenState extends State<ProductScreen> {
     );
   }
 
-  Widget _buildBarChart(List<BarChartGroupData> bars) {
-    if (bars.isEmpty) return _noDataPlaceholder();
-
-    return BarChart(
-      BarChartData(
-        borderData: FlBorderData(
-            show: true,
-            border: const Border(bottom: BorderSide(), left: BorderSide())),
-        gridData: FlGridData(show: false),
-        titlesData: FlTitlesData(
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (val, _) {
-                return Text(val.toInt().toString(),
-                    style: const TextStyle(fontSize: 10));
-              },
-            ),
-          ),
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (val, _) {
-                return Text(val.toInt().toString(),
-                    style: const TextStyle(fontSize: 10));
-              },
-            ),
-          ),
-        ),
-        barGroups: bars,
-      ),
-    );
-  }
-
   Widget _buildPieChart(Map<String, double> dataMap) {
     if (dataMap.isEmpty) return _noDataPlaceholder();
+
+    final List<Color> colorList = [
+      Colors.blue,
+      Colors.red,
+      Colors.green,
+      Colors.orange,
+      Colors.purple,
+      Colors.cyan,
+      Colors.amber,
+      Colors.pink,
+      Colors.teal,
+      Colors.indigo,
+      Colors.lime,
+      Colors.brown,
+      Colors.black
+    ];
+
+    final keys = dataMap.keys.toList();
 
     return Row(
       children: [
@@ -710,7 +477,8 @@ class _ProductScreenState extends State<ProductScreen> {
           child: pie_chart.PieChart(
             dataMap: dataMap,
             chartType: pie_chart.ChartType.ring,
-            // chartRadius: 80,
+            colorList: List.generate(
+                dataMap.length, (index) => colorList[index % colorList.length]),
             legendOptions: const pie_chart.LegendOptions(
               showLegends: false,
             ),
@@ -721,27 +489,45 @@ class _ProductScreenState extends State<ProductScreen> {
         ),
         const SizedBox(height: 8),
         Expanded(
-            // spacing: 16,
-            // runSpacing: 8,
-            child: SingleChildScrollView(
-          child: Column(
-              children: dataMap.keys.map((k) {
-            return Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: SingleChildScrollView(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                    width: 12,
-                    height: 12,
-                    color: Colors.primaries[dataMap.keys.toList().indexOf(k) %
-                        Colors.primaries.length]),
-                const SizedBox(width: 4),
-                Text(k),
-              ],
-            );
-          }).toList()),
-        )),
+              children: List.generate(keys.length, (index) {
+                final k = keys[index];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 12,
+                        height: 12,
+                        color: colorList[index % colorList.length],
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '$k ${dataMap[k]}шт.',
+                          softWrap: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _noDataPlaceholder() {
+    return Row(
+      children: const [
+        Icon(Icons.info, color: Colors.grey),
+        SizedBox(width: 8),
+        Text('Нет данных для отображения'),
       ],
     );
   }
@@ -816,5 +602,203 @@ class _ProductScreenState extends State<ProductScreen> {
       default:
         return '';
     }
+  }
+}
+
+class _Feedback extends StatelessWidget {
+  const _Feedback({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final model = context.watch<ProductViewModel>();
+    final ratingDistribution = model.ratingDistribution;
+
+    final totalCount =
+        ratingDistribution.values.fold(0, (sum, count) => sum + count);
+    final ratingsData = ratingDistribution.entries.map((entry) {
+      final rating = entry.key;
+      final count = entry.value;
+      return [rating, '$count шт.', '${(count * 100 / totalCount).ceil()}%'];
+    }).toList()
+      ..sort((a, b) => int.parse(a[0]).compareTo(int.parse(b[0])));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Отзывы покупателей',
+          style: Theme.of(context)
+              .textTheme
+              .titleLarge
+              ?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Распределение оценок в виде таблицы
+              Text(
+                'Распределение оценок',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              if (ratingsData.isNotEmpty)
+                _buildTable(
+                  context,
+                  columns: const ['Оценка', 'Количество', 'Процент'],
+                  rows: ratingsData,
+                )
+              else
+                _noDataPlaceholder(),
+
+              const SizedBox(height: 24),
+              const Divider(),
+              const SizedBox(height: 16),
+
+              // Плюсы и Минусы (всегда развернуты)
+              if (model.pros.isNotEmpty || model.cons.isNotEmpty) ...[
+                Text(
+                  'Плюсы и минусы',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+
+                // Плюсы
+                if (model.pros.isNotEmpty) ...[
+                  Text(
+                    'Плюсы:',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  ...model.pros.map((pro) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.add, color: Colors.green, size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(pro)),
+                        ],
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: 16),
+                ],
+
+                // Минусы
+                if (model.cons.isNotEmpty) ...[
+                  Text(
+                    'Минусы:',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  ...model.cons.map((con) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.remove, color: Colors.red, size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(con)),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+              ] else
+                const Text('Нет отзывов или мнений покупателей'),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _noDataPlaceholder() {
+    return Row(
+      children: const [
+        Icon(Icons.info, color: Colors.grey),
+        SizedBox(width: 8),
+        Text('Нет данных для отображения'),
+      ],
+    );
+  }
+
+  Widget _buildTable(BuildContext context,
+      {required List<String> columns, required List<List<String>> rows}) {
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Table(
+        columnWidths: const {
+          0: IntrinsicColumnWidth(),
+          1: IntrinsicColumnWidth(),
+          2: IntrinsicColumnWidth(),
+        },
+        border: TableBorder(
+          horizontalInside: BorderSide(color: Colors.grey.shade300),
+        ),
+        children: [
+          TableRow(
+            decoration: BoxDecoration(
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(8)),
+              color: theme.colorScheme.primary.withOpacity(0.1),
+            ),
+            children: columns
+                .map((column) => Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Text(
+                        column,
+                        style: theme.textTheme.bodyLarge
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                    ))
+                .toList(),
+          ),
+          for (var row in rows)
+            TableRow(
+              children: row
+                  .map((cell) => Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Text(cell, style: theme.textTheme.bodyMedium),
+                      ))
+                  .toList(),
+            ),
+        ],
+      ),
+    );
   }
 }

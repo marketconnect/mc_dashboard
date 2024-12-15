@@ -1,3 +1,5 @@
+import 'package:mc_dashboard/domain/entities/warehouse.dart';
+
 class Stock {
   final int productId;
   final int warehouseId;
@@ -16,12 +18,18 @@ class Stock {
   });
 
   factory Stock.fromJson(Map<String, dynamic> json) {
+    int parseInt(dynamic value) {
+      if (value is int) return value;
+      if (value is String) return int.tryParse(value) ?? 0;
+      return 0;
+    }
+
     return Stock(
-      productId: json['product_id'] as int? ?? 0,
-      warehouseId: json['warehouse_id'] as int? ?? 0,
-      sizeOptionId: json['size_option_id'] as int? ?? 0,
-      quantity: json['quantity'] as int? ?? 0,
-      basicPrice: json['basic_price'] as int? ?? 0,
+      productId: parseInt(json['product_id']),
+      warehouseId: parseInt(json['warehouse_id']),
+      sizeOptionId: parseInt(json['size_option_id']),
+      quantity: parseInt(json['quantity']),
+      basicPrice: parseInt(json['basic_price']),
       timestamp: json['timestamp'] != null && json['timestamp'] is String
           ? DateTime.tryParse(json['timestamp'] as String) ??
               DateTime.fromMillisecondsSinceEpoch(0)
@@ -41,7 +49,8 @@ class Stock {
   }
 }
 
-List<Map<String, dynamic>> calculateWarehouseShares(List<Stock> stocks) {
+List<Map<String, dynamic>> calculateWarehouseShares(
+    List<Stock> stocks, List<Warehouse> warehouses) {
   final warehouseQuantities = <int, int>{};
 
   // Суммируем количество товаров для каждого склада
@@ -58,9 +67,14 @@ List<Map<String, dynamic>> calculateWarehouseShares(List<Stock> stocks) {
   final warehouseShares = warehouseQuantities.entries.map((entry) {
     final warehouseId = entry.key;
     final quantity = entry.value;
+    final whNames = warehouses.where((element) => element.id == warehouseId);
+    String whName = "";
+    if (whNames.isNotEmpty) {
+      whName = whNames.first.name;
+    }
 
     return {
-      "name": "Склад $warehouseId", // Пример: добавляем "Склад" перед ID
+      "name": whName,
       "value":
           totalQuantity > 0 ? (quantity / totalQuantity * 100).toDouble() : 0.0,
     };

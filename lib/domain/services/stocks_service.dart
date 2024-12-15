@@ -14,6 +14,7 @@ class StocksService implements ProductViewModelStocksService {
   StocksService({required this.stocksApiClient});
 
   @override
+  @override
   Future<Either<AppErrorBase, List<Stock>>> getLastDayStocks({
     int? productId,
   }) async {
@@ -34,9 +35,28 @@ class StocksService implements ProductViewModelStocksService {
         startDate: startDateStr,
         endDate: endDateStr,
       );
-      print('Fetched stocks: ${result.stocks.length}');
+
       return Right(result.stocks);
     } on DioException catch (e, stackTrace) {
+      if (e.response?.statusCode == 404) {
+        return const Right([]);
+      }
+
+      if (e.response?.data == null) {
+        final error = AppErrorBase(
+          'DioException: ',
+          name: 'getOneMonthStocks',
+          sendTo: true,
+          source: 'StocksService',
+          args: [
+            'productId: $productId',
+          ],
+          stackTrace: stackTrace.toString(),
+        );
+        AppLogger.log(error);
+        return Left(error);
+      }
+
       final responseMessage = e.response?.data?['message'] ?? e.message;
       final error = AppErrorBase(
         'DioException: $responseMessage',

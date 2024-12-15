@@ -5,11 +5,13 @@ import 'package:mc_dashboard/api/detailed_orders.dart';
 import 'package:mc_dashboard/api/orders.dart';
 import 'package:mc_dashboard/api/stocks.dart';
 import 'package:mc_dashboard/api/subjects_summary.dart';
+import 'package:mc_dashboard/api/warehouses.dart';
 import 'package:mc_dashboard/core/dio/setup.dart';
 import 'package:mc_dashboard/domain/services/detailed_orders_service.dart';
 import 'package:mc_dashboard/domain/services/orders_service.dart';
 import 'package:mc_dashboard/domain/services/stocks_service.dart';
 import 'package:mc_dashboard/domain/services/subjects_summary_service.dart';
+import 'package:mc_dashboard/domain/services/warehouses_service.dart';
 import 'package:mc_dashboard/main.dart';
 
 import 'package:mc_dashboard/presentation/choosing_niche_screen/choosing_niche_screen.dart';
@@ -59,6 +61,9 @@ class _DIContainer {
   OrderService _makeOrdersService() =>
       OrderService(ordersApiClient: OrdersApiClient(dio));
 
+  WhService _makeWhService() =>
+      WhService(whApiClient: WarehousesApiClient(dio));
+
   // ViewModels
   ChoosingNicheViewModel _makeChoosingNicheViewModel(
           BuildContext context,
@@ -100,6 +105,7 @@ class _DIContainer {
         productId: productId,
         ordersService: _makeOrdersService(),
         stocksService: _makeStocksService(),
+        whService: _makeWhService(),
         productPrice: productPrice,
       );
 }

@@ -1,3 +1,5 @@
+import 'package:mc_dashboard/domain/entities/warehouse.dart';
+
 class OrderWb {
   final int productId;
   final int sizeOptionId;
@@ -76,10 +78,14 @@ int getTotalOrders(List<OrderWb> orders) {
   return orders.fold(0, (total, order) => total + order.orders);
 }
 
-Map<int, int> getTotalOrdersByWarehouse(List<OrderWb> orders) {
+Map<String, double> getTotalOrdersByWarehouse(
+    List<OrderWb> orders, List<Warehouse> warehouses) {
   Map<int, int> warehouseOrders = {};
 
   for (var order in orders) {
+    if (order.orders == 0) {
+      continue;
+    }
     warehouseOrders.update(
       order.warehouseId,
       (currentSum) => currentSum + order.orders,
@@ -87,11 +93,18 @@ Map<int, int> getTotalOrdersByWarehouse(List<OrderWb> orders) {
     );
   }
 
-  return warehouseOrders;
-}
-
-Map<String, double> transformMap(Map<int, int> inputMap) {
-  return inputMap.map((key, value) {
-    return MapEntry(key.toString(), value.toDouble());
+  return warehouseOrders.map((key, value) {
+    String whName = '';
+    final warehousesNames = warehouses.where((e) => e.id == key);
+    if (warehousesNames.isNotEmpty) {
+      whName = warehousesNames.first.name;
+    }
+    return MapEntry(whName, value.toDouble());
   });
 }
+
+// Map<String, double> transformMap(Map<int, int> inputMap) {
+//   return inputMap.map((key, value) {
+//     return MapEntry(key.toString(), value.toDouble());
+//   });
+// }

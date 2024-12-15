@@ -27,13 +27,17 @@ class StocksResponse {
   });
 
   factory StocksResponse.fromJson(Map<String, dynamic> json) {
+    if (json['stocks'] == null || json['stocks'] is! List) {
+      throw FormatException(
+          'Expected a list for "stocks" but got: ${json['stocks']}');
+    }
+
     return StocksResponse(
       stocks: (json['stocks'] as List<dynamic>)
           .map((item) => Stock.fromJson(item as Map<String, dynamic>))
           .toList(),
     );
   }
-
   Map<String, dynamic> toJson() {
     return {
       'stocks': stocks.map((stock) => stock.toJson()).toList(),
