@@ -606,7 +606,7 @@ class _ProductScreenState extends State<ProductScreen> {
 }
 
 class _Feedback extends StatelessWidget {
-  const _Feedback({super.key});
+  const _Feedback();
 
   @override
   Widget build(BuildContext context) {
