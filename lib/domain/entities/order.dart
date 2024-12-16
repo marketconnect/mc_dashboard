@@ -69,7 +69,7 @@ List<Map<String, dynamic>> aggregatePricesByDay(List<OrderWb> orders) {
   return aggregatedPrices.entries.map((entry) {
     return {
       'date': entry.key,
-      'price': (entry.value / 100).ceil(),
+      'price': entry.value,
     };
   }).toList();
 }

@@ -15,13 +15,13 @@ class StocksService implements ProductViewModelStocksService {
 
   @override
   @override
-  Future<Either<AppErrorBase, List<Stock>>> getLastDayStocks({
+  Future<Either<AppErrorBase, List<Stock>>> getMonthStocks({
     int? productId,
   }) async {
     try {
       final today = DateTime.now();
-      final startDate = today.subtract(const Duration(days: 2));
-      final endDate = today.subtract(const Duration(days: 2));
+      final startDate = today.subtract(const Duration(days: 31));
+      final endDate = today.subtract(const Duration(days: 1));
 
       final startDateStr = startDate.toIso8601String().substring(0, 10);
       final endDateStr = endDate.toIso8601String().substring(0, 10);
@@ -35,6 +35,7 @@ class StocksService implements ProductViewModelStocksService {
         startDate: startDateStr,
         endDate: endDateStr,
       );
+      print("stockds ${result.stocks.where((e) => e.quantity > 0)}");
 
       return Right(result.stocks);
     } on DioException catch (e, stackTrace) {

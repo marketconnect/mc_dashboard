@@ -49,8 +49,9 @@ class _ProductScreenState extends State<ProductScreen> {
 
     List<DateTime> priceDates =
         priceHistoryData.map((e) => e['date'] as DateTime).toList();
-    List<double> priceValues =
-        priceHistoryData.map((e) => (e["price"] as num).toDouble()).toList();
+    List<double> priceValues = priceHistoryData.map((e) {
+      return (e["price"] as num).toDouble();
+    }).toList();
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -178,117 +179,19 @@ class _ProductScreenState extends State<ProductScreen> {
                       _buildChartContainer(
                         title: 'Динамика продаж',
                         child: _buildLineChart(ordersDates, salesValues,
-                            isSales: true),
+                            isSales: true, valueSuffix: 'шт.'),
                       ),
-                      _buildChartContainer(
-                        title: 'История изменения цены',
-                        child: _buildLineChart(priceDates, priceValues,
-                            isSales: false),
-                      ),
-                      // _buildChartContainer(
-                      //   title: 'Распределение оценок',
-                      //   child: _buildBarChart(ratingBars),
-                      // ),
                       _buildChartContainer(
                         title: 'Доля продаж по складам',
                         child: _buildPieChart(pieDataMap),
                       ),
+                      _buildChartContainer(
+                        title: 'История изменения цены',
+                        child: _buildLineChart(priceDates, priceValues,
+                            isSales: false, valueSuffix: '₽'),
+                      ),
                     ],
                   ),
-                  // if (model.pros.isNotEmpty || model.cons.isNotEmpty) ...[
-                  //   const SizedBox(height: 24),
-                  //   Text(
-                  //     'Плюсы и минусы',
-                  //     style: Theme.of(context)
-                  //         .textTheme
-                  //         .titleLarge
-                  //         ?.copyWith(fontWeight: FontWeight.bold),
-                  //   ),
-                  //   const SizedBox(height: 8),
-                  //   if (model.pros.isNotEmpty) ...[
-                  //     GestureDetector(
-                  //       onTap: () {
-                  //         setState(() {
-                  //           _prosExpanded = !_prosExpanded;
-                  //         });
-                  //       },
-                  //       child: Row(
-                  //         mainAxisAlignment: MainAxisAlignment.start,
-                  //         children: [
-                  //           Text(
-                  //             'Плюсы:',
-                  //             style: Theme.of(context)
-                  //                 .textTheme
-                  //                 .titleMedium
-                  //                 ?.copyWith(fontWeight: FontWeight.bold),
-                  //           ),
-                  //           Icon(
-                  //             _prosExpanded
-                  //                 ? Icons.keyboard_arrow_up
-                  //                 : Icons.keyboard_arrow_down,
-                  //           ),
-                  //         ],
-                  //       ),
-                  //     ),
-                  //     if (_prosExpanded)
-                  //       Column(
-                  //         crossAxisAlignment: CrossAxisAlignment.start,
-                  //         children: model.pros.map((pro) {
-                  //           return Row(
-                  //             crossAxisAlignment: CrossAxisAlignment.start,
-                  //             children: [
-                  //               const Icon(Icons.add,
-                  //                   color: Colors.green, size: 16),
-                  //               const SizedBox(width: 8),
-                  //               Expanded(child: Text(pro)),
-                  //             ],
-                  //           );
-                  //         }).toList(),
-                  //       ),
-                  //   ],
-                  //   const SizedBox(height: 16),
-                  //   if (model.cons.isNotEmpty) ...[
-                  //     GestureDetector(
-                  //       onTap: () {
-                  //         setState(() {
-                  //           _consExpanded = !_consExpanded;
-                  //         });
-                  //       },
-                  //       child: Row(
-                  //         mainAxisAlignment: MainAxisAlignment.start,
-                  //         children: [
-                  //           Text(
-                  //             'Минусы:',
-                  //             style: Theme.of(context)
-                  //                 .textTheme
-                  //                 .titleMedium
-                  //                 ?.copyWith(fontWeight: FontWeight.bold),
-                  //           ),
-                  //           Icon(
-                  //             _consExpanded
-                  //                 ? Icons.keyboard_arrow_up
-                  //                 : Icons.keyboard_arrow_down,
-                  //           ),
-                  //         ],
-                  //       ),
-                  //     ),
-                  //     if (_consExpanded)
-                  //       Column(
-                  //         crossAxisAlignment: CrossAxisAlignment.start,
-                  //         children: model.cons.map((con) {
-                  //           return Row(
-                  //             crossAxisAlignment: CrossAxisAlignment.start,
-                  //             children: [
-                  //               const Icon(Icons.remove,
-                  //                   color: Colors.red, size: 16),
-                  //               const SizedBox(width: 8),
-                  //               Expanded(child: Text(con)),
-                  //             ],
-                  //           );
-                  //         }).toList(),
-                  //       ),
-                  //   ],
-                  // ],
                   const SizedBox(height: 24),
                   Text(
                     'Остатки',
@@ -309,7 +212,6 @@ class _ProductScreenState extends State<ProductScreen> {
                           }).toList(),
                         )
                       : _noDataPlaceholder(),
-
                   const SizedBox(height: 24),
                   _Feedback()
                 ],
@@ -391,8 +293,12 @@ class _ProductScreenState extends State<ProductScreen> {
     );
   }
 
-  Widget _buildLineChart(List<DateTime> dates, List<double> values,
-      {required bool isSales}) {
+  Widget _buildLineChart(
+    List<DateTime> dates,
+    List<double> values, {
+    required bool isSales,
+    String valueSuffix = '',
+  }) {
     if (dates.isEmpty || values.isEmpty || dates.length != values.length) {
       return _noDataPlaceholder();
     }
@@ -404,11 +310,41 @@ class _ProductScreenState extends State<ProductScreen> {
 
     return LineChart(
       LineChartData(
-        gridData:
-            FlGridData(drawVerticalLine: false, drawHorizontalLine: false),
+        lineTouchData: LineTouchData(touchTooltipData:
+            LineTouchTooltipData(getTooltipItems: (touchedSpots) {
+          return touchedSpots.map((touchedSpot) {
+            final value = touchedSpot.y.toInt(); // Assuming integer values
+
+            return LineTooltipItem(
+              '$value$valueSuffix',
+              const TextStyle(
+                color: Colors.black,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            );
+          }).toList();
+        })),
+        gridData: FlGridData(
+          drawVerticalLine: true,
+          drawHorizontalLine: true,
+          horizontalInterval: values.isNotEmpty
+              ? (values.reduce((a, b) => a > b ? a : b) / 5)
+              : 1,
+          verticalInterval: 1,
+          getDrawingHorizontalLine: (value) => FlLine(
+            color: Colors.grey.withOpacity(0.3),
+            strokeWidth: 0.5,
+          ),
+          getDrawingVerticalLine: (value) => FlLine(
+            color: Colors.grey.withOpacity(0.3),
+            strokeWidth: 0.5,
+          ),
+        ),
         borderData: FlBorderData(
-            show: true,
-            border: const Border(bottom: BorderSide(), left: BorderSide())),
+          show: true,
+          border: const Border(bottom: BorderSide(), left: BorderSide()),
+        ),
         titlesData: FlTitlesData(
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
@@ -426,13 +362,8 @@ class _ProductScreenState extends State<ProductScreen> {
             sideTitles: SideTitles(
               showTitles: true,
               getTitlesWidget: (val, _) {
-                if (isSales) {
-                  return Text(val.toInt().toString(),
-                      style: const TextStyle(fontSize: 10));
-                } else {
-                  return Text('${val.toInt()} ₽',
-                      style: const TextStyle(fontSize: 10));
-                }
+                final valueText = val.toInt().toString();
+                return Text(valueText, style: const TextStyle(fontSize: 10));
               },
             ),
           ),
@@ -615,9 +546,14 @@ class _Feedback extends StatelessWidget {
 
     final totalCount =
         ratingDistribution.values.fold(0, (sum, count) => sum + count);
+
+    if (totalCount == 0) {
+      return SizedBox();
+    }
     final ratingsData = ratingDistribution.entries.map((entry) {
       final rating = entry.key;
       final count = entry.value;
+
       return [rating, '$count шт.', '${(count * 100 / totalCount).ceil()}%'];
     }).toList()
       ..sort((a, b) => int.parse(a[0]).compareTo(int.parse(b[0])));
@@ -644,7 +580,6 @@ class _Feedback extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Распределение оценок в виде таблицы
               Text(
                 'Распределение оценок',
                 style: Theme.of(context)

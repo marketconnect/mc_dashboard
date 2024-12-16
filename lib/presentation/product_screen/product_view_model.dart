@@ -8,7 +8,7 @@ import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/domain/entities/warehouse.dart';
 
 abstract class ProductViewModelStocksService {
-  Future<Either<AppErrorBase, List<Stock>>> getLastDayStocks({
+  Future<Either<AppErrorBase, List<Stock>>> getMonthStocks({
     int? productId,
   });
 }
@@ -73,7 +73,9 @@ class ProductViewModel extends ViewModelBase {
   void setPros(List<String> value) {
     // lowercase
     value = value.map((e) => e.toLowerCase()).toList();
-    Set<String> set = Set.from(value.sublist(0, 30));
+    final n = value.length > 30 ? 30 : value.length;
+
+    Set<String> set = Set.from(value.sublist(0, n));
     pros = set.toList();
   }
 
@@ -82,7 +84,7 @@ class ProductViewModel extends ViewModelBase {
     // lowercase
     value = value.map((e) => e.toLowerCase()).toList();
     final n = value.length > 30 ? 30 : value.length;
-    ;
+
     Set<String> set = Set.from(value.sublist(0, n));
     cons = set.toList();
   }
@@ -94,7 +96,7 @@ class ProductViewModel extends ViewModelBase {
     final values = await Future.wait([
       fetchCardInfo(calculateCardUrl(calculateImageUrl(_basketNum, productId))),
       ordersService.getOneMonthOrders(productId: productId),
-      stocksService.getLastDayStocks(productId: productId),
+      stocksService.getMonthStocks(productId: productId),
     ]);
     final cardInfo = values[0] as CardInfo;
     final feedbackInfo = await fetchFeedbacks(cardInfo.imtId);

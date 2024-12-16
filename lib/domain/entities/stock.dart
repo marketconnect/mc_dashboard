@@ -82,3 +82,17 @@ List<Map<String, dynamic>> calculateWarehouseShares(
 
   return warehouseShares;
 }
+
+Map<String, int> calculateDailyStockSums(List<Stock> stocks) {
+  final dailySums = <String, int>{};
+
+  for (final stock in stocks) {
+    final dateKey = "${stock.timestamp.year.toString().padLeft(4, '0')}-"
+        "${stock.timestamp.month.toString().padLeft(2, '0')}-"
+        "${stock.timestamp.day.toString().padLeft(2, '0')}";
+
+    dailySums[dateKey] = (dailySums[dateKey] ?? 0) + stock.quantity;
+  }
+
+  return dailySums;
+}
