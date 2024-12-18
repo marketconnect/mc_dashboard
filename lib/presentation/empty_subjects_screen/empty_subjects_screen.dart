@@ -18,6 +18,7 @@ class _EmptySubjectProductsScreenState
     final theme = Theme.of(context);
 
     final model = context.watch<EmptySubjectViewModel>();
+    final onNavigateBack = model.onNavigateBack;
     final searchQuery = model.searchQuery;
     final onSearchChanged = model.onSearchChanged;
     return Scaffold(
@@ -26,6 +27,20 @@ class _EmptySubjectProductsScreenState
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            Row(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 8.0),
+                  child: IconButton(
+                      onPressed: () => onNavigateBack(),
+                      icon: Icon(
+                        Icons.arrow_back_ios,
+                        color: theme.colorScheme.primary,
+                      )),
+                ),
+              ],
+            ),
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 500),
               child: TextField(

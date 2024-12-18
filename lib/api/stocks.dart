@@ -1,10 +1,11 @@
+import 'package:mc_dashboard/.env.dart';
 import 'package:mc_dashboard/domain/entities/stock.dart';
 import 'package:retrofit/retrofit.dart';
 import 'package:dio/dio.dart';
 
 part 'stocks.g.dart';
 
-@RestApi(baseUrl: "http://localhost:2009")
+@RestApi(baseUrl: ApiSettings.baseUrl)
 abstract class StocksApiClient {
   factory StocksApiClient(Dio dio, {String baseUrl}) = _StocksApiClient;
 

@@ -49,38 +49,53 @@ class Stock {
   }
 }
 
-List<Map<String, dynamic>> calculateWarehouseShares(
+(List<Map<String, dynamic>>, int) calculateWarehouseShares(
     List<Stock> stocks, List<Warehouse> warehouses) {
-  final warehouseQuantities = <int, int>{};
+  DateTime latestDate = stocks
+      .map((stock) => stock.timestamp)
+      .reduce((a, b) => a.isAfter(b) ? a : b);
 
-  // Суммируем количество товаров для каждого склада
-  for (final stock in stocks) {
+  final filteredStocks = stocks
+      .where((stock) =>
+          stock.timestamp.year == latestDate.year &&
+          stock.timestamp.month == latestDate.month &&
+          stock.timestamp.day == latestDate.day)
+      .toList();
+
+  final warehouseQuantities = <int, int>{};
+  for (final stock in filteredStocks) {
     warehouseQuantities[stock.warehouseId] =
         (warehouseQuantities[stock.warehouseId] ?? 0) + stock.quantity;
   }
 
-  // Вычисляем общее количество товаров на всех складах
   final totalQuantity =
       warehouseQuantities.values.fold(0, (sum, qty) => sum + qty);
 
-  // Преобразуем в нужный формат
   final warehouseShares = warehouseQuantities.entries.map((entry) {
     final warehouseId = entry.key;
     final quantity = entry.value;
+
     final whNames = warehouses.where((element) => element.id == warehouseId);
     String whName = "";
     if (whNames.isNotEmpty) {
       whName = whNames.first.name;
+    } else {
+      whName = 'СкладwarehouseId';
     }
 
     return {
       "name": whName,
-      "value":
-          totalQuantity > 0 ? (quantity / totalQuantity * 100).toDouble() : 0.0,
+      "value": quantity,
     };
   }).toList();
+  warehouseShares.sort((a, b) {
+    final aValue = (a["value"] as num?) ?? 0;
+    final bValue = (b["value"] as num?) ?? 0;
 
-  return warehouseShares;
+    return bValue.compareTo(aValue);
+  });
+
+  return (warehouseShares, totalQuantity);
 }
 
 Map<String, int> calculateDailyStockSums(List<Stock> stocks) {

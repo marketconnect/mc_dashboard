@@ -7,7 +7,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
 import 'package:mc_dashboard/presentation/choosing_niche_screen/choosing_niche_view_model.dart';
 
-// TODO if search open in the table, do not change graphs input
 class ChoosingNicheScreen extends StatelessWidget {
   const ChoosingNicheScreen({super.key});
 

@@ -31,11 +31,13 @@ class ProductViewModel extends ViewModelBase {
   final ProductViewModelStocksService stocksService;
   final ProductViewModelOrderService ordersService;
   final ProductViewModelWhService whService;
+  final void Function() onNavigateBack;
   ProductViewModel(
       {required super.context,
       required this.productId,
       required this.stocksService,
       required this.whService,
+      required this.onNavigateBack,
       required this.ordersService,
       required this.productPrice}) {
     _asyncInit();
@@ -43,6 +45,7 @@ class ProductViewModel extends ViewModelBase {
 
   String? _basketNum;
   String _name = "";
+  String _subjectName = "";
   String _rating = "0.0";
   String get rating => _rating;
   final List<String> _images = [];
@@ -50,13 +53,17 @@ class ProductViewModel extends ViewModelBase {
   int _pics = 1;
   Map<String, int> ratingDistribution = {};
   String get name => _name;
-  List<String> get images => _images;
+  String get subjectName => _subjectName;
+  List<String> get images =>
+      _images.map((el) => el.replaceAll("c246x328", "big")).toList();
   List<String> pros = [];
 
   // final List<Stock> _stocks = [];
   // List<Stock> get stocks => _stocks;
   List<Map<String, dynamic>> _warehouseShares = [];
   List<Map<String, dynamic>> get warehouseShares => _warehouseShares;
+  int _totalWhStocks = 0;
+  int get totalWhStocks => _totalWhStocks;
 
   // orders
   List<Map<String, dynamic>> _orders = [];
@@ -70,6 +77,11 @@ class ProductViewModel extends ViewModelBase {
   Map<String, double> _warehousesOrdersSum = {};
 
   Map<String, double> get warehousesOrdersSum => _warehousesOrdersSum;
+
+  // Stocks
+  Map<String, int> _dailyStocksSums = {};
+  Map<String, int> get dailyStocksSums => _dailyStocksSums;
+
   void setPros(List<String> value) {
     // lowercase
     value = value.map((e) => e.toLowerCase()).toList();
@@ -94,9 +106,10 @@ class ProductViewModel extends ViewModelBase {
     setLoading();
     _basketNum = getBasketNum(productId);
     final values = await Future.wait([
-      fetchCardInfo(calculateCardUrl(calculateImageUrl(_basketNum, productId))),
-      ordersService.getOneMonthOrders(productId: productId),
-      stocksService.getMonthStocks(productId: productId),
+      fetchCardInfo(
+          calculateCardUrl(calculateImageUrl(_basketNum, productId))), // 0
+      ordersService.getOneMonthOrders(productId: productId), // 1
+      stocksService.getMonthStocks(productId: productId), // 2
     ]);
     final cardInfo = values[0] as CardInfo;
     final feedbackInfo = await fetchFeedbacks(cardInfo.imtId);
@@ -121,6 +134,7 @@ class ProductViewModel extends ViewModelBase {
     if (stocksOrEither.isRight()) {
       stocks = stocksOrEither.fold((l) => <Stock>[], (r) => r);
       whIds.addAll(stocks.map((e) => e.warehouseId));
+      _dailyStocksSums = calculateDailyStockSums(stocks);
     }
 
     final whOrEither =
@@ -128,12 +142,15 @@ class ProductViewModel extends ViewModelBase {
     if (whOrEither.isRight()) {
       final warehousesList =
           whOrEither.fold((l) => throw UnimplementedError, (r) => r);
-      _warehouseShares = calculateWarehouseShares(stocks, warehousesList);
+      final whShares = calculateWarehouseShares(stocks, warehousesList);
+      _warehouseShares = whShares.$1;
+      _totalWhStocks = whShares.$2;
       _warehousesOrdersSum = getTotalOrdersByWarehouse(orders, warehousesList);
     }
 
     _pics = cardInfo.photoCount;
     _name = cardInfo.imtName;
+    _subjectName = cardInfo.subjName;
     final image = calculateImageUrl(_basketNum, productId);
     _images.add(image);
 

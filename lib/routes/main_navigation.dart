@@ -10,9 +10,16 @@ abstract class ScreenFactory {
       required String subjectName,
       required void Function(int productId, int productPrice)
           onNavigateToProductScreen,
-      required void Function() onNavigateToEmptySubject});
+      required void Function() onNavigateToEmptySubject,
+      required void Function() onNavigateBack});
   Widget makeEmptySubjectProductsScreen(
       {required void Function(int subjectId, String subjectName)
-          onNavigateToSubjectProducts});
-  Widget makeProductScreen({required int productId, required int productPrice});
+          onNavigateToSubjectProducts,
+      required void Function() onNavigateBack});
+  Widget makeProductScreen(
+      {required int productId,
+      required int productPrice,
+      required void Function() onNavigateBack});
+
+  Widget makeLoginScreen();
 }

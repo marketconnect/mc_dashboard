@@ -1,12 +1,14 @@
 import 'package:dio/dio.dart';
 
 import 'package:flutter/material.dart';
+import 'package:mc_dashboard/api/auth.dart';
 import 'package:mc_dashboard/api/detailed_orders.dart';
 import 'package:mc_dashboard/api/orders.dart';
 import 'package:mc_dashboard/api/stocks.dart';
 import 'package:mc_dashboard/api/subjects_summary.dart';
 import 'package:mc_dashboard/api/warehouses.dart';
 import 'package:mc_dashboard/core/dio/setup.dart';
+import 'package:mc_dashboard/domain/services/auth_service.dart';
 import 'package:mc_dashboard/domain/services/detailed_orders_service.dart';
 import 'package:mc_dashboard/domain/services/orders_service.dart';
 import 'package:mc_dashboard/domain/services/stocks_service.dart';
@@ -19,10 +21,14 @@ import 'package:mc_dashboard/presentation/choosing_niche_screen/choosing_niche_v
 import 'package:mc_dashboard/presentation/app/app.dart';
 import 'package:mc_dashboard/presentation/empty_subjects_screen/empty_subjects_screen.dart';
 import 'package:mc_dashboard/presentation/empty_subjects_screen/empty_subjects_view_model.dart';
+import 'package:mc_dashboard/presentation/login_screen/login_screen.dart';
+import 'package:mc_dashboard/presentation/login_screen/login_view_model.dart';
 import 'package:mc_dashboard/presentation/product_screen/product_screen.dart';
 import 'package:mc_dashboard/presentation/product_screen/product_view_model.dart';
 import 'package:mc_dashboard/presentation/subject_products_screen/subject_products_screen.dart';
 import 'package:mc_dashboard/presentation/subject_products_screen/subject_products_view_model.dart';
+import 'package:mc_dashboard/repositories/cookies.dart';
+import 'package:mc_dashboard/repositories/local_storage.dart';
 import 'package:mc_dashboard/routes/main_navigation.dart';
 import 'package:provider/provider.dart';
 
@@ -48,6 +54,13 @@ class _DIContainer {
 
   ScreenFactory _makeScreenFactory() => ScreenFactoryDefault(this);
 
+  // Repositories //////////////////////////////////////////////////////////////
+  // CookiesRepo _makeCookiesRepo() => const CookiesRepo();
+
+  LocalStorageRepo _makeLocalStorageRepo() => LocalStorageRepo();
+  // Api clients ///////////////////////////////////////////////////////////////
+  AuthApiClient _makeAuthApiClient() => const AuthApiClient();
+  // Services //////////////////////////////////////////////////////////////////
   SubjectsSummaryService _makeSubjectsSummaryService() =>
       SubjectsSummaryService(
           subjectsSummaryApiClient: SubjectsSummaryApiClient(dio));
@@ -64,7 +77,11 @@ class _DIContainer {
   WhService _makeWhService() =>
       WhService(whApiClient: WarehousesApiClient(dio));
 
-  // ViewModels
+  AuthService _makeAuthService() => AuthService(
+        apiClient: _makeAuthApiClient(),
+        authServiceStorage: _makeLocalStorageRepo(),
+      );
+  // ViewModels ////////////////////////////////////////////////////////////////
   ChoosingNicheViewModel _makeChoosingNicheViewModel(
           BuildContext context,
           void Function(int subjectId, String subjectName)
@@ -79,6 +96,7 @@ class _DIContainer {
     int subjectId,
     String subjectName,
     void Function() onNavigateToEmptySubject,
+    void Function() onNavigateBack,
     void Function(int productId, int productPrice) onNavigateToProductScreen,
   ) =>
       SubjectProductsViewModel(
@@ -87,26 +105,35 @@ class _DIContainer {
           context: context,
           onNavigateToEmptySubject: onNavigateToEmptySubject,
           onNavigateToProductScreen: onNavigateToProductScreen,
+          onNavigateBack: onNavigateBack,
           detailedOrdersService: _makeDetailedOrdersService());
 
   EmptySubjectViewModel _makeEmptySubjectProductsViewModel(
           BuildContext context,
           void Function(int subjectId, String subjectName)
-              onNavigateToSubjectProducts) =>
+              onNavigateToSubjectProducts,
+          void Function() onNavigateBack) =>
       EmptySubjectViewModel(
           context: context,
           onNavigateToSubjectProducts: onNavigateToSubjectProducts,
+          onNavigateBack: onNavigateBack,
           subjectsSummaryService: _makeSubjectsSummaryService());
 
-  ProductViewModel _makeProductViewModel(
-          BuildContext context, int productId, int productPrice) =>
+  ProductViewModel _makeProductViewModel(BuildContext context, int productId,
+          int productPrice, void Function() onNavigateBack) =>
       ProductViewModel(
         context: context,
         productId: productId,
         ordersService: _makeOrdersService(),
         stocksService: _makeStocksService(),
+        onNavigateBack: onNavigateBack,
         whService: _makeWhService(),
         productPrice: productPrice,
+      );
+
+  LoginViewModel _makeLoginViewModel(BuildContext context) => LoginViewModel(
+        context: context,
+        authService: _makeAuthService(),
       );
 }
 
@@ -133,13 +160,15 @@ class ScreenFactoryDefault implements ScreenFactory {
       required String subjectName,
       required void Function(int productId, int productPrice)
           onNavigateToProductScreen,
-      required void Function() onNavigateToEmptySubject}) {
+      required void Function() onNavigateToEmptySubject,
+      required void Function() onNavigateBack}) {
     return ChangeNotifierProvider(
       create: (context) => _diContainer._makeSubjectProductsViewModel(
           context,
           subjectId,
           subjectName,
           onNavigateToEmptySubject,
+          onNavigateBack,
           onNavigateToProductScreen),
       child: const SubjectProductsScreen(),
     );
@@ -148,21 +177,34 @@ class ScreenFactoryDefault implements ScreenFactory {
   @override
   Widget makeEmptySubjectProductsScreen(
       {required void Function(int subjectId, String subjectName)
-          onNavigateToSubjectProducts}) {
+          onNavigateToSubjectProducts,
+      required void Function() onNavigateBack}) {
     return ChangeNotifierProvider(
       create: (context) => _diContainer._makeEmptySubjectProductsViewModel(
-          context, onNavigateToSubjectProducts),
+          context, onNavigateToSubjectProducts, onNavigateBack),
       child: const EmptySubjectProductsScreen(),
     );
   }
 
   @override
   Widget makeProductScreen(
-      {required int productId, required int productPrice}) {
+      {required int productId,
+      required int productPrice,
+      required void Function() onNavigateBack}) {
     return ChangeNotifierProvider(
-      create: (context) =>
-          _diContainer._makeProductViewModel(context, productId, productPrice),
+      create: (context) => _diContainer._makeProductViewModel(
+          context, productId, productPrice, onNavigateBack),
       child: const ProductScreen(),
+    );
+  }
+
+  @override
+  Widget makeLoginScreen() {
+    return ChangeNotifierProvider(
+      create: (context) => _diContainer._makeLoginViewModel(
+        context,
+      ),
+      child: const LoginScreen(),
     );
   }
 }

@@ -1,10 +1,11 @@
+import 'package:mc_dashboard/.env.dart';
 import 'package:mc_dashboard/domain/entities/subject_summary_item.dart';
 import 'package:retrofit/retrofit.dart';
 import 'package:dio/dio.dart';
 
 part 'subjects_summary.g.dart';
 
-@RestApi(baseUrl: "http://localhost:2009")
+@RestApi(baseUrl: ApiSettings.baseUrl)
 abstract class SubjectsSummaryApiClient {
   factory SubjectsSummaryApiClient(Dio dio, {String baseUrl}) =
       _SubjectsSummaryApiClient;

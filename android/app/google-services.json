@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "393151339240",
+    "project_id": "marketconnect-d2dc2",
+    "storage_bucket": "marketconnect-d2dc2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:393151339240:android:56f12b1f2064b4e541475d",
+        "android_client_info": {
+          "package_name": "com.i_rm.marketconnect"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAi1SSCjiXMImWUbz5os7arg4EUcQwUOJQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,14 +1,15 @@
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:mc_dashboard/core/utils/dates.dart';
 import 'package:mc_dashboard/presentation/product_screen/product_view_model.dart';
 import 'package:pie_chart/pie_chart.dart' as pie_chart;
 import 'package:flutter/material.dart';
 
-import 'dart:math' as math;
-
 import 'package:provider/provider.dart';
 
-// TODO back button
 // TODO scrolling for images
+// add subject name next to name
+//
 class ProductScreen extends StatefulWidget {
   const ProductScreen({super.key});
 
@@ -23,10 +24,12 @@ class _ProductScreenState extends State<ProductScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final model = context.watch<ProductViewModel>();
     final id = model.productId;
 
     final name = model.name;
+    final subjName = model.subjectName;
     final images = model.images;
 
     final price = model.productPrice;
@@ -35,12 +38,15 @@ class _ProductScreenState extends State<ProductScreen> {
     // final stocks = model.stocks;
     final orders = model.orders;
 
-    final pieDataMap = model.warehousesOrdersSum;
+    final dailyStockSums = model.dailyStocksSums;
 
+    final pieDataMap = model.warehousesOrdersSum;
+    final onNavigateBack = model.onNavigateBack;
     //
     final orders30d = model.orders30d;
     final priceHistoryData = model.priceHistory;
     final warehouseShares = model.warehouseShares;
+    final totalWhStocks = model.totalWhStocks;
 
     List<DateTime> ordersDates =
         orders.map((e) => e['date'] as DateTime).toList();
@@ -63,12 +69,29 @@ class _ProductScreenState extends State<ProductScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    name,
-                    style: Theme.of(context)
-                        .textTheme
-                        .headlineMedium
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      IconButton(
+                        onPressed: () => onNavigateBack(),
+                        icon: Icon(
+                          Icons.arrow_back_ios,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                      Expanded(
+                        // Оборачиваем Text в Expanded
+                        child: Text(
+                          name,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -77,81 +100,7 @@ class _ProductScreenState extends State<ProductScreen> {
                   ),
                   const SizedBox(height: 16),
                   SizedBox(
-                    height: 200,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: images.map((img) {
-                        return MouseRegion(
-                          cursor: SystemMouseCursors.click,
-                          child: GestureDetector(
-                            onTap: () {
-                              if (img.isNotEmpty) {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => Dialog(
-                                    child: InteractiveViewer(
-                                      child: FittedBox(
-                                        fit: BoxFit.contain,
-                                        child: Image.network(
-                                          img,
-                                          fit: BoxFit.contain,
-                                          loadingBuilder: (context, child,
-                                              loadingProgress) {
-                                            if (loadingProgress == null) {
-                                              return child;
-                                            }
-                                            return const SizedBox(
-                                              width: 100,
-                                              height: 100,
-                                              child: Center(
-                                                  child:
-                                                      CircularProgressIndicator()),
-                                            );
-                                          },
-                                          errorBuilder:
-                                              (context, error, stackTrace) {
-                                            return const Center(
-                                              child: Text(
-                                                  'Ошибка загрузки изображения'),
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.only(right: 8.0),
-                              child: Image.network(
-                                img,
-                                fit: BoxFit.contain,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Image.asset(
-                                    'images/no_image.jpg',
-                                    width: 50,
-                                  );
-                                },
-                                loadingBuilder:
-                                    (context, child, loadingProgress) {
-                                  if (loadingProgress == null) {
-                                    return child;
-                                  }
-                                  return const SizedBox(
-                                    width: 50,
-                                    height: 50,
-                                    child: Center(
-                                        child: CircularProgressIndicator()),
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
+                      height: 400, child: ImageCarousel(imageUrls: images)),
                   const SizedBox(height: 24),
                   const SizedBox(height: 24),
                   Wrap(
@@ -190,6 +139,9 @@ class _ProductScreenState extends State<ProductScreen> {
                         child: _buildLineChart(priceDates, priceValues,
                             isSales: false, valueSuffix: '₽'),
                       ),
+                      _buildChartContainer(
+                          title: "История остатков",
+                          child: BarChartWidget(dailyStockSums: dailyStockSums))
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -203,11 +155,12 @@ class _ProductScreenState extends State<ProductScreen> {
                   const SizedBox(height: 8),
                   warehouseShares.isNotEmpty
                       ? _buildTable(
-                          columns: const ['Склад', 'Доля (%)'],
+                          columns: const ['Склад', 'Количество', 'Доля'],
                           rows: warehouseShares.map((w) {
                             return [
                               w["name"] as String,
-                              '${(w["value"] as double).toStringAsFixed(2)} %', // Преобразование в строку
+                              '${w["value"]}',
+                              '${totalWhStocks > 0 ? (w["value"] / totalWhStocks * 100).toDouble().toStringAsFixed(1) : 0.0} %'
                             ];
                           }).toList(),
                         )
@@ -310,21 +263,28 @@ class _ProductScreenState extends State<ProductScreen> {
 
     return LineChart(
       LineChartData(
-        lineTouchData: LineTouchData(touchTooltipData:
-            LineTouchTooltipData(getTooltipItems: (touchedSpots) {
-          return touchedSpots.map((touchedSpot) {
-            final value = touchedSpot.y.toInt(); // Assuming integer values
-
-            return LineTooltipItem(
-              '$value$valueSuffix',
-              const TextStyle(
-                color: Colors.black,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            );
-          }).toList();
-        })),
+        lineTouchData: LineTouchData(
+          touchTooltipData: LineTouchTooltipData(
+            getTooltipItems: (touchedSpots) {
+              return touchedSpots.map((touchedSpot) {
+                final index = touchedSpot.x.toInt(); // Индекс даты
+                final value = touchedSpot.y.toInt(); // Значение графика
+                if (index < 0 || index >= dates.length) {
+                  return const LineTooltipItem('', TextStyle()); // Без данных
+                }
+                final date = dates[index];
+                return LineTooltipItem(
+                  '${_formatDate(date)}\n$value$valueSuffix', // Форматирование
+                  const TextStyle(
+                    color: Colors.black,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                );
+              }).toList();
+            },
+          ),
+        ),
         gridData: FlGridData(
           drawVerticalLine: true,
           drawHorizontalLine: true,
@@ -379,6 +339,30 @@ class _ProductScreenState extends State<ProductScreen> {
         ],
       ),
     );
+  }
+
+  /// Вспомогательный метод для форматирования даты
+  String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')} ${_monthName(date.month)}';
+  }
+
+  /// Метод для получения названия месяца
+  String _monthName(int month) {
+    const months = [
+      'Янв',
+      'Фев',
+      'Мар',
+      'Апр',
+      'Май',
+      'Июн',
+      'Июл',
+      'Авг',
+      'Сен',
+      'Окт',
+      'Ноя',
+      'Дек'
+    ];
+    return months[month - 1];
   }
 
   Widget _buildPieChart(Map<String, double> dataMap) {
@@ -502,37 +486,6 @@ class _ProductScreenState extends State<ProductScreen> {
           ),
       ],
     );
-  }
-
-  String _monthName(int month) {
-    switch (month) {
-      case 1:
-        return 'янв';
-      case 2:
-        return 'фев';
-      case 3:
-        return 'мар';
-      case 4:
-        return 'апр';
-      case 5:
-        return 'мая';
-      case 6:
-        return 'июн';
-      case 7:
-        return 'июл';
-      case 8:
-        return 'авг';
-      case 9:
-        return 'сен';
-      case 10:
-        return 'окт';
-      case 11:
-        return 'ноя';
-      case 12:
-        return 'дек';
-      default:
-        return '';
-    }
   }
 }
 
@@ -733,6 +686,147 @@ class _Feedback extends StatelessWidget {
                   .toList(),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class ImageCarousel extends StatelessWidget {
+  final List<String> imageUrls;
+
+  const ImageCarousel({super.key, required this.imageUrls});
+
+  @override
+  Widget build(BuildContext context) {
+    return CarouselSlider(
+      options: CarouselOptions(
+        height: 800,
+        enlargeCenterPage: true,
+        autoPlay: true,
+        // aspectRatio: 9 / 12,
+        autoPlayCurve: Curves.easeInOut,
+        enableInfiniteScroll: true,
+        autoPlayAnimationDuration: Duration(milliseconds: 800),
+        viewportFraction: 0.4,
+      ),
+      items: imageUrls.map((imgUrl) {
+        return Builder(
+          builder: (BuildContext context) {
+            return Container(
+              margin: EdgeInsets.symmetric(horizontal: 5.0),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8.0),
+                image: DecorationImage(
+                  image: NetworkImage(imgUrl),
+                  fit: BoxFit.contain,
+                ),
+              ),
+            );
+          },
+        );
+      }).toList(),
+    );
+  }
+}
+
+class BarChartWidget extends StatelessWidget {
+  final Map<String, int> dailyStockSums;
+
+  const BarChartWidget({super.key, required this.dailyStockSums});
+
+  @override
+  Widget build(BuildContext context) {
+    final dates = dailyStockSums.keys.toList();
+    final values = dailyStockSums.values.toList();
+
+    if (dailyStockSums.isEmpty) {
+      return const Center(child: Text("Нет данных"));
+    }
+
+    final barGroups = <BarChartGroupData>[];
+    for (int i = 0; i < dates.length; i++) {
+      barGroups.add(
+        BarChartGroupData(
+          x: i,
+          barRods: [
+            BarChartRodData(
+              toY: values[i].toDouble(),
+              color: Colors.blue,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return BarChart(
+      BarChartData(
+        barGroups: barGroups,
+        titlesData: FlTitlesData(
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (val, _) {
+                int index = val.toInt();
+                final keys = dates;
+
+                if (index < 0 || index >= keys.length) return const SizedBox();
+
+                if (index % 5 != 0) return const SizedBox();
+
+                final dateKey = keys[index];
+                return Text(
+                  formatDate(dateKey),
+                  style: const TextStyle(fontSize: 10),
+                );
+              },
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (val, _) {
+                return Text(
+                  val.toInt().toString(),
+                  style: const TextStyle(fontSize: 10),
+                );
+              },
+            ),
+          ),
+        ),
+        gridData: FlGridData(
+          drawVerticalLine: true,
+          drawHorizontalLine: true,
+          horizontalInterval: values.isNotEmpty
+              ? (values.reduce((a, b) => a > b ? a : b) / 5).ceilToDouble()
+              : 1,
+          verticalInterval: 1,
+          getDrawingHorizontalLine: (value) => FlLine(
+            color: Colors.grey.withOpacity(0.3),
+            strokeWidth: 0.5,
+          ),
+          getDrawingVerticalLine: (value) => FlLine(
+            color: Colors.grey.withOpacity(0.3),
+            strokeWidth: 0.5,
+          ),
+        ),
+        borderData: FlBorderData(
+          show: true,
+          border: const Border(bottom: BorderSide(), left: BorderSide()),
+        ),
+        barTouchData: BarTouchData(
+          touchTooltipData: BarTouchTooltipData(
+            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+              return BarTooltipItem(
+                '${formatDate(dates[group.x])}\n${rod.toY.toInt()} шт',
+                const TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
+              );
+            },
+          ),
+        ),
       ),
     );
   }

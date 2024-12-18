@@ -1,10 +1,11 @@
+import 'package:mc_dashboard/.env.dart';
 import 'package:mc_dashboard/domain/entities/warehouse.dart';
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 
 part 'warehouses.g.dart';
 
-@RestApi(baseUrl: "http://localhost:2009")
+@RestApi(baseUrl: ApiSettings.baseUrl)
 abstract class WarehousesApiClient {
   factory WarehousesApiClient(Dio dio, {String baseUrl}) = _WarehousesApiClient;
 

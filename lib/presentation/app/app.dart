@@ -1,9 +1,12 @@
 // ignore_for_file: library_private_types_in_public_api
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mc_dashboard/core/config.dart';
+
+import 'package:mc_dashboard/repositories/local_storage.dart';
 
 import 'package:mc_dashboard/routes/main_navigation.dart';
 import 'package:mc_dashboard/theme/text_theme.dart';
@@ -30,8 +33,7 @@ class _AppState extends State<App> {
         dialogTheme: dialogTheme,
         textTheme: buildAdaptiveTextTheme(
           context,
-          baseTextTheme:
-              ThemeData.light().textTheme, // Используем текущую тему как основу
+          baseTextTheme: ThemeData.light().textTheme,
         ),
         colorScheme: lightColorScheme,
         fontFamily: GoogleFonts.roboto().fontFamily,
@@ -48,15 +50,29 @@ class _AppState extends State<App> {
           fontFamily: GoogleFonts.roboto().fontFamily),
       debugShowCheckedModeBanner: false,
       themeMode: _isDarkTheme ? ThemeMode.dark : ThemeMode.light,
-      home: MainScreen(
-        isDarkTheme: _isDarkTheme,
-        screenFactory: widget.screenFactory,
-        onThemeChanged: (value) {
-          setState(() {
-            _isDarkTheme = value;
-          });
-        },
-      ),
+      home: StreamBuilder<User?>(
+          stream: FirebaseAuth.instance.authStateChanges(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasData) {
+              final authToken = LocalStorageRepo.getTokenStatic();
+
+              if (authToken != null && authToken.isNotEmpty) {
+                return MainScreen(
+                  isDarkTheme: _isDarkTheme,
+                  screenFactory: widget.screenFactory,
+                  onThemeChanged: (value) {
+                    setState(() {
+                      _isDarkTheme = value;
+                    });
+                  },
+                );
+              }
+            }
+            return widget.screenFactory.makeLoginScreen();
+          }),
     );
   }
 }
@@ -147,11 +163,108 @@ class _MainScreenState extends State<MainScreen> {
               ),
               child: buildSideMenu(),
             ),
+          // Expanded(
+          //   // Body =====================================================
+          //   child: Container(
+          //     padding: const EdgeInsets.all(8),
+          //     child: _buildBodyContent(),
+          //   ),
+          // ),
           Expanded(
             // Body =====================================================
             child: Container(
               padding: const EdgeInsets.all(8),
-              child: _buildBodyContent(),
+              child: IndexedStack(
+                index: _getCurrentIndex(),
+                children: [
+                  widget.screenFactory.makeChoosingNicheScreen(
+                    onNavigateToSubjectProducts:
+                        (int subjectId, String subjectName) {
+                      setState(() {
+                        _selectedSectionIndex = 0;
+                        _selectedSubsectionIndex = 1;
+                        _currentSubjectId = subjectId;
+                        _currentSubjectName = subjectName;
+                      });
+                    },
+                  ),
+                  (_currentSubjectId != null && _currentSubjectName != null)
+                      ? KeyedSubtree(
+                          key: ValueKey(_currentSubjectId),
+                          child: widget.screenFactory.makeSubjectProductsScreen(
+                              subjectId: _currentSubjectId!,
+                              subjectName: _currentSubjectName!,
+                              onNavigateToProductScreen:
+                                  (int productId, int productPrice) {
+                                setState(() {
+                                  _selectedSectionIndex = 0;
+                                  _selectedSubsectionIndex = 2;
+                                  _currentProductId = productId;
+                                  _currentProductPrice = productPrice;
+                                });
+                              },
+                              onNavigateToEmptySubject: () {
+                                setState(() {
+                                  _selectedSectionIndex = 0;
+                                  _selectedSubsectionIndex = 1;
+                                  _currentSubjectId = null;
+                                  _currentSubjectName = null;
+                                });
+                              },
+                              onNavigateBack: () {
+                                setState(() {
+                                  _selectedSectionIndex = 0;
+                                  _selectedSubsectionIndex = 0;
+                                });
+                              }),
+                        )
+                      : widget.screenFactory.makeEmptySubjectProductsScreen(
+                          onNavigateToSubjectProducts:
+                              (int subjectId, String subjectName) {
+                          setState(() {
+                            _selectedSectionIndex = 0;
+                            _selectedSubsectionIndex = 1;
+                            _currentSubjectId = subjectId;
+                            _currentSubjectName = subjectName;
+                          });
+                        }, onNavigateBack: () {
+                          setState(() {
+                            _selectedSectionIndex = 0;
+                            _selectedSubsectionIndex = 0;
+                          });
+                        }),
+                  (_currentProductId != null && _currentProductPrice != null)
+                      ? KeyedSubtree(
+                          key: ValueKey(_currentProductId),
+                          child: widget.screenFactory.makeProductScreen(
+                              productId: _currentProductId!,
+                              productPrice: _currentProductPrice!,
+                              onNavigateBack: () {
+                                setState(() {
+                                  _selectedSectionIndex = 0;
+                                  _selectedSubsectionIndex = 1;
+                                });
+                              }),
+                        )
+                      : widget.screenFactory.makeEmptySubjectProductsScreen(
+                          onNavigateToSubjectProducts:
+                              (int subjectId, String subjectName) {
+                          setState(
+                            () {
+                              _selectedSectionIndex = 0;
+                              _selectedSubsectionIndex = 1;
+                              _currentSubjectId = subjectId;
+                              _currentSubjectName = subjectName;
+                            },
+                          );
+                        }, onNavigateBack: () {
+                          setState(() {
+                            _selectedSectionIndex = 0;
+                            _selectedSubsectionIndex = 0;
+                          });
+                        }),
+                ],
+              ),
             ),
           ),
         ],
@@ -159,77 +272,85 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildBodyContent() {
-    String bodyWidgetName = "choosingNicheScreen";
+  // Widget _buildBodyContent() {
+  //   String bodyWidgetName = "choosingNicheScreen";
+  //   if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 1) {
+  //     bodyWidgetName = "subjectProductsScreen";
+  //   } else if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 0) {
+  //     bodyWidgetName = "choosingNicheScreen";
+  //   } else if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 2) {
+  //     bodyWidgetName = "productScreen";
+  //   }
+
+  //   if (bodyWidgetName == "choosingNicheScreen") {
+  //     return widget.screenFactory.makeChoosingNicheScreen(
+  //       // to navigate from ChoosingNicheScreen to SubjectProductsScreen in MainScreen
+  //       onNavigateToSubjectProducts: (int subjectId, String subjectName) {
+  //         setState(() {
+  //           _selectedSectionIndex = 0;
+  //           _selectedSubsectionIndex = 1;
+  //           _currentSubjectId = subjectId;
+  //           _currentSubjectName = subjectName;
+  //         });
+  //       },
+  //     );
+  //   } else if (bodyWidgetName == "subjectProductsScreen" &&
+  //       _currentSubjectId != null &&
+  //       _currentSubjectName != null) {
+  //     return widget.screenFactory.makeSubjectProductsScreen(
+  //         subjectId: _currentSubjectId!,
+  //         subjectName: _currentSubjectName!,
+  //         onNavigateToProductScreen: (int productId, int productPrice) {
+  //           setState(() {
+  //             _selectedSectionIndex = 0;
+  //             _selectedSubsectionIndex = 2;
+  //             _currentProductId = productId;
+  //             _currentProductPrice = productPrice;
+  //           });
+  //         },
+  //         onNavigateToEmptySubject: () {
+  //           setState(() {
+  //             _selectedSectionIndex = 0;
+  //             _selectedSubsectionIndex = 1;
+  //             _currentSubjectId = null;
+  //             _currentSubjectName = null;
+  //           });
+  //         });
+  //   } else if (bodyWidgetName == "subjectProductsScreen" &&
+  //       (_currentSubjectId == null || _currentSubjectName == null)) {
+  //     return widget.screenFactory.makeEmptySubjectProductsScreen(
+  //       // to navigate from ChoosingNicheScreen to SubjectProductsScreen in MainScreen
+  //       onNavigateToSubjectProducts: (int subjectId, String subjectName) {
+  //         setState(() {
+  //           _selectedSectionIndex = 0;
+  //           _selectedSubsectionIndex = 1;
+  //           _currentSubjectId = subjectId;
+  //           _currentSubjectName = subjectName;
+  //         });
+  //       },
+  //     );
+  //   } else if (bodyWidgetName == "productScreen") {
+  //     // _currentProductId set in SubjectProductsScreen above
+  //     if (_currentProductId == null) {
+  //       return Container();
+  //     }
+  //     return widget.screenFactory.makeProductScreen(
+  //         productId: _currentProductId!, productPrice: _currentProductPrice!);
+  //   }
+
+  //   // Default view if no screen selected
+  //   return Text(
+  //     'Раздел: ${sections[_selectedSectionIndex].title}',
+  //     style: const TextStyle(fontSize: 24),
+  //   );
+  // }
+  int _getCurrentIndex() {
     if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 1) {
-      bodyWidgetName = "subjectProductsScreen";
-    } else if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 0) {
-      bodyWidgetName = "choosingNicheScreen";
+      return 1;
     } else if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 2) {
-      bodyWidgetName = "productScreen";
+      return 2;
     }
-
-    if (bodyWidgetName == "choosingNicheScreen") {
-      return widget.screenFactory.makeChoosingNicheScreen(
-        // to navigate from ChoosingNicheScreen to SubjectProductsScreen in MainScreen
-        onNavigateToSubjectProducts: (int subjectId, String subjectName) {
-          setState(() {
-            _selectedSectionIndex = 0;
-            _selectedSubsectionIndex = 1;
-            _currentSubjectId = subjectId;
-            _currentSubjectName = subjectName;
-          });
-        },
-      );
-    } else if (bodyWidgetName == "subjectProductsScreen" &&
-        _currentSubjectId != null &&
-        _currentSubjectName != null) {
-      return widget.screenFactory.makeSubjectProductsScreen(
-          subjectId: _currentSubjectId!,
-          subjectName: _currentSubjectName!,
-          onNavigateToProductScreen: (int productId, int productPrice) {
-            setState(() {
-              _selectedSectionIndex = 0;
-              _selectedSubsectionIndex = 2;
-              _currentProductId = productId;
-              _currentProductPrice = productPrice;
-            });
-          },
-          onNavigateToEmptySubject: () {
-            setState(() {
-              _selectedSectionIndex = 0;
-              _selectedSubsectionIndex = 1;
-              _currentSubjectId = null;
-              _currentSubjectName = null;
-            });
-          });
-    } else if (bodyWidgetName == "subjectProductsScreen" &&
-        (_currentSubjectId == null || _currentSubjectName == null)) {
-      return widget.screenFactory.makeEmptySubjectProductsScreen(
-        // to navigate from ChoosingNicheScreen to SubjectProductsScreen in MainScreen
-        onNavigateToSubjectProducts: (int subjectId, String subjectName) {
-          setState(() {
-            _selectedSectionIndex = 0;
-            _selectedSubsectionIndex = 1;
-            _currentSubjectId = subjectId;
-            _currentSubjectName = subjectName;
-          });
-        },
-      );
-    } else if (bodyWidgetName == "productScreen") {
-      // _currentProductId set in SubjectProductsScreen above
-      if (_currentProductId == null) {
-        return Container();
-      }
-      return widget.screenFactory.makeProductScreen(
-          productId: _currentProductId!, productPrice: _currentProductPrice!);
-    }
-
-    // Default view if no screen selected
-    return Text(
-      'Раздел: ${sections[_selectedSectionIndex].title}',
-      style: const TextStyle(fontSize: 24),
-    );
+    return 0;
   }
 
   Widget buildSideMenu() {

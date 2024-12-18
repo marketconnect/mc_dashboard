@@ -11,12 +11,14 @@ class EmptySubjectViewModel extends ViewModelBase {
   EmptySubjectViewModel(
       {required super.context,
       required this.subjectsSummaryService,
+      required this.onNavigateBack,
       required this.onNavigateToSubjectProducts}) {
     _asyncInit();
   }
   final EmptySubjectViewModelSubjectsSummaryService subjectsSummaryService;
   final void Function(int subjectId, String subjectName)
       onNavigateToSubjectProducts;
+  final void Function() onNavigateBack;
   // Fields
   String searchQuery = '';
 

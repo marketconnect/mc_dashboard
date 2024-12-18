@@ -1,3 +1,4 @@
+import 'package:mc_dashboard/.env.dart';
 import 'package:mc_dashboard/domain/entities/detailed_order_item.dart';
 
 import 'package:retrofit/retrofit.dart';
@@ -5,7 +6,7 @@ import 'package:dio/dio.dart';
 
 part 'detailed_orders.g.dart';
 
-@RestApi(baseUrl: "http://localhost:2009")
+@RestApi(baseUrl: ApiSettings.baseUrl)
 abstract class DetailedOrdersApiClient {
   factory DetailedOrdersApiClient(Dio dio, {String baseUrl}) =
       _DetailedOrdersApiClient;

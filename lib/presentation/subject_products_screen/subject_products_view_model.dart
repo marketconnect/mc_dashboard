@@ -14,6 +14,7 @@ class SubjectProductsViewModel extends ViewModelBase {
   final int subjectId;
   final String subjectName;
   final void Function() onNavigateToEmptySubject;
+  final void Function() onNavigateBack;
   final void Function(int productId, int productPrice)
       onNavigateToProductScreen;
   SubjectProductsViewModel({
@@ -22,6 +23,7 @@ class SubjectProductsViewModel extends ViewModelBase {
     required this.subjectName,
     required this.onNavigateToEmptySubject,
     required this.onNavigateToProductScreen,
+    required this.onNavigateBack,
     required this.detailedOrdersService,
   }) {
     _asyncInit();

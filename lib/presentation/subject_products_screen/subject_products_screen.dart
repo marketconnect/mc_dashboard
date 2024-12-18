@@ -8,21 +8,17 @@ import 'package:mc_dashboard/presentation/subject_products_screen/subject_produc
 import 'package:pie_chart/pie_chart.dart' as pie_chart;
 import 'package:url_launcher/url_launcher.dart';
 
-// TODO back button
 class SubjectProductsScreen extends StatelessWidget {
   const SubjectProductsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final model = context.watch<SubjectProductsViewModel>();
-    final subjectName = model.subjectName;
-    final switchToFbs = model.switchToFbs;
-    final isFbs = model.isFbs;
+
     final isFilterVisible = model.isFilterVisible;
     final surfaceContainerHighest =
         Theme.of(context).colorScheme.surfaceContainerHighest;
 
-    final theme = Theme.of(context);
     return Scaffold(
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -30,7 +26,7 @@ class SubjectProductsScreen extends StatelessWidget {
           final maxHeight = constraints.maxHeight;
           final isMobileOrLaptop = maxWidth < 900 || maxHeight < 690;
           final model = context.watch<SubjectProductsViewModel>();
-          final onNavigateToEmptySubject = model.onNavigateToEmptySubject;
+
           final clearSellerBrandFilter = model.clearSellerBrandFilter;
           final isFilteredBySeller = model.filteredSeller != null;
           final isFilteredByBrand = model.filteredBrand != null;
@@ -41,12 +37,7 @@ class SubjectProductsScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _Header(
-                      subjectName: subjectName,
-                      theme: theme,
-                      isFbs: isFbs,
-                      switchToFbs: switchToFbs,
-                      onNavigateToEmptySubject: onNavigateToEmptySubject),
+                  _Header(),
                   Container(
                     height: constraints.maxHeight * 0.3, // Height for graph
                     margin: const EdgeInsets.all(8.0),
@@ -98,12 +89,7 @@ class SubjectProductsScreen extends StatelessWidget {
           // Desktop //////////////////////////////////////////////////////////
           return Column(
             children: [
-              _Header(
-                  subjectName: subjectName,
-                  theme: theme,
-                  isFbs: isFbs,
-                  switchToFbs: switchToFbs,
-                  onNavigateToEmptySubject: onNavigateToEmptySubject),
+              _Header(),
               if (!isFilterVisible)
                 Flexible(
                   flex: 1,
@@ -297,22 +283,18 @@ class SubjectProductsScreen extends StatelessWidget {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({
-    required this.subjectName,
-    required this.theme,
-    required this.isFbs,
-    required this.switchToFbs,
-    required this.onNavigateToEmptySubject,
-  });
-
-  final String subjectName;
-  final ThemeData theme;
-  final bool isFbs;
-  final Future<void> Function() switchToFbs;
-  final void Function() onNavigateToEmptySubject;
+  const _Header();
 
   @override
   Widget build(BuildContext context) {
+    final model = context.watch<SubjectProductsViewModel>();
+    final onNavigateBack = model.onNavigateBack;
+    final onNavigateToEmptySubject = model.onNavigateToEmptySubject;
+    final String subjectName = model.subjectName;
+    final ThemeData theme = Theme.of(context);
+    final bool isFbs = model.isFbs;
+    final Future<void> Function() switchToFbs = model.switchToFbs;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -320,12 +302,18 @@ class _Header extends StatelessWidget {
           Padding(
             padding:
                 const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: Text(subjectName,
-                style: TextStyle(
-                  fontSize: theme.textTheme.titleLarge!.fontSize,
-                  fontWeight: FontWeight.bold,
+            child: IconButton(
+                onPressed: () => onNavigateBack(),
+                icon: Icon(
+                  Icons.arrow_back_ios,
+                  color: theme.colorScheme.primary,
                 )),
           ),
+          Text(subjectName,
+              style: TextStyle(
+                fontSize: theme.textTheme.titleLarge!.fontSize,
+                fontWeight: FontWeight.bold,
+              )),
           Transform.scale(
             scale: 0.5,
             child: Switch(
