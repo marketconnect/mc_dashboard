@@ -1,5 +1,6 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:material_table_view/material_table_view.dart';
 import 'package:mc_dashboard/core/utils/dates.dart';
 import 'package:mc_dashboard/presentation/product_screen/product_view_model.dart';
 import 'package:pie_chart/pie_chart.dart' as pie_chart;
@@ -7,9 +8,8 @@ import 'package:flutter/material.dart';
 
 import 'package:provider/provider.dart';
 
-// TODO scrolling for images
-// add subject name next to name
-//
+// TODO add subject name next to name
+
 class ProductScreen extends StatefulWidget {
   const ProductScreen({super.key});
 
@@ -29,7 +29,7 @@ class _ProductScreenState extends State<ProductScreen> {
     final id = model.productId;
 
     final name = model.name;
-    final subjName = model.subjectName;
+    // final subjName = model.subjectName;
     final images = model.images;
 
     final price = model.productPrice;
@@ -166,7 +166,9 @@ class _ProductScreenState extends State<ProductScreen> {
                         )
                       : _noDataPlaceholder(),
                   const SizedBox(height: 24),
-                  _Feedback()
+                  _Feedback(),
+                  const SizedBox(height: 24),
+                  const NormqueryTableWidget(),
                 ],
               ),
             ),
@@ -511,116 +513,229 @@ class _Feedback extends StatelessWidget {
     }).toList()
       ..sort((a, b) => int.parse(a[0]).compareTo(int.parse(b[0])));
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Отзывы покупателей',
-          style: Theme.of(context)
-              .textTheme
-              .titleLarge
-              ?.copyWith(fontWeight: FontWeight.bold),
+    return // Добавляем вертикальную прокрутку для всего содержимого
+        LayoutBuilder(builder: (context, constraints) {
+      final maxWidth = constraints.maxWidth;
+      final maxHeight = constraints.maxHeight;
+      final isMobile = maxWidth < 600 && maxHeight < 690;
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
         ),
-        const SizedBox(height: 16),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Распределение оценок',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              if (ratingsData.isNotEmpty)
-                _buildTable(
-                  context,
-                  columns: const ['Оценка', 'Количество', 'Процент'],
-                  rows: ratingsData,
-                )
-              else
-                _noDataPlaceholder(),
-
-              const SizedBox(height: 24),
-              const Divider(),
-              const SizedBox(height: 16),
-
-              // Плюсы и Минусы (всегда развернуты)
-              if (model.pros.isNotEmpty || model.cons.isNotEmpty) ...[
-                Text(
-                  'Плюсы и минусы',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-
-                // Плюсы
-                if (model.pros.isNotEmpty) ...[
+        child: isMobile
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    'Плюсы:',
+                    'Распределение оценок',
                     style: Theme.of(context)
                         .textTheme
-                        .titleSmall
+                        .titleMedium
                         ?.copyWith(fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 8),
-                  ...model.pros.map((pro) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(Icons.add, color: Colors.green, size: 16),
-                          const SizedBox(width: 8),
-                          Expanded(child: Text(pro)),
-                        ],
-                      ),
-                    );
-                  }),
                   const SizedBox(height: 16),
-                ],
+                  // Таблица
+                  ratingsData.isNotEmpty
+                      ? _buildTable(
+                          context,
+                          columns: const ['Оценка', 'Количество', 'Процент'],
+                          rows: ratingsData,
+                        )
+                      : _noDataPlaceholder(),
 
-                // Минусы
-                if (model.cons.isNotEmpty) ...[
-                  Text(
-                    'Минусы:',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  ...model.cons.map((con) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(Icons.remove, color: Colors.red, size: 16),
-                          const SizedBox(width: 8),
-                          Expanded(child: Text(con)),
-                        ],
-                      ),
-                    );
-                  }),
+                  const SizedBox(height: 24),
+                  const Divider(),
+                  const SizedBox(height: 16),
+
+                  // Плюсы
+                  if (model.pros.isNotEmpty) ...[
+                    Text(
+                      'Плюсы:',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleSmall
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildProsList(context, model.pros),
+                  ] else
+                    Text(
+                      'Нет плюсов',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+
+                  const SizedBox(height: 16),
+
+                  // Минусы
+                  if (model.cons.isNotEmpty) ...[
+                    Text(
+                      'Минусы:',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleSmall
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildConsList(context, model.cons),
+                  ] else
+                    Text(
+                      'Нет минусов',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
                 ],
-              ] else
-                const Text('Нет отзывов или мнений покупателей'),
-            ],
+              )
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 1,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Распределение оценок',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 16),
+                        ratingsData.isNotEmpty
+                            ? _buildTable(
+                                context,
+                                columns: const [
+                                  'Оценка',
+                                  'Количество',
+                                  'Процент'
+                                ],
+                                rows: ratingsData,
+                              )
+                            : _noDataPlaceholder(),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 24),
+                  Expanded(
+                    flex: 1,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (model.pros.isNotEmpty) ...[
+                          Text(
+                            'Плюсы:',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleSmall
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          _buildProsList(context, model.pros),
+                          const SizedBox(height: 24),
+                        ] else
+                          Text(
+                            'Нет плюсов',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        if (model.cons.isNotEmpty) ...[
+                          Text(
+                            'Минусы:',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleSmall
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          _buildConsList(context, model.cons),
+                        ] else
+                          Text(
+                            'Нет минусов',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+      );
+    });
+  }
+
+  _buildProsList(BuildContext context, List<String> pros) {
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 200),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
+        ],
+      ),
+      child: Scrollbar(
+        thumbVisibility: true,
+        child: ListView.builder(
+          padding: const EdgeInsets.all(8.0),
+          itemCount: pros.length,
+          itemBuilder: (context, index) {
+            final pro = pros[index];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.add, color: Colors.green, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(pro)),
+                ],
+              ),
+            );
+          },
         ),
-      ],
+      ),
+    );
+  }
+
+  Widget _buildConsList(BuildContext context, List<String> cons) {
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 200),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Scrollbar(
+        thumbVisibility: true,
+        child: ListView.builder(
+          padding: const EdgeInsets.all(8.0),
+          itemCount: cons.length,
+          itemBuilder: (context, index) {
+            final con = cons[index];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.remove, color: Colors.red, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(con)),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 
@@ -828,6 +943,124 @@ class BarChartWidget extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class NormqueryTableWidget extends StatefulWidget {
+  const NormqueryTableWidget({super.key});
+
+  @override
+  State<NormqueryTableWidget> createState() => _NormqueryTableWidgetState();
+}
+
+class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
+  late TableViewController tableViewController;
+
+  @override
+  void initState() {
+    super.initState();
+    tableViewController = TableViewController();
+  }
+
+  @override
+  void dispose() {
+    tableViewController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final model = context.watch<ProductViewModel>();
+    final normqueryProducts = model.normqueries;
+
+    if (normqueryProducts.isEmpty) {
+      return _noDataPlaceholder();
+    }
+
+    final columnProportions = [0.3, 0.1, 0.2];
+    final columnHeaders = [
+      "Ключевой запрос",
+      "Позиция",
+      "Всего товаров",
+    ];
+
+    final columns = columnProportions
+        .map((widthFraction) => TableColumn(
+            width: widthFraction * MediaQuery.of(context).size.width))
+        .toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Ключевые запросы',
+          style:
+              theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+          ),
+          child: SizedBox(
+            height: 400,
+            child: TableView.builder(
+              controller: tableViewController,
+              columns: columns,
+              rowHeight: 40,
+              rowCount: normqueryProducts.length,
+              headerBuilder: (context, contentBuilder) {
+                return contentBuilder(context, (context, columnIndex) {
+                  return Container(
+                    alignment: Alignment.center,
+                    child: Text(
+                      columnHeaders[columnIndex],
+                    ),
+                  );
+                });
+              },
+              rowBuilder: (context, rowIndex, contentBuilder) {
+                final product = normqueryProducts[rowIndex];
+                final rowValues = [
+                  product.normquery,
+                  ((product.pageNumber - 1) * 100 + product.pagePos).toString(),
+                  product.total.toString(),
+                ];
+
+                return contentBuilder(context, (context, columnIndex) {
+                  final value = rowValues[columnIndex];
+                  return Container(
+                    alignment: columnIndex == 0
+                        ? Alignment.centerLeft
+                        : Alignment.center,
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Text(
+                      value,
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  );
+                });
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _noDataPlaceholder() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: const [
+        Icon(Icons.info, color: Colors.grey),
+        SizedBox(width: 8),
+        Text('Нет данных для отображения'),
+      ],
     );
   }
 }

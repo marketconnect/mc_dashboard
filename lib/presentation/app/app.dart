@@ -23,8 +23,43 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
-  bool _isDarkTheme = false;
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasData) {
+            final authToken = LocalStorageRepo.getTokenStatic();
 
+            if (authToken != null && authToken.isNotEmpty) {
+              return MainScreen(
+                screenFactory: widget.screenFactory,
+              );
+            }
+          }
+          return widget.screenFactory.makeLoginScreen();
+        });
+  }
+}
+
+class MainScreen extends StatefulWidget {
+  final ScreenFactory screenFactory;
+  const MainScreen({
+    super.key,
+    required this.screenFactory,
+  });
+
+  @override
+  // ignore: duplicate_ignore
+  // ignore: library_private_types_in_public_api
+  _MainScreenState createState() => _MainScreenState();
+}
+
+class _MainScreenState extends State<MainScreen> {
+  bool _isDarkTheme = false;
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -50,51 +85,34 @@ class _AppState extends State<App> {
           fontFamily: GoogleFonts.roboto().fontFamily),
       debugShowCheckedModeBanner: false,
       themeMode: _isDarkTheme ? ThemeMode.dark : ThemeMode.light,
-      home: StreamBuilder<User?>(
-          stream: FirebaseAuth.instance.authStateChanges(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasData) {
-              final authToken = LocalStorageRepo.getTokenStatic();
-
-              if (authToken != null && authToken.isNotEmpty) {
-                return MainScreen(
-                  isDarkTheme: _isDarkTheme,
-                  screenFactory: widget.screenFactory,
-                  onThemeChanged: (value) {
-                    setState(() {
-                      _isDarkTheme = value;
-                    });
-                  },
-                );
-              }
-            }
-            return widget.screenFactory.makeLoginScreen();
-          }),
+      home: _Scaffold(
+        isDarkTheme: _isDarkTheme,
+        screenFactory: widget.screenFactory,
+        onThemeChanged: (value) {
+          setState(() {
+            _isDarkTheme = value;
+          });
+        },
+      ),
     );
   }
 }
 
-class MainScreen extends StatefulWidget {
+class _Scaffold extends StatefulWidget {
   final bool isDarkTheme;
   final ValueChanged<bool> onThemeChanged;
   final ScreenFactory screenFactory;
-  const MainScreen({
-    super.key,
+  const _Scaffold({
     required this.isDarkTheme,
     required this.onThemeChanged,
     required this.screenFactory,
   });
 
   @override
-  // ignore: duplicate_ignore
-  // ignore: library_private_types_in_public_api
-  _MainScreenState createState() => _MainScreenState();
+  State<_Scaffold> createState() => __ScaffoldState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class __ScaffoldState extends State<_Scaffold> {
   int _selectedSectionIndex = 0;
   int? _selectedSubsectionIndex; // Stores the selected subsection index
 
@@ -135,6 +153,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     return Scaffold(
       appBar: Responsive.isMobile(context)
           ? AppBar(
@@ -272,78 +291,6 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  // Widget _buildBodyContent() {
-  //   String bodyWidgetName = "choosingNicheScreen";
-  //   if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 1) {
-  //     bodyWidgetName = "subjectProductsScreen";
-  //   } else if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 0) {
-  //     bodyWidgetName = "choosingNicheScreen";
-  //   } else if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 2) {
-  //     bodyWidgetName = "productScreen";
-  //   }
-
-  //   if (bodyWidgetName == "choosingNicheScreen") {
-  //     return widget.screenFactory.makeChoosingNicheScreen(
-  //       // to navigate from ChoosingNicheScreen to SubjectProductsScreen in MainScreen
-  //       onNavigateToSubjectProducts: (int subjectId, String subjectName) {
-  //         setState(() {
-  //           _selectedSectionIndex = 0;
-  //           _selectedSubsectionIndex = 1;
-  //           _currentSubjectId = subjectId;
-  //           _currentSubjectName = subjectName;
-  //         });
-  //       },
-  //     );
-  //   } else if (bodyWidgetName == "subjectProductsScreen" &&
-  //       _currentSubjectId != null &&
-  //       _currentSubjectName != null) {
-  //     return widget.screenFactory.makeSubjectProductsScreen(
-  //         subjectId: _currentSubjectId!,
-  //         subjectName: _currentSubjectName!,
-  //         onNavigateToProductScreen: (int productId, int productPrice) {
-  //           setState(() {
-  //             _selectedSectionIndex = 0;
-  //             _selectedSubsectionIndex = 2;
-  //             _currentProductId = productId;
-  //             _currentProductPrice = productPrice;
-  //           });
-  //         },
-  //         onNavigateToEmptySubject: () {
-  //           setState(() {
-  //             _selectedSectionIndex = 0;
-  //             _selectedSubsectionIndex = 1;
-  //             _currentSubjectId = null;
-  //             _currentSubjectName = null;
-  //           });
-  //         });
-  //   } else if (bodyWidgetName == "subjectProductsScreen" &&
-  //       (_currentSubjectId == null || _currentSubjectName == null)) {
-  //     return widget.screenFactory.makeEmptySubjectProductsScreen(
-  //       // to navigate from ChoosingNicheScreen to SubjectProductsScreen in MainScreen
-  //       onNavigateToSubjectProducts: (int subjectId, String subjectName) {
-  //         setState(() {
-  //           _selectedSectionIndex = 0;
-  //           _selectedSubsectionIndex = 1;
-  //           _currentSubjectId = subjectId;
-  //           _currentSubjectName = subjectName;
-  //         });
-  //       },
-  //     );
-  //   } else if (bodyWidgetName == "productScreen") {
-  //     // _currentProductId set in SubjectProductsScreen above
-  //     if (_currentProductId == null) {
-  //       return Container();
-  //     }
-  //     return widget.screenFactory.makeProductScreen(
-  //         productId: _currentProductId!, productPrice: _currentProductPrice!);
-  //   }
-
-  //   // Default view if no screen selected
-  //   return Text(
-  //     'Раздел: ${sections[_selectedSectionIndex].title}',
-  //     style: const TextStyle(fontSize: 24),
-  //   );
-  // }
   int _getCurrentIndex() {
     if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 1) {
       return 1;

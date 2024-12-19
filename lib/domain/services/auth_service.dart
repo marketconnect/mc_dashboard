@@ -1,6 +1,11 @@
+import 'dart:convert';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
+import 'package:mc_dashboard/presentation/choosing_niche_screen/choosing_niche_view_model.dart';
 import 'package:mc_dashboard/presentation/login_screen/login_view_model.dart';
+import 'package:mc_dashboard/presentation/subject_products_screen/subject_products_view_model.dart';
 
 abstract class AuthServiceAuthApiClient {
   Future<Either<AppErrorBase, String>> register(
@@ -14,7 +19,11 @@ abstract class AuthServiceStorage {
   Either<AppErrorBase, void> clearToken();
 }
 
-class AuthService implements LoginViewModelAuthService {
+class AuthService
+    implements
+        LoginViewModelAuthService,
+        SubjectProductsAuthService,
+        ChoosingNicheAuthService {
   final AuthServiceAuthApiClient apiClient;
   final AuthServiceStorage authServiceStorage;
 
@@ -22,9 +31,13 @@ class AuthService implements LoginViewModelAuthService {
       {required this.apiClient, required this.authServiceStorage});
 
   @override
-  Future<Either<AppErrorBase, void>> register(
-      String username, String password) async {
-    final tokenEither = await apiClient.register(username, password);
+  Future<Either<AppErrorBase, void>> register() async {
+    final user = getFirebaseAuthUserInfo();
+    if (user == null) {
+      return left(AppErrorBase('User is null',
+          name: 'register', sendTo: true, source: 'AuthService'));
+    }
+    final tokenEither = await apiClient.register(user.email!, user.uid);
     return tokenEither.fold(
       (error) => left(error),
       (token) => authServiceStorage.saveToken(token),
@@ -32,12 +45,84 @@ class AuthService implements LoginViewModelAuthService {
   }
 
   @override
-  Future<Either<AppErrorBase, void>> login(
-      String username, String password) async {
-    final tokenEither = await apiClient.login(username, password);
+  Future<Either<AppErrorBase, void>> login() async {
+    final user = getFirebaseAuthUserInfo();
+    if (user == null) {
+      return left(AppErrorBase('User is null',
+          name: 'login', sendTo: true, source: 'AuthService'));
+    }
+    final tokenEither = await apiClient.login(user.email!, user.uid);
     return tokenEither.fold(
       (error) => left(error),
       (token) => authServiceStorage.saveToken(token),
     );
+  }
+
+  // Check if token is expired
+  bool isTokenExpired(String token) {
+    final parts = token.split('.');
+    if (parts.length != 3) return true;
+
+    final payload = json
+        .decode(utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))));
+    final exp = payload['exp'] as int?;
+    if (exp == null) return true;
+
+    final now = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
+    return now >= exp;
+  }
+
+  // Get token type (free or premium)
+  String? getTokenType(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+
+      final payload = json
+          .decode(utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))));
+      final scopes = payload['scopes'] as int? ?? 0;
+
+      if ((scopes & 0x002) == 0x002) return "premium";
+      if ((scopes & 0x001) == 0x001) return "free";
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Get token and its type for use in the application
+  Future<Either<AppErrorBase, Map<String, String?>>> getTokenAndType() async {
+    final tokenEither = authServiceStorage.getToken();
+    return tokenEither.fold(
+      (error) => left(error),
+      (token) {
+        if (token == null || isTokenExpired(token)) {
+          return left(AppErrorBase('Token is null or expired',
+              name: 'getTokenAndType', sendTo: true, source: 'AuthService'));
+        }
+
+        final tokenType = getTokenType(token);
+        if (tokenType == null) {
+          return left(AppErrorBase('Invalid token type',
+              name: 'getTokenAndType', sendTo: true, source: 'AuthService'));
+        }
+
+        return right({'token': token, 'type': tokenType});
+      },
+    );
+  }
+
+  // Clear token from storage
+  Future<Either<AppErrorBase, void>> logout() async {
+    return authServiceStorage.clearToken();
+  }
+
+  User? getFirebaseAuthUserInfo() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null && user.email != null) {
+      return user;
+    } else {
+      return null;
+    }
   }
 }

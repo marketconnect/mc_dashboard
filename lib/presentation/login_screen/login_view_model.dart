@@ -5,8 +5,8 @@ import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 abstract class LoginViewModelAuthService {
-  Future<Either<AppErrorBase, void>> register(String username, String password);
-  Future<Either<AppErrorBase, void>> login(String username, String password);
+  Future<Either<AppErrorBase, void>> register();
+  Future<Either<AppErrorBase, void>> login();
 }
 
 class LoginViewModel extends ViewModelBase {
@@ -46,33 +46,33 @@ class LoginViewModel extends ViewModelBase {
     }
 
     try {
-      String firebaseUid;
+      // String firebaseUid;
       if (isRegisterMode) {
         // Регистрация в Firebase
-        final userCredential = await _auth.createUserWithEmailAndPassword(
+        await _auth.createUserWithEmailAndPassword(
           email: email,
           password: password,
         );
-        firebaseUid = userCredential.user!.uid;
+        // firebaseUid = userCredential.user!.uid;
       } else {
         // Вход в Firebase
-        final userCredential = await _auth.signInWithEmailAndPassword(
+        await _auth.signInWithEmailAndPassword(
           email: email,
           password: password,
         );
-        firebaseUid = userCredential.user!.uid;
+        // firebaseUid = userCredential.user!.uid;
       }
 
       var result = isRegisterMode
-          ? await authService.register(email, firebaseUid)
-          : await authService.login(email, firebaseUid);
+          ? await authService.register()
+          : await authService.login();
 
       // Sometimes firebase registration is successful, but mc_auth_service fails
       // Next time user login (since in the firebase user is created already), but
       // but mc_auth_service is not able to find the user so we need to try register again
 
       if (!isRegisterMode && result.isLeft()) {
-        result = await authService.register(email, firebaseUid);
+        result = await authService.register();
       }
       if (result.isLeft()) {
         errorMessage = isRegisterMode

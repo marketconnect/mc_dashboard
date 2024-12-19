@@ -10,13 +10,11 @@ abstract class SubjectProductsViewModelDetailedOrdersService {
       {required int subjectId, required int isFbs});
 }
 
+abstract class SubjectProductsAuthService {
+  // void getUserInfo();
+}
+
 class SubjectProductsViewModel extends ViewModelBase {
-  final int subjectId;
-  final String subjectName;
-  final void Function() onNavigateToEmptySubject;
-  final void Function() onNavigateBack;
-  final void Function(int productId, int productPrice)
-      onNavigateToProductScreen;
   SubjectProductsViewModel({
     required super.context,
     required this.subjectId,
@@ -25,10 +23,19 @@ class SubjectProductsViewModel extends ViewModelBase {
     required this.onNavigateToProductScreen,
     required this.onNavigateBack,
     required this.detailedOrdersService,
+    required this.authService,
   }) {
     _asyncInit();
   }
 
+  final int subjectId;
+  final String subjectName;
+  final void Function() onNavigateToEmptySubject;
+  final void Function() onNavigateBack;
+  final void Function(int productId, int productPrice)
+      onNavigateToProductScreen;
+
+  final SubjectProductsAuthService authService;
   final SubjectProductsViewModelDetailedOrdersService detailedOrdersService;
 
   // Fields ////////////////////////////////////////////////////////////////////

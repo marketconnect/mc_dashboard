@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:mc_dashboard/api/auth.dart';
 import 'package:mc_dashboard/api/detailed_orders.dart';
+import 'package:mc_dashboard/api/normqueries.dart';
 import 'package:mc_dashboard/api/orders.dart';
 import 'package:mc_dashboard/api/stocks.dart';
 import 'package:mc_dashboard/api/subjects_summary.dart';
@@ -10,6 +11,7 @@ import 'package:mc_dashboard/api/warehouses.dart';
 import 'package:mc_dashboard/core/dio/setup.dart';
 import 'package:mc_dashboard/domain/services/auth_service.dart';
 import 'package:mc_dashboard/domain/services/detailed_orders_service.dart';
+import 'package:mc_dashboard/domain/services/normqueries_service.dart';
 import 'package:mc_dashboard/domain/services/orders_service.dart';
 import 'package:mc_dashboard/domain/services/stocks_service.dart';
 import 'package:mc_dashboard/domain/services/subjects_summary_service.dart';
@@ -27,7 +29,7 @@ import 'package:mc_dashboard/presentation/product_screen/product_screen.dart';
 import 'package:mc_dashboard/presentation/product_screen/product_view_model.dart';
 import 'package:mc_dashboard/presentation/subject_products_screen/subject_products_screen.dart';
 import 'package:mc_dashboard/presentation/subject_products_screen/subject_products_view_model.dart';
-import 'package:mc_dashboard/repositories/cookies.dart';
+
 import 'package:mc_dashboard/repositories/local_storage.dart';
 import 'package:mc_dashboard/routes/main_navigation.dart';
 import 'package:provider/provider.dart';
@@ -81,6 +83,9 @@ class _DIContainer {
         apiClient: _makeAuthApiClient(),
         authServiceStorage: _makeLocalStorageRepo(),
       );
+
+  NormqueryService _makeNormqueryService() =>
+      NormqueryService(NormqueriesApiClient(dio));
   // ViewModels ////////////////////////////////////////////////////////////////
   ChoosingNicheViewModel _makeChoosingNicheViewModel(
           BuildContext context,
@@ -89,6 +94,7 @@ class _DIContainer {
       ChoosingNicheViewModel(
           context: context,
           subjectsSummaryService: _makeSubjectsSummaryService(),
+          authService: _makeAuthService(),
           onNavigateToSubjectProducts: onNavigateToSubjectProducts);
 
   SubjectProductsViewModel _makeSubjectProductsViewModel(
@@ -106,7 +112,8 @@ class _DIContainer {
           onNavigateToEmptySubject: onNavigateToEmptySubject,
           onNavigateToProductScreen: onNavigateToProductScreen,
           onNavigateBack: onNavigateBack,
-          detailedOrdersService: _makeDetailedOrdersService());
+          detailedOrdersService: _makeDetailedOrdersService(),
+          authService: _makeAuthService());
 
   EmptySubjectViewModel _makeEmptySubjectProductsViewModel(
           BuildContext context,
@@ -126,6 +133,7 @@ class _DIContainer {
         productId: productId,
         ordersService: _makeOrdersService(),
         stocksService: _makeStocksService(),
+        normqueryService: _makeNormqueryService(),
         onNavigateBack: onNavigateBack,
         whService: _makeWhService(),
         productPrice: productPrice,

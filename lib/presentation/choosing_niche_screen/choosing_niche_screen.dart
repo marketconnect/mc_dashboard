@@ -478,10 +478,10 @@ class TableWidget extends StatefulWidget {
 
 class _TableWidgetState extends State<TableWidget> {
   late TableViewController tableViewController;
-  @override
-  @override
+
   // since the TableWidget destroys and re-creates when a screen dimension changes,
   // we need to re-initialize the TableViewController
+  @override
   void initState() {
     super.initState();
     tableViewController = TableViewController();

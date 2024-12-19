@@ -9,10 +9,15 @@ abstract class ChoosingNicheViewModelSubjectsSummaryService {
   Future<Either<AppErrorBase, List<SubjectSummaryItem>>> fetchSubjectsSummary();
 }
 
+abstract class ChoosingNicheAuthService {
+  // void getUserInfo();
+}
+
 class ChoosingNicheViewModel extends ViewModelBase {
   ChoosingNicheViewModel(
       {required super.context,
       required this.subjectsSummaryService,
+      required this.authService,
       required this.onNavigateToSubjectProducts}) {
     _asyncInit();
   }
@@ -20,6 +25,7 @@ class ChoosingNicheViewModel extends ViewModelBase {
   final void Function(int subjectId, String subjectName)
       onNavigateToSubjectProducts;
   final ChoosingNicheViewModelSubjectsSummaryService subjectsSummaryService;
+  final ChoosingNicheAuthService authService;
 
   // Fields ////////////////////////////////////////////////////////////////////
 
