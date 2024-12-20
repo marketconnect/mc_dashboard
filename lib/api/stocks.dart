@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 
 part 'stocks.g.dart';
 
+// TODO Add token
 @RestApi(baseUrl: ApiSettings.baseUrl)
 abstract class StocksApiClient {
   factory StocksApiClient(Dio dio, {String baseUrl}) = _StocksApiClient;

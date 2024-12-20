@@ -5,6 +5,7 @@ import 'package:retrofit/retrofit.dart';
 
 part 'warehouses.g.dart';
 
+// TODO Add token
 @RestApi(baseUrl: ApiSettings.baseUrl)
 abstract class WarehousesApiClient {
   factory WarehousesApiClient(Dio dio, {String baseUrl}) = _WarehousesApiClient;

@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 
 part 'subjects_summary.g.dart';
 
+// TODO Add token
 @RestApi(baseUrl: ApiSettings.baseUrl)
 abstract class SubjectsSummaryApiClient {
   factory SubjectsSummaryApiClient(Dio dio, {String baseUrl}) =

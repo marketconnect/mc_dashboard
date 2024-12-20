@@ -14,6 +14,7 @@ abstract class NormqueriesApiClient {
     @Query("ids") required List<int> ids,
   });
 }
+// TODO Add token
 
 class NormqueriesResponse {
   final List<NormqueryProduct> normqueriesWithProducts;
