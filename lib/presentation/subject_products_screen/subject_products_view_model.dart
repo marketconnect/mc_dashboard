@@ -11,7 +11,7 @@ abstract class SubjectProductsViewModelDetailedOrdersService {
 }
 
 abstract class SubjectProductsAuthService {
-  // void getUserInfo();
+  Future<Either<AppErrorBase, Map<String, String?>>> getTokenAndType();
 }
 
 class SubjectProductsViewModel extends ViewModelBase {

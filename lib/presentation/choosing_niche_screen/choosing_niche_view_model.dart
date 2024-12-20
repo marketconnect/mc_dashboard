@@ -10,7 +10,7 @@ abstract class ChoosingNicheViewModelSubjectsSummaryService {
 }
 
 abstract class ChoosingNicheAuthService {
-  // void getUserInfo();
+  Future<Either<AppErrorBase, Map<String, String?>>> getTokenAndType();
 }
 
 class ChoosingNicheViewModel extends ViewModelBase {

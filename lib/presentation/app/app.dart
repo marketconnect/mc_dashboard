@@ -182,13 +182,6 @@ class __ScaffoldState extends State<_Scaffold> {
               ),
               child: buildSideMenu(),
             ),
-          // Expanded(
-          //   // Body =====================================================
-          //   child: Container(
-          //     padding: const EdgeInsets.all(8),
-          //     child: _buildBodyContent(),
-          //   ),
-          // ),
           Expanded(
             // Body =====================================================
             child: Container(
@@ -263,19 +256,25 @@ class __ScaffoldState extends State<_Scaffold> {
                                   _selectedSectionIndex = 0;
                                   _selectedSubsectionIndex = 1;
                                 });
+                              },
+                              onNavigateToEmptyProductScreen: () {
+                                setState(() {
+                                  _selectedSectionIndex = 0;
+                                  _selectedSubsectionIndex = 2;
+                                  _currentProductId = null;
+                                  _currentProductPrice = null;
+                                });
                               }),
                         )
-                      : widget.screenFactory.makeEmptySubjectProductsScreen(
-                          onNavigateToSubjectProducts:
-                              (int subjectId, String subjectName) {
-                          setState(
-                            () {
-                              _selectedSectionIndex = 0;
-                              _selectedSubsectionIndex = 1;
-                              _currentSubjectId = subjectId;
-                              _currentSubjectName = subjectName;
-                            },
-                          );
+                      : widget.screenFactory.makeEmptyProductScreen(
+                          onNavigateToProductScreen:
+                              (int productId, int? productPrice) {
+                          setState(() {
+                            _selectedSectionIndex = 0;
+                            _selectedSubsectionIndex = 2;
+                            _currentProductId = productId;
+                            _currentProductPrice = productPrice;
+                          });
                         }, onNavigateBack: () {
                           setState(() {
                             _selectedSectionIndex = 0;
@@ -296,6 +295,8 @@ class __ScaffoldState extends State<_Scaffold> {
       return 1;
     } else if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 2) {
       return 2;
+    } else if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 3) {
+      return 3;
     }
     return 0;
   }

@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:material_table_view/material_table_view.dart';
@@ -7,9 +8,13 @@ import 'package:pie_chart/pie_chart.dart' as pie_chart;
 import 'package:flutter/material.dart';
 
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+// TODO Add link on payments page and also tokenReset method
+// TODO Add competitors analisis by https://identical-products.wildberries.ru/api/v1/identical?nmID=217712605
 // TODO add subject name next to name
-
+// TODO style AppBar
+// TODO in the wb_api add token type checking for some methods
 class ProductScreen extends StatefulWidget {
   const ProductScreen({super.key});
 
@@ -27,7 +32,7 @@ class _ProductScreenState extends State<ProductScreen> {
     final theme = Theme.of(context);
     final model = context.watch<ProductViewModel>();
     final id = model.productId;
-
+    final onNavigateToEmptyProductScreen = model.onNavigateToEmptyProductScreen;
     final name = model.name;
     // final subjName = model.subjectName;
     final images = model.images;
@@ -45,8 +50,6 @@ class _ProductScreenState extends State<ProductScreen> {
     //
     final orders30d = model.orders30d;
     final priceHistoryData = model.priceHistory;
-    final warehouseShares = model.warehouseShares;
-    final totalWhStocks = model.totalWhStocks;
 
     List<DateTime> ordersDates =
         orders.map((e) => e['date'] as DateTime).toList();
@@ -58,7 +61,8 @@ class _ProductScreenState extends State<ProductScreen> {
     List<double> priceValues = priceHistoryData.map((e) {
       return (e["price"] as num).toDouble();
     }).toList();
-
+    final wildberriesUrl =
+        "https://wildberries.ru/catalog/${id}/detail.aspx?targetUrl=EX";
     return Scaffold(
       body: SingleChildScrollView(
         child: Center(
@@ -70,33 +74,54 @@ class _ProductScreenState extends State<ProductScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      IconButton(
-                        onPressed: () => onNavigateBack(),
-                        icon: Icon(
-                          Icons.arrow_back_ios,
-                          color: theme.colorScheme.primary,
+                      Flexible(
+                        child: Row(
+                          children: [
+                            IconButton(
+                              onPressed: () => onNavigateBack(),
+                              icon: Icon(
+                                Icons.arrow_back_ios,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                name,
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineMedium
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Expanded(
-                        // Оборачиваем Text в Expanded
-                        child: Text(
-                          name,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        ),
+                      IconButton(
+                        onPressed: () => onNavigateToEmptyProductScreen(),
+                        icon: const Icon(Icons.search_sharp, size: 24),
+                        color: Colors.black,
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    'Артикул: $id',
-                    style: Theme.of(context).textTheme.titleMedium,
+                  MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: () => launchUrl(Uri.parse(wildberriesUrl)),
+                      child: Text(
+                        'Артикул: $id',
+                        style: const TextStyle(
+                          decoration: TextDecoration.underline,
+                          decorationColor: Color(0xFF5166e3),
+                          color: Color(0xFF5166e3),
+                        ),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   SizedBox(
@@ -107,7 +132,8 @@ class _ProductScreenState extends State<ProductScreen> {
                     spacing: 16,
                     runSpacing: 16,
                     children: [
-                      _buildStatCard('Цена', '${_formatPrice(price)} ₽'),
+                      if (price != 0)
+                        _buildStatCard('Цена', '${_formatPrice(price)} ₽'),
                       _buildStatCard('Продажи за 30 дней', '$orders30d шт.'),
                       _buildStatCard('Рейтинг', '$rating ★'),
                     ],
@@ -145,30 +171,26 @@ class _ProductScreenState extends State<ProductScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1016),
+                    child: StocksSectionWidget(),
+                  ),
+                  const SizedBox(height: 24),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1016),
+                    child: _Feedback(),
+                  ),
+                  const SizedBox(height: 24),
                   Text(
-                    'Остатки',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleLarge
+                    'Ключевые запросы',
+                    style: theme.textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 8),
-                  warehouseShares.isNotEmpty
-                      ? _buildTable(
-                          columns: const ['Склад', 'Количество', 'Доля'],
-                          rows: warehouseShares.map((w) {
-                            return [
-                              w["name"] as String,
-                              '${w["value"]}',
-                              '${totalWhStocks > 0 ? (w["value"] / totalWhStocks * 100).toDouble().toStringAsFixed(1) : 0.0} %'
-                            ];
-                          }).toList(),
-                        )
-                      : _noDataPlaceholder(),
-                  const SizedBox(height: 24),
-                  _Feedback(),
-                  const SizedBox(height: 24),
-                  const NormqueryTableWidget(),
+                  const SizedBox(height: 16),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1016),
+                    child: NormqueryTableWidget(),
+                  ),
                 ],
               ),
             ),
@@ -448,47 +470,6 @@ class _ProductScreenState extends State<ProductScreen> {
       ],
     );
   }
-
-  Widget _buildTable({
-    required List<String> columns,
-    required List<List<String>> rows,
-  }) {
-    if (rows.isEmpty) return _noDataPlaceholder();
-
-    return Table(
-      border: TableBorder.all(),
-      columnWidths: {
-        for (var i = 0; i < columns.length; i++)
-          i: const IntrinsicColumnWidth(),
-      },
-      children: [
-        TableRow(
-          children: columns
-              .map((column) => TableCell(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        column,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ))
-              .toList(),
-        ),
-        for (var row in rows)
-          TableRow(
-            children: row
-                .map((cell) => TableCell(
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(cell),
-                      ),
-                    ))
-                .toList(),
-          ),
-      ],
-    );
-  }
 }
 
 class _Feedback extends StatelessWidget {
@@ -513,11 +494,10 @@ class _Feedback extends StatelessWidget {
     }).toList()
       ..sort((a, b) => int.parse(a[0]).compareTo(int.parse(b[0])));
 
-    return // Добавляем вертикальную прокрутку для всего содержимого
-        LayoutBuilder(builder: (context, constraints) {
+    return LayoutBuilder(builder: (context, constraints) {
       final maxWidth = constraints.maxWidth;
-      final maxHeight = constraints.maxHeight;
-      final isMobile = maxWidth < 600 && maxHeight < 690;
+
+      final isMobile = maxWidth < 600;
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -537,7 +517,6 @@ class _Feedback extends StatelessWidget {
                         ?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
-                  // Таблица
                   ratingsData.isNotEmpty
                       ? _buildTable(
                           context,
@@ -545,12 +524,9 @@ class _Feedback extends StatelessWidget {
                           rows: ratingsData,
                         )
                       : _noDataPlaceholder(),
-
                   const SizedBox(height: 24),
                   const Divider(),
                   const SizedBox(height: 16),
-
-                  // Плюсы
                   if (model.pros.isNotEmpty) ...[
                     Text(
                       'Плюсы:',
@@ -566,10 +542,7 @@ class _Feedback extends StatelessWidget {
                       'Нет плюсов',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
-
                   const SizedBox(height: 16),
-
-                  // Минусы
                   if (model.cons.isNotEmpty) ...[
                     Text(
                       'Минусы:',
@@ -663,7 +636,8 @@ class _Feedback extends StatelessWidget {
     });
   }
 
-  _buildProsList(BuildContext context, List<String> pros) {
+  Widget _buildProsList(BuildContext context, List<String> pros) {
+    final ScrollController scrollController = ScrollController();
     return Container(
       constraints: const BoxConstraints(maxHeight: 200),
       decoration: BoxDecoration(
@@ -678,8 +652,10 @@ class _Feedback extends StatelessWidget {
         ],
       ),
       child: Scrollbar(
+        controller: scrollController,
         thumbVisibility: true,
         child: ListView.builder(
+          controller: scrollController,
           padding: const EdgeInsets.all(8.0),
           itemCount: pros.length,
           itemBuilder: (context, index) {
@@ -702,6 +678,7 @@ class _Feedback extends StatelessWidget {
   }
 
   Widget _buildConsList(BuildContext context, List<String> cons) {
+    final ScrollController scrollController = ScrollController();
     return Container(
       constraints: const BoxConstraints(maxHeight: 200),
       decoration: BoxDecoration(
@@ -716,8 +693,10 @@ class _Feedback extends StatelessWidget {
         ],
       ),
       child: Scrollbar(
+        controller: scrollController,
         thumbVisibility: true,
         child: ListView.builder(
+          controller: scrollController,
           padding: const EdgeInsets.all(8.0),
           itemCount: cons.length,
           itemBuilder: (context, index) {
@@ -947,6 +926,188 @@ class BarChartWidget extends StatelessWidget {
   }
 }
 
+class StocksSectionWidget extends StatelessWidget {
+  const StocksSectionWidget({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final model = context.watch<ProductViewModel>();
+    final warehouseShares = model.warehouseShares;
+    final totalWhStocks = model.totalWhStocks;
+
+    if (warehouseShares.isEmpty) {
+      return Center(
+        child: Text(
+          'Нет данных об остатках',
+          style: theme.textTheme.bodyMedium,
+        ),
+      );
+    }
+
+    // Prepare data for PieChart
+    final pieDataMap = {
+      for (var warehouse in warehouseShares)
+        warehouse["name"].toString():
+            (warehouse["value"] as int).toDouble() / totalWhStocks * 100,
+    };
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxWidth = constraints.maxWidth;
+        final isMobile = maxWidth < 600;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Остатки по складам',
+              style: theme.textTheme.titleLarge
+                  ?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            if (isMobile)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildTable(
+                    theme,
+                    columns: const ['Склад', 'Количество', 'Доля'],
+                    rows: warehouseShares.map((warehouse) {
+                      return [
+                        warehouse["name"].toString(),
+                        warehouse["value"].toString(),
+                        totalWhStocks > 0
+                            ? "${(warehouse["value"] / totalWhStocks * 100).toStringAsFixed(1)} %"
+                            : "0.0 %",
+                      ];
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: AspectRatio(
+                      aspectRatio: 1, // Пропорциональное соотношение для круга
+                      child: _buildPieChart(context, pieDataMap),
+                    ),
+                  ),
+                ],
+              )
+            else
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 1, // Относительная ширина для таблицы
+                    child: _buildTable(
+                      theme,
+                      columns: const ['Склад', 'Количество', 'Доля'],
+                      rows: warehouseShares.map((warehouse) {
+                        return [
+                          warehouse["name"].toString(),
+                          warehouse["value"].toString(),
+                          totalWhStocks > 0
+                              ? "${(warehouse["value"] / totalWhStocks * 100).toStringAsFixed(1)} %"
+                              : "0.0 %",
+                        ];
+                      }).toList(),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Flexible(
+                    flex: 1, // Относительная ширина для диаграммы
+                    child: AspectRatio(
+                      aspectRatio: 1, // Пропорциональное соотношение для круга
+                      child: _buildPieChart(context, pieDataMap),
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildTable(ThemeData theme,
+      {required List<String> columns, required List<List<String>> rows}) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+      ),
+      child: Table(
+        columnWidths: {
+          for (var i = 0; i < columns.length; i++) i: const FlexColumnWidth(),
+        },
+        border: TableBorder.all(color: theme.dividerColor),
+        children: [
+          TableRow(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.1),
+            ),
+            children: columns
+                .map((column) => Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        column,
+                        style: theme.textTheme.bodyLarge
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                    ))
+                .toList(),
+          ),
+          for (var row in rows)
+            TableRow(
+              children: row
+                  .map((cell) => Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          cell,
+                          style: theme.textTheme.bodyMedium,
+                          textAlign: TextAlign.center,
+                        ),
+                      ))
+                  .toList(),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPieChart(BuildContext context, Map<String, double> dataMap) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+      ),
+      child: pie_chart.PieChart(
+        dataMap: dataMap,
+        chartType: pie_chart.ChartType.disc,
+        baseChartColor: Colors.grey[200]!, // Цвет фона
+        chartRadius: MediaQuery.of(context).size.width / 5, // Размер диаграммы
+        chartValuesOptions: const pie_chart.ChartValuesOptions(
+          showChartValuesInPercentage: true,
+          showChartValuesOutside: false,
+        ),
+        legendOptions: const pie_chart.LegendOptions(
+          showLegendsInRow: true,
+          legendPosition: pie_chart.LegendPosition.bottom,
+        ),
+      ),
+    );
+  }
+}
+
 class NormqueryTableWidget extends StatefulWidget {
   const NormqueryTableWidget({super.key});
 
@@ -956,6 +1117,8 @@ class NormqueryTableWidget extends StatefulWidget {
 
 class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
   late TableViewController tableViewController;
+  final Set<int> selectedIndices = {}; // Хранит индексы выбранных строк
+  bool selectAll = false; // Управляет выбором всех строк
 
   @override
   void initState() {
@@ -979,76 +1142,154 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
       return _noDataPlaceholder();
     }
 
-    final columnProportions = [0.3, 0.1, 0.2];
+    final columnProportions = [0.05, 0.3, 0.1, 0.1, 0.1];
+    final mobColumnProportions = [0.1, 0.4, 0.15, 0.15, 0.15];
     final columnHeaders = [
+      "Выбор",
       "Ключевой запрос",
       "Позиция",
+      "Частота",
       "Всего товаров",
     ];
 
-    final columns = columnProportions
-        .map((widthFraction) => TableColumn(
-            width: widthFraction * MediaQuery.of(context).size.width))
-        .toList();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Stack(
       children: [
-        Text(
-          'Ключевые запросы',
-          style:
-              theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
-          ),
-          child: SizedBox(
-            height: 400,
-            child: TableView.builder(
-              controller: tableViewController,
-              columns: columns,
-              rowHeight: 40,
-              rowCount: normqueryProducts.length,
-              headerBuilder: (context, contentBuilder) {
-                return contentBuilder(context, (context, columnIndex) {
-                  return Container(
-                    alignment: Alignment.center,
-                    child: Text(
-                      columnHeaders[columnIndex],
-                    ),
-                  );
-                });
-              },
-              rowBuilder: (context, rowIndex, contentBuilder) {
-                final product = normqueryProducts[rowIndex];
-                final rowValues = [
-                  product.normquery,
-                  ((product.pageNumber - 1) * 100 + product.pagePos).toString(),
-                  product.total.toString(),
-                ];
+        LayoutBuilder(builder: (context, constraints) {
+          final maxWidth = constraints.maxWidth;
 
-                return contentBuilder(context, (context, columnIndex) {
-                  final value = rowValues[columnIndex];
-                  return Container(
-                    alignment: columnIndex == 0
-                        ? Alignment.centerLeft
-                        : Alignment.center,
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Text(
-                      value,
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                  );
-                });
-              },
+          final isMobile = maxWidth < 600;
+
+          final proportions =
+              isMobile ? mobColumnProportions : columnProportions;
+          final columns = proportions
+              .map((widthFraction) => TableColumn(
+                  width: widthFraction * MediaQuery.of(context).size.width))
+              .toList();
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black12, blurRadius: 4)
+                  ],
+                ),
+                child: SizedBox(
+                  height: 400,
+                  child: TableView.builder(
+                    controller: tableViewController,
+                    columns: columns,
+                    rowHeight: 40,
+                    rowCount: normqueryProducts.length,
+                    headerBuilder: (context, contentBuilder) {
+                      return contentBuilder(context, (context, columnIndex) {
+                        if (columnIndex == 0) {
+                          return Checkbox(
+                            value: selectAll,
+                            onChanged: (value) {
+                              setState(() {
+                                selectAll = value ?? false;
+                                if (selectAll) {
+                                  selectedIndices.addAll(List.generate(
+                                      normqueryProducts.length,
+                                      (index) => index));
+                                } else {
+                                  selectedIndices.clear();
+                                }
+                              });
+                            },
+                          );
+                        }
+                        return Container(
+                          alignment: Alignment.center,
+                          child: Text(
+                            columnHeaders[columnIndex],
+                          ),
+                        );
+                      });
+                    },
+                    rowBuilder: (context, rowIndex, contentBuilder) {
+                      final product = normqueryProducts[rowIndex];
+                      final rowValues = [
+                        product.normquery,
+                        ((product.pageNumber - 1) * 100 + product.pagePos)
+                            .toString(),
+                        product.freq.toString(),
+                        product.total.toString(),
+                      ];
+
+                      return contentBuilder(context, (context, columnIndex) {
+                        if (columnIndex == 0) {
+                          return Checkbox(
+                            value: selectedIndices.contains(rowIndex),
+                            onChanged: (isSelected) {
+                              setState(() {
+                                if (isSelected == true) {
+                                  selectedIndices.add(rowIndex);
+                                  if (selectedIndices.length ==
+                                      normqueryProducts.length) {
+                                    selectAll = true;
+                                  }
+                                } else {
+                                  selectedIndices.remove(rowIndex);
+                                  selectAll = false;
+                                }
+                              });
+                            },
+                          );
+                        }
+
+                        final value = rowValues[columnIndex - 1];
+                        return Container(
+                          alignment: columnIndex == 1
+                              ? Alignment.centerLeft
+                              : Alignment.center,
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: Text(
+                            value,
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                        );
+                      });
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  final selectedItems = selectedIndices
+                      .map((index) => normqueryProducts[index])
+                      .toList();
+                  print('Выбранные элементы: $selectedItems');
+                },
+                child: const Text('Показать выбранные'),
+              ),
+            ],
+          );
+        }),
+        if (model.isFree) // Условие размытия
+          Positioned.fill(
+            child: ClipRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                child: Container(
+                  color: Colors.black.withOpacity(0.2),
+                  alignment: Alignment.center,
+                  child: Text(
+                    "Доступно только для подписчиков",
+                    style: theme.textTheme.titleLarge?.copyWith(
+                        color: Colors.white, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
       ],
     );
   }

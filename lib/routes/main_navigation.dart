@@ -16,9 +16,15 @@ abstract class ScreenFactory {
       {required void Function(int subjectId, String subjectName)
           onNavigateToSubjectProducts,
       required void Function() onNavigateBack});
+
+  Widget makeEmptyProductScreen(
+      {required void Function(int productId, int? productPrice)
+          onNavigateToProductScreen,
+      required void Function() onNavigateBack});
   Widget makeProductScreen(
       {required int productId,
       required int productPrice,
+      required void Function() onNavigateToEmptyProductScreen,
       required void Function() onNavigateBack});
 
   Widget makeLoginScreen();

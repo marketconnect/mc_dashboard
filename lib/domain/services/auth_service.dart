@@ -4,7 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/presentation/choosing_niche_screen/choosing_niche_view_model.dart';
+
 import 'package:mc_dashboard/presentation/login_screen/login_view_model.dart';
+import 'package:mc_dashboard/presentation/product_screen/product_view_model.dart';
 import 'package:mc_dashboard/presentation/subject_products_screen/subject_products_view_model.dart';
 
 abstract class AuthServiceAuthApiClient {
@@ -22,8 +24,9 @@ abstract class AuthServiceStorage {
 class AuthService
     implements
         LoginViewModelAuthService,
+        ChoosingNicheAuthService,
         SubjectProductsAuthService,
-        ChoosingNicheAuthService {
+        ProductAuthService {
   final AuthServiceAuthApiClient apiClient;
   final AuthServiceStorage authServiceStorage;
 
@@ -91,25 +94,30 @@ class AuthService
   }
 
   // Get token and its type for use in the application
+  @override
   Future<Either<AppErrorBase, Map<String, String?>>> getTokenAndType() async {
+    // get token from storage
     final tokenEither = authServiceStorage.getToken();
-    return tokenEither.fold(
-      (error) => left(error),
-      (token) {
-        if (token == null || isTokenExpired(token)) {
-          return left(AppErrorBase('Token is null or expired',
-              name: 'getTokenAndType', sendTo: true, source: 'AuthService'));
-        }
 
-        final tokenType = getTokenType(token);
-        if (tokenType == null) {
-          return left(AppErrorBase('Invalid token type',
-              name: 'getTokenAndType', sendTo: true, source: 'AuthService'));
-        }
+    final token = tokenEither.fold((l) => null, (r) => r);
+    // Token is not expired
+    if (token != null && !isTokenExpired(token)) {
+      return right({'token': token, 'type': getTokenType(token)});
+    }
 
-        return right({'token': token, 'type': tokenType});
-      },
-    );
+    // Token is expired
+    // step 1 login
+    await login();
+
+    // step 2 try again
+    final newTokenEither = authServiceStorage.getToken();
+    final newToken = newTokenEither.fold((l) => null, (r) => r);
+    if (newToken != null) {
+      return right({'token': newToken, 'type': getTokenType(newToken)});
+    } else {
+      return left(AppErrorBase('Token not found in storage',
+          name: 'getTokenAndType', sendTo: true, source: 'AuthService'));
+    }
   }
 
   // Clear token from storage

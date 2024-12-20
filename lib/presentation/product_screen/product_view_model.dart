@@ -2,6 +2,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
 import 'package:mc_dashboard/core/utils/basket_num.dart';
 import 'package:mc_dashboard/domain/entities/card_info.dart';
+import 'package:mc_dashboard/domain/entities/feedback_info.dart';
 import 'package:mc_dashboard/domain/entities/normquery_product.dart';
 import 'package:mc_dashboard/domain/entities/order.dart';
 import 'package:mc_dashboard/domain/entities/stock.dart';
@@ -31,14 +32,11 @@ abstract class ProductViewModelWhService {
   });
 }
 
+abstract class ProductAuthService {
+  Future<Either<AppErrorBase, Map<String, String?>>> getTokenAndType();
+}
+
 class ProductViewModel extends ViewModelBase {
-  final int productId;
-  final int productPrice;
-  final ProductViewModelStocksService stocksService;
-  final ProductViewModelOrderService ordersService;
-  final ProductViewModelWhService whService;
-  final ProductViewModelNormqueryService normqueryService;
-  final void Function() onNavigateBack;
   ProductViewModel(
       {required super.context,
       required this.productId,
@@ -46,10 +44,28 @@ class ProductViewModel extends ViewModelBase {
       required this.whService,
       required this.onNavigateBack,
       required this.ordersService,
+      required this.authService,
       required this.normqueryService,
+      required this.onNavigateToEmptyProductScreen,
       required this.productPrice}) {
     _asyncInit();
   }
+  final int productId;
+  final int productPrice;
+  final ProductViewModelStocksService stocksService;
+  final ProductViewModelOrderService ordersService;
+  final ProductViewModelWhService whService;
+  final ProductViewModelNormqueryService normqueryService;
+  final ProductAuthService authService;
+  final void Function() onNavigateBack;
+  final void Function() onNavigateToEmptyProductScreen;
+
+  // Fields
+
+  Map<String, String?> _tokenInfo = {};
+  Map<String, String?> get tokenInfo => _tokenInfo;
+
+  bool get isFree => _tokenInfo["type"] == "free";
 
   String? _basketNum;
   String _name = "";
@@ -118,15 +134,25 @@ class ProductViewModel extends ViewModelBase {
     setLoading();
     _basketNum = getBasketNum(productId);
     // TODO may be do it subsequent
-    final values = await Future.wait([
+    final vals = await Future.wait([
       fetchCardInfo(
           calculateCardUrl(calculateImageUrl(_basketNum, productId))), // 0
+      authService.getTokenAndType(), // 1
+    ]);
+
+    final cardInfo = vals[0] as CardInfo;
+    final tokenInfoOrEither =
+        vals[1] as Either<AppErrorBase, Map<String, String?>>;
+    if (tokenInfoOrEither.isRight()) {
+      _tokenInfo = tokenInfoOrEither.fold((l) => {}, (r) => r);
+    }
+    final values = await Future.wait([
+      fetchFeedbacks(cardInfo.imtId), // 0
       ordersService.getOneMonthOrders(productId: productId), // 1
       stocksService.getMonthStocks(productId: productId), // 2
-      normqueryService.get(ids: [productId]) // 3
     ]);
-    final cardInfo = values[0] as CardInfo;
-    final feedbackInfo = await fetchFeedbacks(cardInfo.imtId);
+
+    final feedbackInfo = values[0] as FeedbackInfo;
     List<int> whIds = [];
     // Orders
     final ordersEither = values[1] as Either<AppErrorBase, List<OrderWb>>;
@@ -152,11 +178,15 @@ class ProductViewModel extends ViewModelBase {
     }
 
     // Normqueries
-    final normqueryOrEither =
-        values[3] as Either<AppErrorBase, List<NormqueryProduct>>;
-    if (normqueryOrEither.isRight()) {
-      _normqueries =
-          normqueryOrEither.fold((l) => <NormqueryProduct>[], (r) => r);
+    if (!isFree) {
+      final normqueryOrEither = await normqueryService.get(ids: [productId]);
+      if (normqueryOrEither.isRight()) {
+        _normqueries =
+            normqueryOrEither.fold((l) => <NormqueryProduct>[], (r) => r);
+      }
+    } else {
+      _normqueries = generateRandomNormqueryProducts(15);
+      print(_normqueries.map((e) => e.toJson()).toList());
     }
 
     final whOrEither =

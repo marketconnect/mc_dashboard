@@ -1,7 +1,10 @@
+import 'dart:math';
+
 class NormqueryProduct {
   final int normqueryId;
   final String normquery;
   final int total;
+  final int freq;
   final int pagePos;
   final int pageNumber;
   final int productId;
@@ -10,6 +13,7 @@ class NormqueryProduct {
     required this.normqueryId,
     required this.normquery,
     required this.total,
+    required this.freq,
     required this.pagePos,
     required this.pageNumber,
     required this.productId,
@@ -20,6 +24,7 @@ class NormqueryProduct {
       normqueryId: json['normquery_id'] as int,
       normquery: json['normquery'] as String,
       total: json['total'] as int,
+      freq: json['freq'] as int,
       pagePos: json['page_pos'] as int,
       pageNumber: json['page_number'] as int,
       productId: json['product_id'] as int,
@@ -31,9 +36,36 @@ class NormqueryProduct {
       'normquery_id': normqueryId,
       'normquery': normquery,
       'total': total,
+      'freq': freq,
       'page_pos': pagePos,
       'page_number': pageNumber,
       'product_id': productId,
     };
   }
+}
+
+List<NormqueryProduct> generateRandomNormqueryProducts(int count) {
+  final random = Random();
+  final List<NormqueryProduct> products = [];
+
+  for (int i = 0; i < count; i++) {
+    final normqueryId = random.nextInt(10000);
+    final productId = random.nextInt(1000);
+    final pageNumber = random.nextInt(100) + 1;
+    final pagePos = random.nextInt(10) + 1;
+    final freq = random.nextInt(1000) + 1;
+    final total = random.nextInt(10000) + 1;
+
+    products.add(NormqueryProduct(
+      normqueryId: normqueryId,
+      normquery: 'Query $normqueryId',
+      total: total,
+      freq: freq,
+      pagePos: pagePos,
+      pageNumber: pageNumber,
+      productId: productId,
+    ));
+  }
+
+  return products;
 }

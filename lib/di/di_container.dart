@@ -21,6 +21,8 @@ import 'package:mc_dashboard/main.dart';
 import 'package:mc_dashboard/presentation/choosing_niche_screen/choosing_niche_screen.dart';
 import 'package:mc_dashboard/presentation/choosing_niche_screen/choosing_niche_view_model.dart';
 import 'package:mc_dashboard/presentation/app/app.dart';
+import 'package:mc_dashboard/presentation/empty_products_screen/empty_product_screen.dart';
+import 'package:mc_dashboard/presentation/empty_products_screen/empty_product_view_model.dart';
 import 'package:mc_dashboard/presentation/empty_subjects_screen/empty_subjects_screen.dart';
 import 'package:mc_dashboard/presentation/empty_subjects_screen/empty_subjects_view_model.dart';
 import 'package:mc_dashboard/presentation/login_screen/login_screen.dart';
@@ -126,8 +128,22 @@ class _DIContainer {
           onNavigateBack: onNavigateBack,
           subjectsSummaryService: _makeSubjectsSummaryService());
 
-  ProductViewModel _makeProductViewModel(BuildContext context, int productId,
-          int productPrice, void Function() onNavigateBack) =>
+  EmptyProductViewModel _makeEmptyProductViewModel(
+          BuildContext context,
+          void Function(int productId, int productPrice)
+              onNavigateToProductScreen,
+          void Function() onNavigateBack) =>
+      EmptyProductViewModel(
+          context: context,
+          onNavigateToProductScreen: onNavigateToProductScreen,
+          onNavigateBack: onNavigateBack);
+
+  ProductViewModel _makeProductViewModel(
+          BuildContext context,
+          int productId,
+          int productPrice,
+          void Function() onNavigateToEmptyProductScreen,
+          void Function() onNavigateBack) =>
       ProductViewModel(
         context: context,
         productId: productId,
@@ -135,7 +151,9 @@ class _DIContainer {
         stocksService: _makeStocksService(),
         normqueryService: _makeNormqueryService(),
         onNavigateBack: onNavigateBack,
+        onNavigateToEmptyProductScreen: onNavigateToEmptyProductScreen,
         whService: _makeWhService(),
+        authService: _makeAuthService(),
         productPrice: productPrice,
       );
 
@@ -195,13 +213,30 @@ class ScreenFactoryDefault implements ScreenFactory {
   }
 
   @override
+  Widget makeEmptyProductScreen(
+      {required void Function(int productId, int productPrice)
+          onNavigateToProductScreen,
+      required void Function() onNavigateBack}) {
+    return ChangeNotifierProvider(
+      create: (context) => _diContainer._makeEmptyProductViewModel(
+          context, onNavigateToProductScreen, onNavigateBack),
+      child: const EmptyProductScreen(),
+    );
+  }
+
+  @override
   Widget makeProductScreen(
       {required int productId,
       required int productPrice,
+      required void Function() onNavigateToEmptyProductScreen,
       required void Function() onNavigateBack}) {
     return ChangeNotifierProvider(
       create: (context) => _diContainer._makeProductViewModel(
-          context, productId, productPrice, onNavigateBack),
+          context,
+          productId,
+          productPrice,
+          onNavigateToEmptyProductScreen,
+          onNavigateBack),
       child: const ProductScreen(),
     );
   }
