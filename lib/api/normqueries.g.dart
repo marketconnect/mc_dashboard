@@ -14,7 +14,7 @@ class _NormqueriesApiClient implements NormqueriesApiClient {
     this.baseUrl,
     this.errorLogger,
   }) {
-    baseUrl ??= 'http://localhost:2009';
+    baseUrl ??= 'https://marketconnect.website/api';
   }
 
   final Dio _dio;

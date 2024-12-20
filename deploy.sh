@@ -12,6 +12,13 @@ if [[ -z "$DEPLOY_SERVER_USER" || -z "$DEPLOY_SERVER_IP" || -z "$DEPLOY_REMOTE_P
   exit 1
 fi
 
+echo "Начинаю сборку Flutter веб-приложения..."
+flutter build web --release
+if [[ $? -ne 0 ]]; then
+  echo "Ошибка при сборке Flutter веб-приложения."
+  exit 1
+fi
+echo "Сборка завершена успешно!"
 
 echo "Начинаю деплой на $DEPLOY_SERVER_USER@$DEPLOY_SERVER_IP через порт $DEPLOY_SERVER_PORT..."
 sshpass -p "$DEPLOY_SERVER_PASSWORD" rsync -av --delete -e "ssh -p $DEPLOY_SERVER_PORT" "$DEPLOY_LOCAL_PATH" "$DEPLOY_SERVER_USER@$DEPLOY_SERVER_IP:$DEPLOY_REMOTE_PATH"
