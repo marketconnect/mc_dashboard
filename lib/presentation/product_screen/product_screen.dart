@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+// TODO Search btn color in dark theme
 // TODO Add link on payments page and also tokenReset method
 // TODO Add competitors analisis by https://identical-products.wildberries.ru/api/v1/identical?nmID=217712605
 // TODO add subject name next to name
