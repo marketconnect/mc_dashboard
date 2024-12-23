@@ -63,6 +63,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'MarketConnect',
       theme: ThemeData(
         useMaterial3: true,
         dialogTheme: dialogTheme,

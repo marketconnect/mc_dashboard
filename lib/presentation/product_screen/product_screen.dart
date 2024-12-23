@@ -105,7 +105,7 @@ class _ProductScreenState extends State<ProductScreen> {
                       IconButton(
                         onPressed: () => onNavigateToEmptyProductScreen(),
                         icon: const Icon(Icons.search_sharp, size: 24),
-                        color: Colors.black,
+                        color: theme.colorScheme.primary,
                       ),
                     ],
                   ),

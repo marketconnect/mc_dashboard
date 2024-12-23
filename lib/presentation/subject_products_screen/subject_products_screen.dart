@@ -330,9 +330,10 @@ class _Header extends StatelessWidget {
           )
         ]),
         IconButton(
-            onPressed: () => onNavigateToEmptySubject(),
-            icon: Icon(Icons.search_sharp, size: 24),
-            color: Colors.black),
+          onPressed: () => onNavigateToEmptySubject(),
+          icon: Icon(Icons.search_sharp, size: 24),
+          color: theme.colorScheme.primary,
+        ),
       ],
     );
   }
@@ -355,6 +356,10 @@ class _PieChartWithList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final model = context.watch<SubjectProductsViewModel>();
+    if (model.loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
     if (dataMap.isEmpty) {
       return const Center(child: Text("Нет данных"));
     }
