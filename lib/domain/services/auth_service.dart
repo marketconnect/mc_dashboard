@@ -2,7 +2,9 @@ import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:mc_dashboard/.env.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
+import 'package:mc_dashboard/core/utils/dates.dart';
 import 'package:mc_dashboard/presentation/choosing_niche_screen/choosing_niche_view_model.dart';
 
 import 'package:mc_dashboard/presentation/login_screen/login_view_model.dart';
@@ -132,5 +134,25 @@ class AuthService
     } else {
       return null;
     }
+  }
+
+  //
+  @override
+  String? getPaymentUrl() {
+    final email = getFirebaseAuthUserInfo()?.email;
+
+    if (email == null) {
+      return null;
+    }
+    final endDate = DateTime.now().add(Duration(days: 30));
+    final order = simpleEncrypt(email, PaymentSettings.salt);
+    final endDateStr = endDate.toIso8601String().substring(0, 10);
+    return '${SiteSettings.paymentUrl}?amount=${PaymentSettings.amount}&order=$order&email=$email&description=Подписка на месяц до ${formatDate(endDateStr)}';
+  }
+
+  String simpleEncrypt(String email, String salt) {
+    final saltedEmail = "$email:$salt";
+
+    return base64Encode(utf8.encode(saltedEmail));
   }
 }

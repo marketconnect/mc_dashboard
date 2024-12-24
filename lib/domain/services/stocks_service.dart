@@ -26,16 +26,12 @@ class StocksService implements ProductViewModelStocksService {
       final startDateStr = startDate.toIso8601String().substring(0, 10);
       final endDateStr = endDate.toIso8601String().substring(0, 10);
 
-      print(
-          'Fetching stocks: productId=$productId, startDate=$startDateStr, endDate=$endDateStr');
-
       final result = await stocksApiClient.getStocks(
         productId: productId,
         pageSize: 10000,
         startDate: startDateStr,
         endDate: endDateStr,
       );
-      print("stockds ${result.stocks.where((e) => e.quantity > 0)}");
 
       return Right(result.stocks);
     } on DioException catch (e, stackTrace) {

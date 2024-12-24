@@ -34,6 +34,7 @@ abstract class ProductViewModelWhService {
 
 abstract class ProductAuthService {
   Future<Either<AppErrorBase, Map<String, String?>>> getTokenAndType();
+  String? getPaymentUrl();
 }
 
 class ProductViewModel extends ViewModelBase {
@@ -66,6 +67,9 @@ class ProductViewModel extends ViewModelBase {
   Map<String, String?> get tokenInfo => _tokenInfo;
 
   bool get isFree => _tokenInfo["type"] == "free";
+
+  String? _paymentUrl;
+  String? get paymentUrl => _paymentUrl;
 
   String? _basketNum;
   String _name = "";
@@ -186,7 +190,6 @@ class ProductViewModel extends ViewModelBase {
       }
     } else {
       _normqueries = generateRandomNormqueryProducts(15);
-      print(_normqueries.map((e) => e.toJson()).toList());
     }
 
     final whOrEither =
@@ -216,6 +219,7 @@ class ProductViewModel extends ViewModelBase {
       final imageNext = image.replaceFirst('/1.webp', '/$i.webp');
       _images.add(imageNext);
     }
+    _paymentUrl = authService.getPaymentUrl();
     setLoaded();
   }
 }

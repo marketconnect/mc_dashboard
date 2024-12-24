@@ -24,8 +24,6 @@ class FeedbackInfo {
         consList.add(feedback['cons']);
       }
     }
-    print(
-        'prosList: ${prosList.length} consList: ${consList.length} valuation: ${json['valuation']} valuationDistributionPercent: ${json['valuationDistributionPercent']}');
     return FeedbackInfo(
       valuationDistributionPercent:
           Map<String, int>.from(json['valuationDistributionPercent']),

@@ -1137,6 +1137,7 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final model = context.watch<ProductViewModel>();
+    final paymentUrl = model.paymentUrl;
     final normqueryProducts = model.normqueries;
 
     if (normqueryProducts.isEmpty) {
@@ -1263,29 +1264,37 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
+                  // TODO add something
                   final selectedItems = selectedIndices
                       .map((index) => normqueryProducts[index])
                       .toList();
-                  print('Выбранные элементы: $selectedItems');
                 },
                 child: const Text('Показать выбранные'),
               ),
             ],
           );
         }),
-        if (model.isFree) // Условие размытия
+        if (model.isFree)
           Positioned.fill(
-            child: ClipRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                child: Container(
-                  color: Colors.black.withOpacity(0.2),
-                  alignment: Alignment.center,
-                  child: Text(
-                    "Доступно только для подписчиков",
-                    style: theme.textTheme.titleLarge?.copyWith(
-                        color: Colors.white, fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
+            child: GestureDetector(
+              onTap: () {
+                if (paymentUrl != null) {
+                  launchUrl(Uri.parse(paymentUrl));
+                }
+                return;
+              },
+              child: ClipRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                  child: Container(
+                    color: Colors.black.withOpacity(0.2),
+                    alignment: Alignment.center,
+                    child: Text(
+                      "Доступно только для подписчиков",
+                      style: theme.textTheme.titleLarge?.copyWith(
+                          color: Colors.white, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ),
               ),
