@@ -8,6 +8,7 @@ import 'package:mc_dashboard/domain/entities/order.dart';
 import 'package:mc_dashboard/domain/entities/stock.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/domain/entities/warehouse.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 abstract class ProductViewModelStocksService {
   Future<Either<AppErrorBase, List<Stock>>> getMonthStocks({
@@ -35,6 +36,7 @@ abstract class ProductViewModelWhService {
 abstract class ProductAuthService {
   Future<Either<AppErrorBase, Map<String, String?>>> getTokenAndType();
   String? getPaymentUrl();
+  logout();
 }
 
 class ProductViewModel extends ViewModelBase {
@@ -221,5 +223,13 @@ class ProductViewModel extends ViewModelBase {
     }
     _paymentUrl = authService.getPaymentUrl();
     setLoaded();
+  }
+
+  // payment
+  void onPaymentComplete() {
+    if (paymentUrl != null) {
+      launchUrl(Uri.parse(paymentUrl!));
+      authService.logout();
+    }
   }
 }

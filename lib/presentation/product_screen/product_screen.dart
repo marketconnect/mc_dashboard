@@ -1276,24 +1276,24 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
         }),
         if (model.isFree)
           Positioned.fill(
-            child: GestureDetector(
-              onTap: () {
-                if (paymentUrl != null) {
-                  launchUrl(Uri.parse(paymentUrl));
-                }
-                return;
-              },
-              child: ClipRect(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                  child: Container(
-                    color: Colors.black.withOpacity(0.2),
-                    alignment: Alignment.center,
-                    child: Text(
-                      "Доступно только для подписчиков",
-                      style: theme.textTheme.titleLarge?.copyWith(
-                          color: Colors.white, fontWeight: FontWeight.bold),
-                      textAlign: TextAlign.center,
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: () {
+                  model.onPaymentComplete();
+                },
+                child: ClipRect(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                    child: Container(
+                      color: Colors.black.withOpacity(0.2),
+                      alignment: Alignment.center,
+                      child: Text(
+                        "Доступно только для подписчиков",
+                        style: theme.textTheme.titleLarge?.copyWith(
+                            color: Colors.white, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   ),
                 ),

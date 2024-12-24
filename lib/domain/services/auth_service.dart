@@ -1,5 +1,5 @@
 import 'dart:convert';
-
+import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mc_dashboard/.env.dart';
@@ -123,6 +123,7 @@ class AuthService
   }
 
   // Clear token from storage
+  @override
   Future<Either<AppErrorBase, void>> logout() async {
     return authServiceStorage.clearToken();
   }
@@ -145,14 +146,21 @@ class AuthService
       return null;
     }
     final endDate = DateTime.now().add(Duration(days: 30));
-    final order = simpleEncrypt(email, PaymentSettings.salt);
+    final order = simpleEncrypt(
+      email,
+      endDate.toIso8601String().substring(0, 10),
+    );
     final endDateStr = endDate.toIso8601String().substring(0, 10);
     return '${SiteSettings.paymentUrl}?amount=${PaymentSettings.amount}&order=$order&email=$email&description=Подписка на месяц до ${formatDate(endDateStr)}';
   }
 
-  String simpleEncrypt(String email, String salt) {
-    final saltedEmail = "$email:$salt";
+  String simpleEncrypt(String email, String date) {
+    final data = "$email|$date";
 
-    return base64Encode(utf8.encode(saltedEmail));
+    String encoded = base64UrlEncode(utf8.encode(data));
+
+    encoded = encoded.replaceAll('=', '');
+
+    return encoded;
   }
 }
