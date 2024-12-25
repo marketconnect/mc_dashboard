@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:ui';
 import 'dart:html' as html;
 import 'package:excel/excel.dart' as exc;
@@ -45,6 +44,7 @@ class SeoRequestsExtendScreen extends StatelessWidget {
 
                   // Создаём Excel
                   final excel = exc.Excel.createExcel();
+
                   final sheet = excel['Sheet1'];
                   sheet.appendRow(<exc.CellValue?>[
                     exc.TextCellValue("Ключевой запрос"),
@@ -62,7 +62,9 @@ class SeoRequestsExtendScreen extends StatelessWidget {
                     ]);
                   }
 
-                  final List<int>? fileBytes = excel.save();
+                  final List<int>? fileBytes = excel.save(
+                      fileName:
+                          "${formatDateTimeToDayMonthYearHourMinute(DateTime.now())}_запросы.xlsx");
                   if (fileBytes == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -84,7 +86,7 @@ class SeoRequestsExtendScreen extends StatelessWidget {
                         "${formatDateTimeToDayMonthYearHourMinute(DateTime.now())}_запросы.xlsx"; // <-- здесь ваше желаемое имя
 
                   html.document.body!.children.add(anchor);
-                  anchor.click(); // Инициируем скачивание
+                  anchor.click();
 
                   // Удаляем ссылку и освобождаем URL-объект
                   Future.delayed(const Duration(seconds: 1), () {
