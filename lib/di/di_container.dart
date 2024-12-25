@@ -29,6 +29,8 @@ import 'package:mc_dashboard/presentation/login_screen/login_screen.dart';
 import 'package:mc_dashboard/presentation/login_screen/login_view_model.dart';
 import 'package:mc_dashboard/presentation/product_screen/product_screen.dart';
 import 'package:mc_dashboard/presentation/product_screen/product_view_model.dart';
+import 'package:mc_dashboard/presentation/seo_requests_extend_screen/seo_requests_extend_screen.dart';
+import 'package:mc_dashboard/presentation/seo_requests_extend_screen/seo_requests_extend_view_model.dart';
 import 'package:mc_dashboard/presentation/subject_products_screen/subject_products_screen.dart';
 import 'package:mc_dashboard/presentation/subject_products_screen/subject_products_view_model.dart';
 
@@ -106,6 +108,7 @@ class _DIContainer {
     void Function() onNavigateToEmptySubject,
     void Function() onNavigateBack,
     void Function(int productId, int productPrice) onNavigateToProductScreen,
+    void Function(List<int>) onNavigateToSeoRequestsExtendScreen,
   ) =>
       SubjectProductsViewModel(
           subjectId: subjectId,
@@ -114,6 +117,8 @@ class _DIContainer {
           onNavigateToEmptySubject: onNavigateToEmptySubject,
           onNavigateToProductScreen: onNavigateToProductScreen,
           onNavigateBack: onNavigateBack,
+          onNavigateToSeoRequestsExtendScreen:
+              onNavigateToSeoRequestsExtendScreen,
           detailedOrdersService: _makeDetailedOrdersService(),
           authService: _makeAuthService());
 
@@ -157,6 +162,17 @@ class _DIContainer {
         productPrice: productPrice,
       );
 
+  SeoRequestsExtendViewModel _makeSeoRequestsExtendViewModel(
+          BuildContext context,
+          void Function() onNavigateBack,
+          List<int> productIds) =>
+      SeoRequestsExtendViewModel(
+          context: context,
+          onNavigateBack: onNavigateBack,
+          normqueryService: _makeNormqueryService(),
+          authService: _makeAuthService(),
+          productIds: productIds);
+
   LoginViewModel _makeLoginViewModel(BuildContext context) => LoginViewModel(
         context: context,
         authService: _makeAuthService(),
@@ -187,6 +203,7 @@ class ScreenFactoryDefault implements ScreenFactory {
       required void Function(int productId, int productPrice)
           onNavigateToProductScreen,
       required void Function() onNavigateToEmptySubject,
+      required void Function(List<int>) onNavigateToSeoRequestsExtendScreen,
       required void Function() onNavigateBack}) {
     return ChangeNotifierProvider(
       create: (context) => _diContainer._makeSubjectProductsViewModel(
@@ -195,7 +212,8 @@ class ScreenFactoryDefault implements ScreenFactory {
           subjectName,
           onNavigateToEmptySubject,
           onNavigateBack,
-          onNavigateToProductScreen),
+          onNavigateToProductScreen,
+          onNavigateToSeoRequestsExtendScreen),
       child: const SubjectProductsScreen(),
     );
   }
@@ -238,6 +256,20 @@ class ScreenFactoryDefault implements ScreenFactory {
           onNavigateToEmptyProductScreen,
           onNavigateBack),
       child: const ProductScreen(),
+    );
+  }
+
+  @override
+  Widget makeSeoRequestsExtendScreen(
+      {required void Function() onNavigateBack,
+      required List<int> productIds}) {
+    return ChangeNotifierProvider(
+      create: (context) => _diContainer._makeSeoRequestsExtendViewModel(
+        context,
+        onNavigateBack,
+        productIds,
+      ),
+      child: const SeoRequestsExtendScreen(),
     );
   }
 

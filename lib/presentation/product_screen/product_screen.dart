@@ -6,8 +6,9 @@ import 'package:mc_dashboard/core/utils/dates.dart';
 import 'package:mc_dashboard/presentation/product_screen/product_view_model.dart';
 import 'package:pie_chart/pie_chart.dart' as pie_chart;
 import 'package:flutter/material.dart';
-
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 // TODO Search btn color in dark theme
@@ -36,7 +37,6 @@ class _ProductScreenState extends State<ProductScreen> {
     final onNavigateToEmptyProductScreen = model.onNavigateToEmptyProductScreen;
     final name = model.name;
     // final subjName = model.subjectName;
-    final images = model.images;
 
     final price = model.productPrice;
     final rating = model.rating;
@@ -125,8 +125,7 @@ class _ProductScreenState extends State<ProductScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  SizedBox(
-                      height: 400, child: ImageCarousel(imageUrls: images)),
+                  SizedBox(height: 400, child: ImageCarousel()),
                   const SizedBox(height: 24),
                   const SizedBox(height: 24),
                   Wrap(
@@ -787,24 +786,40 @@ class _Feedback extends StatelessWidget {
 }
 
 class ImageCarousel extends StatelessWidget {
-  final List<String> imageUrls;
-
-  const ImageCarousel({super.key, required this.imageUrls});
+  const ImageCarousel({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final model = context.watch<ProductViewModel>();
+    final images = model.images;
+    final theme = Theme.of(context);
+    if (images.isEmpty) {
+      return Shimmer.fromColors(
+        baseColor: theme.colorScheme.surfaceContainerHighest,
+        highlightColor: theme.colorScheme.surfaceContainer,
+        child: Container(
+          height: 800,
+          width: double.infinity,
+          margin: EdgeInsets.symmetric(horizontal: 5.0),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8.0),
+            color: Colors.grey,
+          ),
+        ),
+      );
+    }
+
     return CarouselSlider(
       options: CarouselOptions(
         height: 800,
         enlargeCenterPage: true,
         autoPlay: true,
-        // aspectRatio: 9 / 12,
         autoPlayCurve: Curves.easeInOut,
         enableInfiniteScroll: true,
         autoPlayAnimationDuration: Duration(milliseconds: 800),
         viewportFraction: 0.4,
       ),
-      items: imageUrls.map((imgUrl) {
+      items: images.map((imgUrl) {
         return Builder(
           builder: (BuildContext context) {
             return Container(
@@ -1121,6 +1136,9 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
   final Set<int> selectedIndices = {}; // Хранит индексы выбранных строк
   bool selectAll = false; // Управляет выбором всех строк
 
+  int? _sortColumnIndex; // Индекс сортируемого столбца
+  bool _sortAscending = true; // Направление сортировки
+
   @override
   void initState() {
     super.initState();
@@ -1133,24 +1151,57 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
     super.dispose();
   }
 
+  void _sortData(int columnIndex) {
+    setState(() {
+      if (_sortColumnIndex == columnIndex) {
+        _sortAscending = !_sortAscending;
+      } else {
+        _sortColumnIndex = columnIndex;
+        _sortAscending = true;
+      }
+
+      context.read<ProductViewModel>().normqueries.sort((a, b) {
+        int compare;
+        switch (columnIndex) {
+          case 1: // Ключевой запрос
+            compare = a.normquery.compareTo(b.normquery);
+            break;
+          case 2: // Позиция
+            compare = ((a.pageNumber - 1) * 100 + a.pagePos)
+                .compareTo((b.pageNumber - 1) * 100 + b.pagePos);
+            break;
+          case 3: // Частота
+            compare = a.freq.compareTo(b.freq);
+            break;
+          case 4: // Всего товаров
+            compare = a.total.compareTo(b.total);
+            break;
+          default:
+            compare = 0;
+        }
+        return _sortAscending ? compare : -compare;
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final model = context.watch<ProductViewModel>();
-    final paymentUrl = model.paymentUrl;
+
     final normqueryProducts = model.normqueries;
 
     if (normqueryProducts.isEmpty) {
       return _noDataPlaceholder();
     }
 
-    final columnProportions = [0.05, 0.3, 0.1, 0.1, 0.1];
-    final mobColumnProportions = [0.1, 0.4, 0.15, 0.15, 0.15];
+    final columnProportions = [0.05, 0.2, 0.1, 0.1, 0.1];
+    final mobColumnProportions = [0.1, 0.3, 0.2, 0.15, 0.15];
     final columnHeaders = [
       "Выбор",
       "Ключевой запрос",
-      "Позиция",
-      "Частота",
+      "Позиция товара",
+      "Частота (нед.)",
       "Всего товаров",
     ];
 
@@ -1172,7 +1223,7 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8),
@@ -1206,10 +1257,22 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
                             },
                           );
                         }
-                        return Container(
-                          alignment: Alignment.center,
-                          child: Text(
-                            columnHeaders[columnIndex],
+                        return GestureDetector(
+                          onTap: () => _sortData(columnIndex),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                columnHeaders[columnIndex],
+                              ),
+                              if (_sortColumnIndex == columnIndex)
+                                Icon(
+                                  _sortAscending
+                                      ? Icons.arrow_upward
+                                      : Icons.arrow_downward,
+                                  size: 16,
+                                ),
+                            ],
                           ),
                         );
                       });
@@ -1247,14 +1310,35 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
                         }
 
                         final value = rowValues[columnIndex - 1];
-                        return Container(
-                          alignment: columnIndex == 1
-                              ? Alignment.centerLeft
-                              : Alignment.center,
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: Text(
-                            value,
-                            style: theme.textTheme.bodyMedium,
+                        return GestureDetector(
+                          onTap: () {
+                            if (columnIndex == 1) {
+                              final wildberriesUrl =
+                                  "https://www.wildberries.ru/catalog/0/search.aspx?search=$value";
+                              launchUrl(Uri.parse(wildberriesUrl));
+                            }
+                          },
+                          child: Container(
+                            alignment: columnIndex == 1
+                                ? Alignment.centerLeft
+                                : Alignment.center,
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 8.0),
+                            child: MouseRegion(
+                              cursor: columnIndex == 1
+                                  ? SystemMouseCursors.click
+                                  : MouseCursor.defer,
+                              child: Text(
+                                value,
+                                style: columnIndex == 1
+                                    ? const TextStyle(
+                                        decoration: TextDecoration.underline,
+                                        decorationColor: Color(0xFF5166e3),
+                                        color: Color(0xFF5166e3),
+                                      )
+                                    : theme.textTheme.bodyMedium,
+                              ),
+                            ),
                           ),
                         );
                       });
@@ -1265,12 +1349,38 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
-                  // TODO add something
+                  // Получение выбранных элементов
                   final selectedItems = selectedIndices
                       .map((index) => normqueryProducts[index])
                       .toList();
+
+                  if (selectedItems.isEmpty) {
+                    // Если ничего не выбрано, можно уведомить пользователя
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content:
+                              Text('Нет выбранных элементов для копирования')),
+                    );
+                    return;
+                  }
+
+                  // Формирование строки для копирования
+                  final clipboardContent = selectedItems.map((product) {
+                    return '${product.normquery}\t${((product.pageNumber - 1) * 100 + product.pagePos)}\t${product.freq}\t${product.total}';
+                  }).join('\n'); // Разделитель строк - перенос
+                  final clipboardContentWithColumnNames =
+                      'Ключевой запрос\tПозиция\tЧастота\tВсего товаров\n$clipboardContent';
+                  // Копирование данных в буфер обмена
+                  Clipboard.setData(
+                      ClipboardData(text: clipboardContentWithColumnNames));
+
+                  // Уведомление пользователя о выполнении копирования
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('Данные скопированы в буфер обмена')),
+                  );
                 },
-                child: const Text('Показать выбранные'),
+                child: const Text('Копировать'),
               ),
             ],
           );

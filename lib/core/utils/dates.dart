@@ -35,3 +35,15 @@ String formatDate(String date) {
   final month = monthName(int.parse(parts[1]));
   return "$day $month";
 }
+
+String formatDateTimeToDayMonthYearHourMinute(DateTime dateTime) {
+  final day = _twoDigits(dateTime.day);
+  final month = _twoDigits(dateTime.month);
+  final year = dateTime.year;
+  final hour = _twoDigits(dateTime.hour);
+  final minute = _twoDigits(dateTime.minute);
+
+  return '$day.$month.${year}_$hour.$minute';
+}
+
+String _twoDigits(int value) => value < 10 ? '0$value' : value.toString();

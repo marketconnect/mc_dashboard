@@ -11,6 +11,7 @@ abstract class ScreenFactory {
       required void Function(int productId, int productPrice)
           onNavigateToProductScreen,
       required void Function() onNavigateToEmptySubject,
+      required void Function(List<int>) onNavigateToSeoRequestsExtendScreen,
       required void Function() onNavigateBack});
   Widget makeEmptySubjectProductsScreen(
       {required void Function(int subjectId, String subjectName)
@@ -26,6 +27,11 @@ abstract class ScreenFactory {
       required int productPrice,
       required void Function() onNavigateToEmptyProductScreen,
       required void Function() onNavigateBack});
+
+  Widget makeSeoRequestsExtendScreen({
+    required List<int> productIds,
+    required void Function() onNavigateBack,
+  });
 
   Widget makeLoginScreen();
 }

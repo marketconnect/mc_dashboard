@@ -15,16 +15,16 @@ abstract class SubjectProductsAuthService {
 }
 
 class SubjectProductsViewModel extends ViewModelBase {
-  SubjectProductsViewModel({
-    required super.context,
-    required this.subjectId,
-    required this.subjectName,
-    required this.onNavigateToEmptySubject,
-    required this.onNavigateToProductScreen,
-    required this.onNavigateBack,
-    required this.detailedOrdersService,
-    required this.authService,
-  }) {
+  SubjectProductsViewModel(
+      {required super.context,
+      required this.subjectId,
+      required this.subjectName,
+      required this.onNavigateToEmptySubject,
+      required this.onNavigateToProductScreen,
+      required this.onNavigateBack,
+      required this.detailedOrdersService,
+      required this.authService,
+      required this.onNavigateToSeoRequestsExtendScreen}) {
     _asyncInit();
   }
 
@@ -37,8 +37,14 @@ class SubjectProductsViewModel extends ViewModelBase {
 
   final SubjectProductsAuthService authService;
   final SubjectProductsViewModelDetailedOrdersService detailedOrdersService;
+  final void Function(List<int>) onNavigateToSeoRequestsExtendScreen;
 
   // Fields ////////////////////////////////////////////////////////////////////
+
+  // Table Checkbox
+  // Храним индексы выбранных строк
+  final Set<int> _selectedRows = {};
+  Set<int> get selectedRows => _selectedRows;
 
   List<DetailedOrderItem> _filteredOrders = [];
 
@@ -56,6 +62,16 @@ class SubjectProductsViewModel extends ViewModelBase {
 
   Map<String, Map<String, TextEditingController>> get filterControllers =>
       _filterControllers;
+
+  // Methods //////////////////////////////////////////////////////////////////
+  void selectRow(int index) {
+    if (_selectedRows.contains(index)) {
+      _selectedRows.remove(index);
+    } else {
+      _selectedRows.add(index);
+    }
+    notifyListeners();
+  }
 
   void toggleFilterVisibility() {
     isFilterVisible = !isFilterVisible;
@@ -321,5 +337,10 @@ class SubjectProductsViewModel extends ViewModelBase {
       return true;
     }).toList();
     notifyListeners();
+  }
+
+  void navigateToSeoRequestsExtendScreen() {
+    final ids = _selectedRows.toList();
+    onNavigateToSeoRequestsExtendScreen(ids);
   }
 }

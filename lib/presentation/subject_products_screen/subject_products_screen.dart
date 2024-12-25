@@ -6,21 +6,44 @@ import 'package:provider/provider.dart';
 import 'package:mc_dashboard/presentation/subject_products_screen/subject_products_view_model.dart';
 
 import 'package:pie_chart/pie_chart.dart' as pie_chart;
+import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-// TODO  Search btn color in dark theme
 class SubjectProductsScreen extends StatelessWidget {
   const SubjectProductsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final model = context.watch<SubjectProductsViewModel>();
-
+    final selectedRows = model.selectedRows;
     final isFilterVisible = model.isFilterVisible;
-    final surfaceContainerHighest =
-        Theme.of(context).colorScheme.surfaceContainerHighest;
+    final theme = Theme.of(context);
+    final surfaceContainerHighest = theme.colorScheme.surfaceContainerHighest;
 
     return Scaffold(
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: selectedRows.isEmpty
+          ? null
+          : MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: () => model.navigateToSeoRequestsExtendScreen(),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary,
+                    borderRadius: BorderRadius.circular(16.0),
+                    border: Border.all(color: theme.colorScheme.outline),
+                  ),
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    "Расширение запросов",
+                    style: TextStyle(
+                        color: theme.colorScheme.onPrimary,
+                        fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final maxWidth = constraints.maxWidth;
@@ -357,13 +380,26 @@ class _PieChartWithList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final model = context.watch<SubjectProductsViewModel>();
+    final theme = Theme.of(context);
     if (model.loading) {
-      return const Center(child: CircularProgressIndicator());
+      return Shimmer.fromColors(
+        baseColor: theme.colorScheme.surfaceContainerHighest,
+        highlightColor: theme.colorScheme.surfaceContainer,
+        child: Container(
+          height: 300,
+          width: double.infinity,
+          margin: const EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            color: Colors.grey,
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+        ),
+      );
     }
     if (dataMap.isEmpty) {
       return const Center(child: Text("Нет данных"));
     }
-    final theme = Theme.of(context);
+
     final colorList = _generateColorList(dataMap.length);
 
     return Stack(
@@ -494,6 +530,8 @@ class _TableWidgetState extends State<_TableWidget> {
   @override
   Widget build(BuildContext context) {
     final model = context.watch<SubjectProductsViewModel>();
+    final selectedRows = model.selectedRows;
+    final selectRow = model.selectRow;
     final detailedOrders = model.detailedOrders;
     final sortData = model.sortData;
     final sortColumnIndex = model.sortColumnIndex;
@@ -501,375 +539,435 @@ class _TableWidgetState extends State<_TableWidget> {
     final theme = Theme.of(context);
     final toggleFilterVisibility = model.toggleFilterVisibility;
     final navigateToProduct = model.onNavigateToProductScreen;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final maxWidth = constraints.maxWidth;
-        final maxHeight = constraints.maxHeight;
-        final isMobile = maxWidth < 600 && maxHeight < 690;
-        final isMobileOrLaptop = maxWidth < 900 && maxHeight < 690;
-        final mobileMinColumnWidths = [
-          100.0,
-          80.0,
-          80.0,
-          80.0,
-          80.0,
-          80.0,
-          80.0
-        ];
 
-        final columnProportions = [
-          0.2,
-          0.12,
-          0.12,
-          0.12,
-          0.12,
-          0.12,
-          0.12,
-        ];
+    return Column(
+      children: [
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final maxWidth = constraints.maxWidth;
+              final maxHeight = constraints.maxHeight;
+              final isMobile = maxWidth < 600 && maxHeight < 690;
+              final isMobileOrLaptop = maxWidth < 900 && maxHeight < 690;
 
-        final columnWidths = isMobile
-            ? mobileMinColumnWidths
-            : columnProportions.map((p) => p * maxWidth).toList();
+              // Минимальные ширины для мобильных:
+              final mobileMinColumnWidths = [
+                40.0, // колонка с чекбоксом
+                100.0, // Товар
+                80.0, // Выручка
+                80.0, // Цена
+                80.0, // Продавец
+                80.0, // Бренд
+                80.0, // Заказы
+                80.0, // Детали
+              ];
 
-        final columns = <TableColumn>[
-          TableColumn(width: columnWidths[0]),
-          TableColumn(width: columnWidths[1]),
-          TableColumn(width: columnWidths[2]),
-          TableColumn(width: columnWidths[3]),
-          TableColumn(width: columnWidths[4]),
-          TableColumn(width: columnWidths[5]),
-          TableColumn(width: columnWidths[6]),
-        ];
+              // Пропорции столбцов для десктопа:
+              final columnProportions = [
+                0.05, // Чекбокс
+                0.2, // Товар
+                0.12, // Выручка
+                0.12, // Цена
+                0.12, // Продавец
+                0.12, // Бренд
+                0.12, // Заказы
+                0.12, // Детали
+              ];
 
-        return Stack(
-          children: [
-            Positioned.fill(
-              child: Container(
-                margin: const EdgeInsets.all(8.0),
-                padding: const EdgeInsets.fromLTRB(16.0, 50.0, 16.0, 16.0),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: TableView.builder(
-                    controller: tableViewController,
-                    columns: columns,
-                    rowHeight: model.tableRowHeight,
-                    rowCount: detailedOrders.length,
-                    headerBuilder: (context, contentBuilder) {
-                      // Header builder //////////////////////////////////////////
+              // Вычислим итоговые ширины
+              final columnWidths = isMobile
+                  ? mobileMinColumnWidths
+                  : columnProportions.map((p) => p * maxWidth).toList();
 
-                      return contentBuilder(context, (context, columnIndex) {
-                        final headers = [
-                          "Товар",
-                          "Выручка (₽)",
-                          "Цена со скидкой (₽)",
-                          "Продавец",
-                          "Бренд",
-                          "Заказы кол-во",
-                          "Детали",
-                        ];
-                        final alignment = columnIndex == 0
-                            ? Alignment.centerLeft
-                            : Alignment.center;
+              // Итого 8 столбцов (1 чекбокс + 7 ваших)
+              final columns = <TableColumn>[
+                TableColumn(width: columnWidths[0]), // Чекбокс
+                TableColumn(width: columnWidths[1]),
+                TableColumn(width: columnWidths[2]),
+                TableColumn(width: columnWidths[3]),
+                TableColumn(width: columnWidths[4]),
+                TableColumn(width: columnWidths[5]),
+                TableColumn(width: columnWidths[6]),
+                TableColumn(width: columnWidths[7]),
+              ];
 
-                        return GestureDetector(
-                          onTap: () {
-                            if (columnIndex == 6) {
-                              return;
+              return Stack(
+                children: [
+                  // Само тело таблицы
+                  Positioned.fill(
+                    child: Container(
+                      margin: const EdgeInsets.all(8.0),
+                      padding:
+                          const EdgeInsets.fromLTRB(16.0, 50.0, 16.0, 16.0),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      child: TableView.builder(
+                        controller: tableViewController,
+                        columns: columns,
+                        rowHeight: model.tableRowHeight,
+                        rowCount: detailedOrders.length,
+                        headerBuilder: (context, contentBuilder) {
+                          // Заголовки столбцов
+                          return contentBuilder(context,
+                              (context, columnIndex) {
+                            if (columnIndex == 0) {
+                              return SizedBox();
                             }
-                            sortData(columnIndex);
-                          },
-                          child: Container(
-                            alignment: alignment,
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 4.0),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: columnIndex == 0
-                                  ? MainAxisAlignment.start
-                                  : MainAxisAlignment.center,
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    headers[columnIndex],
-                                    textAlign: columnIndex == 0
-                                        ? TextAlign.left
-                                        : TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize:
-                                          theme.textTheme.bodyMedium!.fontSize,
-                                      color: theme.colorScheme.onSurface,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 2,
-                                    softWrap: true,
-                                  ),
-                                ),
-                                if (columnIndex == sortColumnIndex)
-                                  Padding(
-                                    padding: const EdgeInsets.only(left: 4.0),
-                                    child: Icon(
-                                      isAscending
-                                          ? Icons.arrow_drop_down
-                                          : Icons.arrow_drop_up,
-                                      color: theme.colorScheme.onSurface,
-                                      size:
-                                          theme.textTheme.bodyMedium!.fontSize,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        );
-                      });
-                    },
-                    rowBuilder: (context, rowIndex, contentBuilder) {
-                      final item = detailedOrders[rowIndex];
 
-                      final basketNum = getBasketNum(item.productId);
-                      final imageUrl =
-                          calculateImageUrl(basketNum, item.productId);
-                      final cardUrl = calculateCardUrl(imageUrl);
+                            // Остальные 7 колонок:
+                            final headers = [
+                              "Товар",
+                              "Выручка (₽)",
+                              "Цена со скидкой (₽)",
+                              "Продавец",
+                              "Бренд",
+                              "Заказы кол-во",
+                              "Детали",
+                            ];
+                            final headerIndex = columnIndex - 1;
+                            final alignment = headerIndex == 0
+                                ? Alignment.centerLeft
+                                : Alignment.center;
 
-                      return contentBuilder(context, (context, columnIndex) {
-                        Widget content;
-                        switch (columnIndex) {
-                          case 0:
-                            content = imageUrl.isEmpty
-                                ? Row(
-                                    children: [
-                                      Image.asset(
-                                        'images/no_image.jpg',
-                                        width: 50,
+                            return GestureDetector(
+                              onTap: () {
+                                // "Детали" = последний индекс (6), не сортируем
+                                if (headerIndex == 6) return;
+                                sortData(headerIndex);
+                              },
+                              child: Container(
+                                alignment: alignment,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 4.0),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: headerIndex == 0
+                                      ? MainAxisAlignment.start
+                                      : MainAxisAlignment.center,
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        headers[headerIndex],
+                                        textAlign: headerIndex == 0
+                                            ? TextAlign.left
+                                            : TextAlign.center,
+                                        style: TextStyle(
+                                          fontSize: theme
+                                              .textTheme.bodyMedium!.fontSize,
+                                          color: theme.colorScheme.onSurface,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 2,
+                                        softWrap: true,
                                       ),
-                                      const SizedBox(width: 8),
-                                      const Text("Описание отсутствует"),
-                                    ],
-                                  )
-                                : FutureBuilder<String>(
-                                    future:
-                                        fetchCardInfo(cardUrl).then((value) {
-                                      return value.imtName;
-                                    }),
-                                    builder: (context, snapshot) {
-                                      final description =
-                                          snapshot.data ?? "Загрузка...";
-                                      final wildberriesUrl =
-                                          "https://wildberries.ru/catalog/${item.productId}/detail.aspx?targetUrl=EX";
-                                      return Row(
-                                        children: [
-                                          GestureDetector(
-                                            onTap: () {
-                                              if (imageUrl.isNotEmpty) {
-                                                showDialog(
-                                                  context: context,
-                                                  builder: (context) => Dialog(
-                                                    child: InteractiveViewer(
-                                                      child: FittedBox(
-                                                        fit: BoxFit.contain,
-                                                        child: Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(18.0),
-                                                          child: Image.network(
-                                                            imageUrl,
-                                                            fit: BoxFit.contain,
-                                                            loadingBuilder:
-                                                                (context, child,
-                                                                    loadingProgress) {
-                                                              if (loadingProgress ==
-                                                                  null) {
-                                                                return child;
-                                                              }
-                                                              return const SizedBox(
-                                                                width: 100,
-                                                                height: 100,
-                                                                child: Center(
-                                                                    child:
-                                                                        CircularProgressIndicator()),
-                                                              );
-                                                            },
-                                                            errorBuilder:
-                                                                (context, error,
-                                                                    stackTrace) {
-                                                              return const Center(
-                                                                child: Text(
-                                                                    'Ошибка загрузки изображения'),
-                                                              );
-                                                            },
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                );
-                                              }
-                                            },
-                                            child: Image.network(
-                                              imageUrl,
-                                              width: 50,
-                                              height: 50,
-                                              fit: BoxFit.cover,
-                                              errorBuilder:
-                                                  (context, error, stackTrace) {
-                                                return Image.asset(
-                                                  'images/no_image.jpg',
-                                                  width: 50,
-                                                );
-                                              },
-                                              loadingBuilder: (context, child,
-                                                  loadingProgress) {
-                                                if (loadingProgress == null) {
-                                                  return child;
-                                                }
-                                                return const SizedBox(
-                                                  width: 50,
-                                                  height: 50,
-                                                  child: Center(
-                                                      child:
-                                                          CircularProgressIndicator()),
-                                                );
-                                              },
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: MouseRegion(
-                                              cursor: SystemMouseCursors.click,
-                                              child: GestureDetector(
-                                                onTap: () => launchUrl(
-                                                    Uri.parse(wildberriesUrl)),
-                                                child: Text(
-                                                  description,
-                                                  maxLines: 2,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: const TextStyle(
-                                                    decoration: TextDecoration
-                                                        .underline,
-                                                    decorationColor:
-                                                        Color(0xFF5166e3),
-                                                    color: Color(0xFF5166e3),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  );
-
-                            break;
-                          case 1: // REVENUE
-                            content = Text((item.price * item.orders)
-                                .toString()
-                                .formatWithThousands());
-                            break;
-                          case 2: // PRICE
-                            content = Text(
-                                item.price.toString().formatWithThousands());
-
-                            break;
-                          case 3: // SALLER
-                            content = Text(item.supplier.toString());
-                            break;
-                          case 4: // Brand
-                            content = Text(item.brand);
-                            break;
-                          case 5: // Orders count
-                            content = Text(
-                                item.orders.toString().formatWithThousands());
-                            break;
-
-                          case 6:
-                            content = MouseRegion(
-                              cursor: SystemMouseCursors.click,
-                              child: GestureDetector(
-                                onTap: () => navigateToProduct(
-                                    item.productId, item.price),
-                                child: Container(
-                                  alignment: Alignment.center,
-                                  width: isMobileOrLaptop
-                                      ? columns[6].width * 0.7
-                                      : columns[6].width * 0.35,
-                                  height: isMobileOrLaptop
-                                      ? columns[6].width * 0.3
-                                      : columns[6].width * 0.15,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(4.0),
-                                    border: Border.all(
-                                      color: theme.colorScheme.primary,
-                                      width: 1.0,
                                     ),
-                                  ),
-                                  child: Text(
-                                    'Перейти',
-                                    style: TextStyle(
-                                        // fontWeight: FontWeight.w600,
-                                        color: theme.colorScheme.primary,
-                                        fontSize: isMobileOrLaptop
-                                            ? columns[6].width * 0.12
-                                            : columns[6].width * 0.06),
-                                  ),
+                                    if (headerIndex == sortColumnIndex)
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(left: 4.0),
+                                        child: Icon(
+                                          isAscending
+                                              ? Icons.arrow_drop_down
+                                              : Icons.arrow_drop_up,
+                                          color: theme.colorScheme.onSurface,
+                                          size: theme
+                                              .textTheme.bodyMedium!.fontSize,
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
                             );
-                          default:
-                            content = const SizedBox();
-                        }
+                          });
+                        },
+                        rowBuilder: (context, rowIndex, contentBuilder) {
+                          final item = detailedOrders[rowIndex];
 
-                        return Container(
-                          decoration: BoxDecoration(
-                              border: Border(
-                            bottom: BorderSide(
-                              color:
-                                  theme.colorScheme.onSurface.withOpacity(0.2),
-                              width: 1.0,
-                            ),
-                          )),
-                          alignment: columnIndex == 0
-                              ? Alignment.centerLeft
-                              : Alignment.center,
-                          padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                          child: content,
-                        );
-                      });
-                    }),
-              ),
-            ),
-            Positioned(
-              right: 26,
-              top: 26,
-              child: TextButton(
-                onPressed: () {
-                  // _showFilterDialog(context, model);
-                  toggleFilterVisibility();
-                },
-                child: Text(
-                  "Фильтры",
-                  style: TextStyle(
-                    fontSize: theme.textTheme.bodyMedium!.fontSize,
-                    color: theme.colorScheme.onSurface,
+                          final basketNum = getBasketNum(item.productId);
+                          final imageUrl =
+                              calculateImageUrl(basketNum, item.productId);
+                          final cardUrl = calculateCardUrl(imageUrl);
+
+                          return contentBuilder(context,
+                              (context, columnIndex) {
+                            // 0-й столбец: чекбокс выбора
+                            if (columnIndex == 0) {
+                              return Container(
+                                alignment: Alignment.center,
+                                child: Checkbox(
+                                  activeColor: Colors.transparent,
+                                  value: selectedRows.contains(item.productId),
+                                  onChanged: (bool? value) {
+                                    selectRow(item.productId);
+                                  },
+                                ),
+                              );
+                            }
+
+                            // Остальные данные (columnIndex - 1)
+                            final dataIndex = columnIndex - 1;
+                            Widget content;
+                            switch (dataIndex) {
+                              case 0: // Товар
+                                content = imageUrl.isEmpty
+                                    ? Row(
+                                        children: [
+                                          Image.asset(
+                                            'images/no_image.jpg',
+                                            width: 50,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          const Text("Описание отсутствует"),
+                                        ],
+                                      )
+                                    : FutureBuilder<String>(
+                                        future: fetchCardInfo(cardUrl)
+                                            .then((value) => value.imtName),
+                                        builder: (context, snapshot) {
+                                          final description =
+                                              snapshot.data ?? "Загрузка...";
+                                          final wildberriesUrl =
+                                              "https://wildberries.ru/catalog/${item.productId}/detail.aspx?targetUrl=EX";
+                                          return Row(
+                                            children: [
+                                              GestureDetector(
+                                                onTap: () {
+                                                  if (imageUrl.isNotEmpty) {
+                                                    showDialog(
+                                                      context: context,
+                                                      builder: (context) =>
+                                                          Dialog(
+                                                        child:
+                                                            InteractiveViewer(
+                                                          child: FittedBox(
+                                                            fit: BoxFit.contain,
+                                                            child: Padding(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .all(
+                                                                      18.0),
+                                                              child:
+                                                                  Image.network(
+                                                                imageUrl,
+                                                                fit: BoxFit
+                                                                    .contain,
+                                                                loadingBuilder:
+                                                                    (context,
+                                                                        child,
+                                                                        loadingProgress) {
+                                                                  if (loadingProgress ==
+                                                                      null) {
+                                                                    return child;
+                                                                  }
+                                                                  return const SizedBox(
+                                                                    width: 100,
+                                                                    height: 100,
+                                                                    child: Center(
+                                                                        child:
+                                                                            CircularProgressIndicator()),
+                                                                  );
+                                                                },
+                                                                errorBuilder:
+                                                                    (context,
+                                                                        error,
+                                                                        stackTrace) {
+                                                                  return const Center(
+                                                                    child: Text(
+                                                                        'Ошибка загрузки изображения'),
+                                                                  );
+                                                                },
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }
+                                                },
+                                                child: Image.network(
+                                                  imageUrl,
+                                                  width: 50,
+                                                  height: 50,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (context, error,
+                                                      stackTrace) {
+                                                    return Image.asset(
+                                                      'images/no_image.jpg',
+                                                      width: 50,
+                                                    );
+                                                  },
+                                                  loadingBuilder: (context,
+                                                      child, loadingProgress) {
+                                                    if (loadingProgress ==
+                                                        null) {
+                                                      return child;
+                                                    }
+                                                    return const SizedBox(
+                                                      width: 50,
+                                                      height: 50,
+                                                      child: Center(
+                                                        child:
+                                                            CircularProgressIndicator(),
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: MouseRegion(
+                                                  cursor:
+                                                      SystemMouseCursors.click,
+                                                  child: GestureDetector(
+                                                    onTap: () => launchUrl(
+                                                        Uri.parse(
+                                                            wildberriesUrl)),
+                                                    child: Text(
+                                                      description,
+                                                      maxLines: 2,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: const TextStyle(
+                                                        decoration:
+                                                            TextDecoration
+                                                                .underline,
+                                                        decorationColor:
+                                                            Color(0xFF5166e3),
+                                                        color:
+                                                            Color(0xFF5166e3),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+                                break;
+                              case 1: // Выручка
+                                content = Text(
+                                  (item.price * item.orders)
+                                      .toString()
+                                      .formatWithThousands(),
+                                );
+                                break;
+                              case 2: // Цена
+                                content = Text(
+                                  item.price.toString().formatWithThousands(),
+                                );
+                                break;
+                              case 3: // Продавец
+                                content = Text(item.supplier.toString());
+                                break;
+                              case 4: // Бренд
+                                content = Text(item.brand);
+                                break;
+                              case 5: // Заказы
+                                content = Text(
+                                  item.orders.toString().formatWithThousands(),
+                                );
+                                break;
+                              case 6: // Детали
+                                content = MouseRegion(
+                                  cursor: SystemMouseCursors.click,
+                                  child: GestureDetector(
+                                    onTap: () => navigateToProduct(
+                                        item.productId, item.price),
+                                    child: Container(
+                                      alignment: Alignment.center,
+                                      width: isMobileOrLaptop
+                                          ? columns[columnIndex].width * 0.7
+                                          : columns[columnIndex].width * 0.35,
+                                      height: isMobileOrLaptop
+                                          ? columns[columnIndex].width * 0.3
+                                          : columns[columnIndex].width * 0.15,
+                                      decoration: BoxDecoration(
+                                        borderRadius:
+                                            BorderRadius.circular(4.0),
+                                        border: Border.all(
+                                          color: theme.colorScheme.primary,
+                                          width: 1.0,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        'Перейти',
+                                        style: TextStyle(
+                                          color: theme.colorScheme.primary,
+                                          fontSize: isMobileOrLaptop
+                                              ? columns[columnIndex].width *
+                                                  0.12
+                                              : columns[columnIndex].width *
+                                                  0.06,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                                break;
+                              default:
+                                content = const SizedBox();
+                            }
+
+                            return Container(
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: theme.colorScheme.onSurface
+                                        .withOpacity(0.2),
+                                    width: 1.0,
+                                  ),
+                                ),
+                              ),
+                              alignment: dataIndex == 0
+                                  ? Alignment.centerLeft
+                                  : Alignment.center,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 4.0),
+                              child: content,
+                            );
+                          });
+                        },
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ),
-            Positioned(
-              left: 26,
-              top: 26,
-              child: Text(
-                model.tableHeaderText,
-                style: TextStyle(
-                  fontSize: theme.textTheme.titleLarge!.fontSize,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+                  // Кнопка "Фильтры"
+                  Positioned(
+                    right: 26,
+                    top: 26,
+                    child: TextButton(
+                      onPressed: () {
+                        toggleFilterVisibility();
+                      },
+                      child: Text(
+                        "Фильтры",
+                        style: TextStyle(
+                          fontSize: theme.textTheme.bodyMedium!.fontSize,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Заголовок таблицы
+                  Positioned(
+                    left: 26,
+                    top: 26,
+                    child: Text(
+                      model.tableHeaderText,
+                      style: TextStyle(
+                        fontSize: theme.textTheme.titleLarge!.fontSize,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

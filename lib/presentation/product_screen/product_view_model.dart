@@ -66,7 +66,7 @@ class ProductViewModel extends ViewModelBase {
   // Fields
 
   Map<String, String?> _tokenInfo = {};
-  Map<String, String?> get tokenInfo => _tokenInfo;
+  // Map<String, String?> get tokenInfo => _tokenInfo;
 
   bool get isFree => _tokenInfo["type"] == "free";
 

@@ -122,8 +122,12 @@ class __ScaffoldState extends State<_Scaffold> {
   String?
       _currentSubjectName; // Stores the selected subject Name (for SubjectProductsScreen) look _buildBodyContent
 
-  int? _currentProductId;
-  int? _currentProductPrice;
+  int? _currentProductId; // Stores the selected product ID (for ProductScreen)
+  int?
+      _currentProductPrice; // Stores the selected product price (for ProductScreen)
+
+  List<int>?
+      _selectedProductIds; // List to store selected product IDs for SeoRequestsExtendScreen
 
   final List<_Section> sections = [
     _Section(
@@ -145,7 +149,9 @@ class __ScaffoldState extends State<_Scaffold> {
     //   ],
     // ),
     // _Section(title: 'Поиск по SKU', icon: Icons.search, subsections: []),
-    // _Section(title: 'SEO', icon: Icons.query_stats, subsections: []),
+    _Section(title: 'SEO', icon: Icons.query_stats, subsections: [
+      _Subsection(title: 'Расширение запросов'),
+    ]),
     // _Section(        title: 'Настройка рассылок', icon: Icons.settings, subsections: []),
     // Section(title: 'Настройка', icon: Icons.settings, subsections: []),
     // Section(title: 'Помощь', icon: Icons.help, subsections: []),
@@ -191,6 +197,7 @@ class __ScaffoldState extends State<_Scaffold> {
                 index: _getCurrentIndex(),
                 children: [
                   widget.screenFactory.makeChoosingNicheScreen(
+                    // 0 ChoosingNicheScreen
                     onNavigateToSubjectProducts:
                         (int subjectId, String subjectName) {
                       setState(() {
@@ -201,7 +208,8 @@ class __ScaffoldState extends State<_Scaffold> {
                       });
                     },
                   ),
-                  (_currentSubjectId != null && _currentSubjectName != null)
+                  (_currentSubjectId != null &&
+                          _currentSubjectName != null) // 1 SubjectProducts
                       ? KeyedSubtree(
                           key: ValueKey(_currentSubjectId),
                           child: widget.screenFactory.makeSubjectProductsScreen(
@@ -222,6 +230,14 @@ class __ScaffoldState extends State<_Scaffold> {
                                   _selectedSubsectionIndex = 1;
                                   _currentSubjectId = null;
                                   _currentSubjectName = null;
+                                });
+                              },
+                              onNavigateToSeoRequestsExtendScreen:
+                                  (List<int> ids) {
+                                setState(() {
+                                  _selectedSectionIndex = 1;
+                                  _selectedSubsectionIndex = 0;
+                                  _selectedProductIds = ids;
                                 });
                               },
                               onNavigateBack: () {
@@ -246,7 +262,8 @@ class __ScaffoldState extends State<_Scaffold> {
                             _selectedSubsectionIndex = 0;
                           });
                         }),
-                  (_currentProductId != null && _currentProductPrice != null)
+                  (_currentProductId != null &&
+                          _currentProductPrice != null) // 2 Product
                       ? KeyedSubtree(
                           key: ValueKey(_currentProductId),
                           child: widget.screenFactory.makeProductScreen(
@@ -282,6 +299,27 @@ class __ScaffoldState extends State<_Scaffold> {
                             _selectedSubsectionIndex = 0;
                           });
                         }),
+                  (_selectedProductIds != null)
+                      ? KeyedSubtree(
+                          key: ValueKey(_selectedProductIds.hashCode),
+                          child: widget.screenFactory.makeSeoRequestsExtendScreen(
+                              // 3 SeoRequestsExtendScreen //////////////////////////
+                              productIds: _selectedProductIds!,
+                              onNavigateBack: () {
+                                setState(() {
+                                  _selectedSectionIndex = 0;
+                                  _selectedSubsectionIndex = 1;
+                                });
+                              }),
+                        )
+                      : Center(
+                          child: Text(
+                            'Вы не выбрали товары',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
                 ],
               ),
             ),
@@ -296,7 +334,11 @@ class __ScaffoldState extends State<_Scaffold> {
       return 1;
     } else if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 2) {
       return 2;
-    } else if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 3) {
+    }
+    // else if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 3) {
+    //   return 3;
+    // }
+    else if (_selectedSectionIndex == 1 && _selectedSubsectionIndex == 0) {
       return 3;
     }
     return 0;

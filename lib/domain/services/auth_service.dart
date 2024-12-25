@@ -9,6 +9,7 @@ import 'package:mc_dashboard/presentation/choosing_niche_screen/choosing_niche_v
 
 import 'package:mc_dashboard/presentation/login_screen/login_view_model.dart';
 import 'package:mc_dashboard/presentation/product_screen/product_view_model.dart';
+import 'package:mc_dashboard/presentation/seo_requests_extend_screen/seo_requests_extend_view_model.dart';
 import 'package:mc_dashboard/presentation/subject_products_screen/subject_products_view_model.dart';
 
 abstract class AuthServiceAuthApiClient {
@@ -27,6 +28,7 @@ class AuthService
     implements
         LoginViewModelAuthService,
         ChoosingNicheAuthService,
+        SeoRequestsExtendAuthService,
         SubjectProductsAuthService,
         ProductAuthService {
   final AuthServiceAuthApiClient apiClient;
