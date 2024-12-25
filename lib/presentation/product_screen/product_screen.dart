@@ -1227,6 +1227,7 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
                       return contentBuilder(context, (context, columnIndex) {
                         if (columnIndex == 0) {
                           return Checkbox(
+                            activeColor: Colors.transparent,
                             value: selectedIndices.contains(rowIndex),
                             onChanged: (isSelected) {
                               setState(() {
