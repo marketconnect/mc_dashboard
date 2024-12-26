@@ -114,6 +114,7 @@ class _Scaffold extends StatefulWidget {
 }
 
 class __ScaffoldState extends State<_Scaffold> {
+  List<ExpansionTileController> _controllers = [];
   int _selectedSectionIndex = 0;
   int? _selectedSubsectionIndex; // Stores the selected subsection index
 
@@ -156,6 +157,15 @@ class __ScaffoldState extends State<_Scaffold> {
     // Section(title: 'Настройка', icon: Icons.settings, subsections: []),
     // Section(title: 'Помощь', icon: Icons.help, subsections: []),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _controllers = List.generate(
+      sections.length,
+      (_) => ExpansionTileController(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -238,6 +248,7 @@ class __ScaffoldState extends State<_Scaffold> {
                                   _selectedSectionIndex = 1;
                                   _selectedSubsectionIndex = 0;
                                   _selectedProductIds = ids;
+                                  _controllers[1].expand();
                                 });
                               },
                               onNavigateBack: () {
@@ -437,6 +448,7 @@ class __ScaffoldState extends State<_Scaffold> {
                   );
                 } else {
                   return ExpansionTile(
+                    controller: _controllers[sectionIndex],
                     leading: Icon(
                       section.icon,
                       color: sectionIndex == _selectedSectionIndex
