@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:material_table_view/material_table_view.dart';
 import 'package:mc_dashboard/core/utils/basket_num.dart';
 import 'package:mc_dashboard/core/utils/strings_ext.dart';
@@ -30,16 +31,16 @@ class SubjectProductsScreen extends StatelessWidget {
                 onTap: () => model.navigateToSeoRequestsExtendScreen(),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primary,
-                    borderRadius: BorderRadius.circular(16.0),
-                    border: Border.all(color: theme.colorScheme.outline),
+                    color: theme.colorScheme.secondary,
+                    borderRadius: BorderRadius.circular(8.0),
+                    border: Border.all(color: theme.colorScheme.onSecondary),
                   ),
                   padding: const EdgeInsets.all(16.0),
                   child: Text(
                     "Расширение запросов",
                     style: TextStyle(
-                        color: theme.colorScheme.onPrimary,
-                        fontWeight: FontWeight.bold),
+                        color: theme.colorScheme.onSecondary,
+                        fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -697,6 +698,7 @@ class _TableWidgetState extends State<_TableWidget> {
                               return Container(
                                 alignment: Alignment.center,
                                 child: Checkbox(
+                                  checkColor: theme.colorScheme.secondary,
                                   activeColor: Colors.transparent,
                                   value: selectedRows.contains(item.productId),
                                   onChanged: (bool? value) {
