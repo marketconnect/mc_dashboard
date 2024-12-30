@@ -96,14 +96,14 @@ class SeoRequestsExtendScreen extends StatelessWidget {
                 },
                 child: Container(
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primary,
+                    color: theme.colorScheme.secondary,
                     borderRadius: BorderRadius.circular(16.0),
-                    border: Border.all(color: theme.colorScheme.outline),
+                    border: Border.all(color: theme.colorScheme.onSecondary),
                   ),
                   padding: const EdgeInsets.all(16.0),
                   child: Text(
                     'Экспорт в Excel',
-                    style: TextStyle(color: theme.colorScheme.onPrimary),
+                    style: TextStyle(color: theme.colorScheme.onSecondary),
                   ),
                 ),
               ),
@@ -294,6 +294,8 @@ class _NormqueryTableWidgetState extends State<_NormqueryTableWidget> {
                         return contentBuilder(context, (context, columnIndex) {
                           if (columnIndex == 0) {
                             return Checkbox(
+                              activeColor: Colors.transparent,
+                              checkColor: theme.colorScheme.secondary,
                               value: selectAll,
                               onChanged: (value) {
                                 selectAllMethod();
@@ -331,6 +333,7 @@ class _NormqueryTableWidgetState extends State<_NormqueryTableWidget> {
                           if (columnIndex == 0) {
                             return Checkbox(
                                 activeColor: Colors.transparent,
+                                checkColor: theme.colorScheme.secondary,
                                 value: selectedIndices.contains(rowIndex),
                                 onChanged: (isSelected) {
                                   selectRow(rowIndex);
