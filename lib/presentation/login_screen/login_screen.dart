@@ -9,7 +9,7 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<LoginViewModel>();
-
+    final showBtn = viewModel.showBtn;
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       color: Colors.white,
@@ -116,25 +116,26 @@ class LoginScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: () async {
-                        await viewModel.signInOrRegister();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF07cf79),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                    if (showBtn)
+                      ElevatedButton(
+                        onPressed: () async {
+                          await viewModel.signInOrRegister();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xFF07cf79),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Text(
+                          viewModel.isRegisterMode
+                              ? 'Зарегистрироваться'
+                              : 'Войти',
+                          style: const TextStyle(
+                              fontSize: 18, color: Colors.white),
                         ),
                       ),
-                      child: Text(
-                        viewModel.isRegisterMode
-                            ? 'Зарегистрироваться'
-                            : 'Войти',
-                        style:
-                            const TextStyle(fontSize: 18, color: Colors.white),
-                      ),
-                    ),
                     if (viewModel.errorMessage != null) ...[
                       const SizedBox(height: 12),
                       Text(

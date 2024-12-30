@@ -35,7 +35,8 @@ class SubjectProductsScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8.0),
                     border: Border.all(color: theme.colorScheme.onSecondary),
                   ),
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 20.0, horizontal: 16.0),
                   child: Text(
                     "Расширение запросов",
                     style: TextStyle(

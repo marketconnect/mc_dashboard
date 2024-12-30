@@ -97,13 +97,16 @@ class SeoRequestsExtendScreen extends StatelessWidget {
                 child: Container(
                   decoration: BoxDecoration(
                     color: theme.colorScheme.secondary,
-                    borderRadius: BorderRadius.circular(16.0),
+                    borderRadius: BorderRadius.circular(8.0),
                     border: Border.all(color: theme.colorScheme.onSecondary),
                   ),
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 20.0, horizontal: 16.0),
                   child: Text(
                     'Экспорт в Excel',
-                    style: TextStyle(color: theme.colorScheme.onSecondary),
+                    style: TextStyle(
+                        color: theme.colorScheme.onSecondary,
+                        fontWeight: FontWeight.w600),
                   ),
                 ),
               ),

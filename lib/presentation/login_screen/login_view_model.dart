@@ -32,8 +32,15 @@ class LoginViewModel extends ViewModelBase {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // Methods
+  bool _showBtn = true;
+  bool get showBtn => _showBtn;
+  void setShowBtn(bool value) {
+    _showBtn = value;
+    notifyListeners();
+  }
 
   Future<void> signInOrRegister() async {
+    setShowBtn(false);
     errorMessage = null;
 
     final email = emailController.text.trim();
@@ -41,6 +48,7 @@ class LoginViewModel extends ViewModelBase {
 
     if (email.isEmpty || password.isEmpty) {
       errorMessage = 'Заполните все поля';
+      setShowBtn(true);
       notifyListeners();
       return;
     }
@@ -75,6 +83,7 @@ class LoginViewModel extends ViewModelBase {
         result = await authService.register();
       }
       if (result.isLeft()) {
+        setShowBtn(true);
         errorMessage = isRegisterMode
             ? "Ошибка регистрации на сервере"
             : "Ошибка авторизации на сервере";
@@ -90,9 +99,9 @@ class LoginViewModel extends ViewModelBase {
       );
     } on FirebaseAuthException catch (e) {
       errorMessage = e.message;
-
-      notifyListeners();
     }
+    setShowBtn(true);
+    notifyListeners();
   }
 
   @override
