@@ -2,8 +2,11 @@ import 'dart:ui';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:material_table_view/material_table_view.dart';
+
 import 'package:mc_dashboard/core/utils/dates.dart';
 import 'package:mc_dashboard/presentation/product_screen/product_view_model.dart';
+import 'package:mc_dashboard/presentation/product_screen/table_row_model.dart';
+import 'package:mc_dashboard/theme/color_schemes.dart';
 import 'package:pie_chart/pie_chart.dart' as pie_chart;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -64,6 +67,7 @@ class _ProductScreenState extends State<ProductScreen> {
     }).toList();
     final wildberriesUrl =
         "https://wildberries.ru/catalog/${id}/detail.aspx?targetUrl=EX";
+
     return Scaffold(
       body: SingleChildScrollView(
         child: Center(
@@ -191,6 +195,41 @@ class _ProductScreenState extends State<ProductScreen> {
                     constraints: const BoxConstraints(maxWidth: 1016),
                     child: NormqueryTableWidget(),
                   ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Анализ эффективности SEO',
+                    style: theme.textTheme.titleLarge
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 16),
+                  if (model.seoTableSections.isNotEmpty)
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1016),
+                      child: SeoSectionWidget(
+                        sectionTitle: "Заголовок",
+                        querySimilarities: model.seoTableSections["title"]!,
+                      ),
+                    ),
+                  const SizedBox(height: 16),
+                  if (model.seoTableSections.isNotEmpty)
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1016),
+                      child: SeoSectionWidget(
+                        sectionTitle: "Характеристики",
+                        querySimilarities:
+                            model.seoTableSections["characteristics"]!,
+                      ),
+                    ),
+                  const SizedBox(height: 16),
+                  if (model.seoTableSections.isNotEmpty)
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1016),
+                      child: SeoSectionWidget(
+                        sectionTitle: "Описание",
+                        querySimilarities:
+                            model.seoTableSections["description"]!,
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -792,11 +831,10 @@ class ImageCarousel extends StatelessWidget {
   Widget build(BuildContext context) {
     final model = context.watch<ProductViewModel>();
     final images = model.images;
-    final theme = Theme.of(context);
+
     if (images.isEmpty) {
-      return Shimmer.fromColors(
-        baseColor: theme.colorScheme.surfaceContainerHighest,
-        highlightColor: theme.colorScheme.surfaceContainer,
+      return Shimmer(
+        gradient: Theme.of(context).colorScheme.shimmerGradient,
         child: Container(
           height: 800,
           width: double.infinity,
@@ -1219,8 +1257,7 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
                   width: widthFraction * MediaQuery.of(context).size.width))
               .toList();
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          return Stack(
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
@@ -1349,42 +1386,65 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  // Получение выбранных элементов
-                  final selectedItems = selectedIndices
-                      .map((index) => normqueryProducts[index])
-                      .toList();
+              if (selectedIndices.isNotEmpty)
+                Positioned(
+                  bottom: 24,
+                  right: maxWidth / 2 - 80,
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: () {
+                        // Получение выбранных элементов
+                        final selectedItems = selectedIndices
+                            .map((index) => normqueryProducts[index])
+                            .toList();
 
-                  if (selectedItems.isEmpty) {
-                    // Если ничего не выбрано, можно уведомить пользователя
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content:
-                              Text('Нет выбранных элементов для копирования')),
-                    );
-                    return;
-                  }
+                        if (selectedItems.isEmpty) {
+                          // Если ничего не выбрано, можно уведомить пользователя
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text(
+                                    'Нет выбранных элементов для копирования')),
+                          );
+                          return;
+                        }
 
-                  // Формирование строки для копирования
-                  final clipboardContent = selectedItems.map((product) {
-                    return '${product.normquery}\t${((product.pageNumber - 1) * 100 + product.pagePos)}\t${product.freq}\t${product.total}';
-                  }).join('\n'); // Разделитель строк - перенос
-                  final clipboardContentWithColumnNames =
-                      'Ключевой запрос\tПозиция\tЧастота\tВсего товаров\n$clipboardContent';
-                  // Копирование данных в буфер обмена
-                  Clipboard.setData(
-                      ClipboardData(text: clipboardContentWithColumnNames));
+                        // Формирование строки для копирования
+                        final clipboardContent = selectedItems.map((product) {
+                          return '${product.normquery}\t${((product.pageNumber - 1) * 100 + product.pagePos)}\t${product.freq}\t${product.total}';
+                        }).join('\n'); // Разделитель строк - перенос
+                        final clipboardContentWithColumnNames =
+                            'Ключевой запрос\tПозиция\tЧастота\tВсего товаров\n$clipboardContent';
+                        // Копирование данных в буфер обмена
+                        Clipboard.setData(ClipboardData(
+                            text: clipboardContentWithColumnNames));
 
-                  // Уведомление пользователя о выполнении копирования
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Данные скопированы в буфер обмена')),
-                  );
-                },
-                child: const Text('Копировать'),
-              ),
+                        // Уведомление пользователя о выполнении копирования
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content:
+                                  Text('Данные скопированы в буфер обмена')),
+                        );
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.secondary,
+                          borderRadius: BorderRadius.circular(8.0),
+                          border:
+                              Border.all(color: theme.colorScheme.onSecondary),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 20.0, horizontal: 16.0),
+                        child: Text(
+                          "Копировать",
+                          style: TextStyle(
+                              color: theme.colorScheme.onSecondary,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           );
         }),
@@ -1427,5 +1487,114 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
         Text('Нет данных для отображения'),
       ],
     );
+  }
+}
+
+class SeoSectionWidget extends StatelessWidget {
+  final String sectionTitle;
+  final List<SEOTableRowModel> querySimilarities;
+
+  const SeoSectionWidget({
+    super.key,
+    required this.sectionTitle,
+    required this.querySimilarities,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    if (querySimilarities.isEmpty) {
+      return _noDataPlaceholder();
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            sectionTitle,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Table(
+            columnWidths: const {
+              0: FlexColumnWidth(2),
+              1: FlexColumnWidth(1),
+              2: FlexColumnWidth(1),
+            },
+            border: TableBorder.all(color: theme.dividerColor),
+            children: [
+              TableRow(
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withOpacity(0.1),
+                ),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      'Ключевой запрос',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      'Релевантность',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      'Частотность',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
+              ...querySimilarities.map((row) => TableRow(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(row.normquery),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          '${(row.titleSimilarity * 100).toStringAsFixed(1)}%',
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text('${row.freq}'),
+                      ),
+                    ],
+                  )),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _noDataPlaceholder() {
+    return Center(child: Text("Нет данных для отображения"));
   }
 }

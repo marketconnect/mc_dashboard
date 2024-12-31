@@ -7,6 +7,7 @@ import 'package:material_table_view/material_table_view.dart';
 import 'package:mc_dashboard/core/utils/dates.dart';
 
 import 'package:mc_dashboard/presentation/seo_requests_extend_screen/seo_requests_extend_view_model.dart';
+import 'package:mc_dashboard/theme/color_schemes.dart';
 
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
@@ -243,9 +244,8 @@ class _NormqueryTableWidgetState extends State<_NormqueryTableWidget> {
     ];
 
     if (loading) {
-      return Shimmer.fromColors(
-        baseColor: theme.colorScheme.surfaceContainerHighest,
-        highlightColor: theme.colorScheme.surfaceContainer,
+      return Shimmer(
+        gradient: Theme.of(context).colorScheme.shimmerGradient,
         child: Container(
           margin: EdgeInsets.symmetric(horizontal: 5.0),
           decoration: BoxDecoration(

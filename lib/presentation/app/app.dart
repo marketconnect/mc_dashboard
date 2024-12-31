@@ -12,6 +12,7 @@ import 'package:mc_dashboard/routes/main_navigation.dart';
 import 'package:mc_dashboard/theme/text_theme.dart';
 import 'package:mc_dashboard/theme/color_schemes.dart';
 import 'package:mc_dashboard/theme/dialog_theme.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class App extends StatefulWidget {
   final ScreenFactory screenFactory;
@@ -364,57 +365,67 @@ class __ScaffoldState extends State<_Scaffold> {
         Expanded(
           child: ListView(
             children: [
-              Container(
-                alignment: Alignment.centerLeft,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppConfig.sideMenuWidth * 0.2,
-                    vertical: AppConfig.sideMenuWidth * 0.1),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  alignment: Alignment.center,
-                  children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
+              MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  onTap: () {
+                    // link to google.com
+                    launchUrl(Uri.parse('https://marketconnect.ru'));
+                  },
+                  child: Container(
+                    alignment: Alignment.centerLeft,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppConfig.sideMenuWidth * 0.2,
+                        vertical: AppConfig.sideMenuWidth * 0.1),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      alignment: Alignment.center,
                       children: [
-                        Text(
-                          'M',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontFamily: GoogleFonts.alikeAngular().fontFamily,
-                            color: theme.colorScheme.onPrimary,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'M',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontFamily:
+                                    GoogleFonts.alikeAngular().fontFamily,
+                                color: theme.colorScheme.onPrimary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'ARKET',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontFamily: GoogleFonts.waitingForTheSunrise()
+                                    .fontFamily,
+                                color: theme.colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
-                        Text(
-                          'ARKET',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontFamily:
-                                GoogleFonts.waitingForTheSunrise().fontFamily,
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.bold,
+                        Positioned(
+                          top: 20,
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 30),
+                            child: Text(
+                              'CONNECT',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontFamily: GoogleFonts.waitingForTheSunrise()
+                                    .fontFamily,
+                                color: theme.colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    Positioned(
-                      top: 20,
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 30),
-                        child: Text(
-                          'CONNECT',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontFamily:
-                                GoogleFonts.waitingForTheSunrise().fontFamily,
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
               _SideMenuDivider(theme: theme),

@@ -50,3 +50,39 @@ const darkColorScheme = ColorScheme(
   // side menu background
   surfaceContainerHighest: Color(0xFF212121),
 );
+
+extension ShimmerGradientScheme on ColorScheme {
+  LinearGradient get shimmerGradient {
+    return brightness == Brightness.dark
+        ? LinearGradient(
+            colors: [
+              const Color(0xFF333333), // Тёмный базовый цвет
+              const Color(0xFF4F4F4F), // Немного светлее
+              const Color(0xFF333333), // Повторяем базовый
+            ],
+            stops: [
+              0.1,
+              0.5,
+              0.9,
+            ],
+            begin: const Alignment(-1.0, -0.3),
+            end: const Alignment(1.0, 0.3),
+            tileMode: TileMode.clamp,
+          )
+        : LinearGradient(
+            colors: [
+              Color(0xFFEBEBF4),
+              Color(0xFFF4F4F4),
+              Color(0xFFEBEBF4),
+            ],
+            stops: [
+              0.1,
+              0.3,
+              0.4,
+            ],
+            begin: Alignment(-1.0, -0.3),
+            end: Alignment(1.0, 0.3),
+            tileMode: TileMode.clamp,
+          );
+  }
+}

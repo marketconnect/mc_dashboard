@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'package:material_table_view/material_table_view.dart';
+
 import 'package:mc_dashboard/core/utils/basket_num.dart';
 import 'package:mc_dashboard/core/utils/strings_ext.dart';
+import 'package:mc_dashboard/theme/color_schemes.dart';
 import 'package:provider/provider.dart';
 import 'package:mc_dashboard/presentation/subject_products_screen/subject_products_view_model.dart';
 
@@ -384,9 +386,8 @@ class _PieChartWithList extends StatelessWidget {
     final model = context.watch<SubjectProductsViewModel>();
     final theme = Theme.of(context);
     if (model.loading) {
-      return Shimmer.fromColors(
-        baseColor: theme.colorScheme.surfaceContainerHighest,
-        highlightColor: theme.colorScheme.surfaceContainer,
+      return Shimmer(
+        gradient: Theme.of(context).colorScheme.shimmerGradient,
         child: Container(
           height: 300,
           width: double.infinity,

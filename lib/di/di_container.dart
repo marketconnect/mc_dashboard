@@ -3,6 +3,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:mc_dashboard/api/auth.dart';
 import 'package:mc_dashboard/api/detailed_orders.dart';
+import 'package:mc_dashboard/api/kw_lemmas.dart';
+import 'package:mc_dashboard/api/lemmatize.dart';
 import 'package:mc_dashboard/api/normqueries.dart';
 import 'package:mc_dashboard/api/orders.dart';
 import 'package:mc_dashboard/api/stocks.dart';
@@ -11,6 +13,8 @@ import 'package:mc_dashboard/api/warehouses.dart';
 import 'package:mc_dashboard/core/dio/setup.dart';
 import 'package:mc_dashboard/domain/services/auth_service.dart';
 import 'package:mc_dashboard/domain/services/detailed_orders_service.dart';
+import 'package:mc_dashboard/domain/services/kw_lemmas_service.dart';
+import 'package:mc_dashboard/domain/services/lemmatize_service.dart';
 import 'package:mc_dashboard/domain/services/normqueries_service.dart';
 import 'package:mc_dashboard/domain/services/orders_service.dart';
 import 'package:mc_dashboard/domain/services/stocks_service.dart';
@@ -90,6 +94,13 @@ class _DIContainer {
 
   NormqueryService _makeNormqueryService() =>
       NormqueryService(NormqueriesApiClient(dio));
+
+  KwLemmaService _makeKwLemmaService() =>
+      KwLemmaService(KwLemmasApiClient(dio));
+
+  LemmatizeService _makeLemmatizeService() => LemmatizeService(
+        apiClient: LemmatizeApiClient(dio),
+      );
   // ViewModels ////////////////////////////////////////////////////////////////
   ChoosingNicheViewModel _makeChoosingNicheViewModel(
           BuildContext context,
@@ -155,10 +166,12 @@ class _DIContainer {
         ordersService: _makeOrdersService(),
         stocksService: _makeStocksService(),
         normqueryService: _makeNormqueryService(),
+        kwLemmaService: _makeKwLemmaService(),
         onNavigateBack: onNavigateBack,
         onNavigateToEmptyProductScreen: onNavigateToEmptyProductScreen,
         whService: _makeWhService(),
         authService: _makeAuthService(),
+        lemmatizeService: _makeLemmatizeService(),
         productPrice: productPrice,
       );
 

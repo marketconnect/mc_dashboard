@@ -64,7 +64,13 @@ Future<CardInfo> fetchCardInfo(String cardUrl) async {
     final response = await Dio().get(cardUrl);
     return CardInfo.fromJson(response.data);
   } catch (e) {
-    return CardInfo(imtName: "", imtId: 0, photoCount: 0, subjName: "");
+    return CardInfo(
+        imtName: "",
+        imtId: 0,
+        photoCount: 0,
+        subjName: "",
+        description: "",
+        characteristics: "");
   }
 }
 

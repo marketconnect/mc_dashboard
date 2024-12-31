@@ -19,3 +19,24 @@ abstract class DetailedOrdersApiClient {
     @Query("page_size") String? pageSize,
   });
 }
+
+class DetailedOrdersResponse {
+  final List<DetailedOrderItem> detailedOrders;
+
+  DetailedOrdersResponse({required this.detailedOrders});
+
+  factory DetailedOrdersResponse.fromJson(Map<String, dynamic> json) {
+    return DetailedOrdersResponse(
+      detailedOrders: (json['detailed_orders30d'] as List)
+          .map((item) => DetailedOrderItem.fromJson(item))
+          .toList(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'detailed_orders30d':
+          detailedOrders.map((item) => item.toJson()).toList(),
+    };
+  }
+}

@@ -1,13 +1,17 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
 import 'package:mc_dashboard/core/utils/basket_num.dart';
+import 'package:mc_dashboard/core/utils/similarity.dart';
 import 'package:mc_dashboard/domain/entities/card_info.dart';
 import 'package:mc_dashboard/domain/entities/feedback_info.dart';
+import 'package:mc_dashboard/domain/entities/kw_lemmas.dart';
+import 'package:mc_dashboard/domain/entities/lemmatize.dart';
 import 'package:mc_dashboard/domain/entities/normquery_product.dart';
 import 'package:mc_dashboard/domain/entities/order.dart';
 import 'package:mc_dashboard/domain/entities/stock.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/domain/entities/warehouse.dart';
+import 'package:mc_dashboard/presentation/product_screen/table_row_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 abstract class ProductViewModelStocksService {
@@ -39,6 +43,15 @@ abstract class ProductAuthService {
   logout();
 }
 
+abstract class ProductViewModelKwLemmaService {
+  Future<Either<AppErrorBase, List<KwLemmaItem>>> get({required List<int> ids});
+}
+
+abstract class ProductViewModelLemmatizeService {
+  Future<Either<AppErrorBase, LemmatizeResponse>> get(
+      {required LemmatizeRequest req});
+}
+
 class ProductViewModel extends ViewModelBase {
   ProductViewModel(
       {required super.context,
@@ -49,7 +62,9 @@ class ProductViewModel extends ViewModelBase {
       required this.ordersService,
       required this.authService,
       required this.normqueryService,
+      required this.kwLemmaService,
       required this.onNavigateToEmptyProductScreen,
+      required this.lemmatizeService,
       required this.productPrice}) {
     _asyncInit();
   }
@@ -60,38 +75,67 @@ class ProductViewModel extends ViewModelBase {
   final ProductViewModelWhService whService;
   final ProductViewModelNormqueryService normqueryService;
   final ProductAuthService authService;
+  final ProductViewModelKwLemmaService kwLemmaService;
+  final ProductViewModelLemmatizeService lemmatizeService;
   final void Function() onNavigateBack;
   final void Function() onNavigateToEmptyProductScreen;
 
-  // Fields
+  // Fields ////////////////////////////////////////////////////////////////////
 
+  // token and sub info
   Map<String, String?> _tokenInfo = {};
-  // Map<String, String?> get tokenInfo => _tokenInfo;
-
   bool get isFree => _tokenInfo["type"] == "free";
 
+  // payment url
   String? _paymentUrl;
   String? get paymentUrl => _paymentUrl;
 
+  // basket num
   String? _basketNum;
-  String _name = "";
-  String _subjectName = "";
+
+  // total orders in 30 days
+  int orders30d = 0;
+
+  // rating
   String _rating = "0.0";
   String get rating => _rating;
-  final List<String> _images = [];
-  int orders30d = 0;
+
+  // pics
   int _pics = 1;
+
+  // rating distribution
   Map<String, int> ratingDistribution = {};
+
+  // name
+  String _name = "";
   String get name => _name;
+
+  // description
+  String _description = "";
+  String get description => _description;
+
+  // characteristics
+  String _characteristics = "";
+  String get characteristics => _characteristics;
+
+  // subject
+  String _subjectName = "";
   String get subjectName => _subjectName;
+
+  // images
+  final List<String> _images = [];
   List<String> get images =>
       _images.map((el) => el.replaceAll("c246x328", "big")).toList();
-  List<String> pros = [];
 
-  // final List<Stock> _stocks = [];
-  // List<Stock> get stocks => _stocks;
+  // kw lemmas
+  final List<KwLemmaItem> _kwLemmas = [];
+  List<KwLemmaItem> get kwLemmas => _kwLemmas;
+
+  // warehouse shares
   List<Map<String, dynamic>> _warehouseShares = [];
   List<Map<String, dynamic>> get warehouseShares => _warehouseShares;
+
+  // total wh stocks
   int _totalWhStocks = 0;
   int get totalWhStocks => _totalWhStocks;
 
@@ -105,7 +149,6 @@ class ProductViewModel extends ViewModelBase {
 
   // warehouses
   Map<String, double> _warehousesOrdersSum = {};
-
   Map<String, double> get warehousesOrdersSum => _warehousesOrdersSum;
 
   // Stocks
@@ -116,6 +159,23 @@ class ProductViewModel extends ViewModelBase {
   List<NormqueryProduct> _normqueries = [];
   List<NormqueryProduct> get normqueries => _normqueries;
 
+  // pros and cons
+  List<String> pros = [];
+  List<String> cons = [];
+
+  String _lemmatizedName = "";
+  String _lemmatizedDescription = "";
+  String _lemmatizedCharacteristics = "";
+
+  // Seo table rows
+  Map<String, List<SEOTableRowModel>> _seoTableSections = {};
+  Map<String, List<SEOTableRowModel>> get seoTableSections => _seoTableSections;
+  // setters ///////////////////////////////////////////////////////////////////
+  void setKwLemmas(List<KwLemmaItem> value) {
+    _kwLemmas.clear();
+    _kwLemmas.addAll(value);
+  }
+
   void setPros(List<String> value) {
     // lowercase
     value = value.map((e) => e.toLowerCase()).toList();
@@ -125,7 +185,6 @@ class ProductViewModel extends ViewModelBase {
     pros = set.toList();
   }
 
-  List<String> cons = [];
   void setCons(List<String> value) {
     // lowercase
     value = value.map((e) => e.toLowerCase()).toList();
@@ -135,23 +194,27 @@ class ProductViewModel extends ViewModelBase {
     cons = set.toList();
   }
 
-  // Methods
+  // Methods ///////////////////////////////////////////////////////////////////
   Future<void> _asyncInit() async {
     setLoading();
     _basketNum = getBasketNum(productId);
-    // TODO may be do it subsequent
+
     final vals = await Future.wait([
       fetchCardInfo(
           calculateCardUrl(calculateImageUrl(_basketNum, productId))), // 0
       authService.getTokenAndType(), // 1
     ]);
 
+    // card info
     final cardInfo = vals[0] as CardInfo;
+
+    // token and sub info
     final tokenInfoOrEither =
         vals[1] as Either<AppErrorBase, Map<String, String?>>;
     if (tokenInfoOrEither.isRight()) {
       _tokenInfo = tokenInfoOrEither.fold((l) => {}, (r) => r);
     }
+
     final values = await Future.wait([
       fetchFeedbacks(cardInfo.imtId), // 0
       ordersService.getOneMonthOrders(productId: productId), // 1
@@ -171,7 +234,6 @@ class ProductViewModel extends ViewModelBase {
       whIds.addAll(orders.map((e) => e.warehouseId));
       // sum all orders
       orders30d = getTotalOrders(orders);
-      // _orders.map((e) => (e['totalOrders'] as int));
     }
 
     // Stocks
@@ -194,6 +256,14 @@ class ProductViewModel extends ViewModelBase {
       _normqueries = generateRandomNormqueryProducts(15);
     }
 
+    // kw lemmas
+    final normqueryIds = _normqueries.map((e) => e.normqueryId).toList();
+    final kwLemmasOrEither = await kwLemmaService.get(ids: normqueryIds);
+    if (kwLemmasOrEither.isRight()) {
+      final kwLemmas = kwLemmasOrEither.fold((l) => <KwLemmaItem>[], (r) => r);
+      setKwLemmas(kwLemmas);
+    }
+
     final whOrEither =
         await whService.getWarehouses(ids: whIds.toSet().toList());
     if (whOrEither.isRight()) {
@@ -205,8 +275,35 @@ class ProductViewModel extends ViewModelBase {
       _warehousesOrdersSum = getTotalOrdersByWarehouse(orders, warehousesList);
     }
 
+    // set card info
     _pics = cardInfo.photoCount;
     _name = cardInfo.imtName;
+    _description = cardInfo.description;
+
+    _characteristics = cardInfo.characteristics;
+
+    final lemmatizedOrEither = await lemmatizeService.get(
+      req: LemmatizeRequest(
+        title: cardInfo.imtName,
+        characteristics: cardInfo.characteristics,
+        description: cardInfo.description,
+      ),
+    );
+
+    if (lemmatizedOrEither.isRight()) {
+      final lemmatized =
+          lemmatizedOrEither.fold((l) => throw UnimplementedError, (r) => r);
+      _lemmatizedName = lemmatized.title;
+      _lemmatizedDescription = lemmatized.description;
+      _lemmatizedCharacteristics = lemmatized.characteristics;
+      _seoTableSections = await generateSEOTableSections(
+          _normqueries,
+          _kwLemmas,
+          _lemmatizedName,
+          _lemmatizedDescription,
+          _lemmatizedCharacteristics,
+          calculateCosineSimilarity);
+    }
     _subjectName = cardInfo.subjName;
     final image = calculateImageUrl(_basketNum, productId);
     _images.add(image);

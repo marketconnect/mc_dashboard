@@ -80,7 +80,7 @@ class Stock {
     if (whNames.isNotEmpty) {
       whName = whNames.first.name;
     } else {
-      whName = 'СкладwarehouseId';
+      whName = 'Склад $warehouseId';
     }
 
     return {
