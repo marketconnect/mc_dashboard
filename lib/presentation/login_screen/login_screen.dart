@@ -145,17 +145,19 @@ class LoginScreen extends StatelessWidget {
                       ),
                     ],
                     const SizedBox(height: 16),
-                    TextButton(
-                      onPressed: () {
-                        viewModel.setIsRegisterMode(!viewModel.isRegisterMode);
-                      },
-                      child: Text(
-                        viewModel.isRegisterMode
-                            ? 'Уже есть аккаунт? Войти'
-                            : 'Нет аккаунта? Зарегистрируйтесь',
-                        style: const TextStyle(color: Colors.blue),
+                    if (showBtn)
+                      TextButton(
+                        onPressed: () {
+                          viewModel
+                              .setIsRegisterMode(!viewModel.isRegisterMode);
+                        },
+                        child: Text(
+                          viewModel.isRegisterMode
+                              ? 'Уже есть аккаунт? Войти'
+                              : 'Нет аккаунта? Зарегистрируйтесь',
+                          style: const TextStyle(color: Colors.blue),
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),

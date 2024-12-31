@@ -230,6 +230,15 @@ class _ProductScreenState extends State<ProductScreen> {
                             model.seoTableSections["description"]!,
                       ),
                     ),
+                  const SizedBox(height: 16),
+                  if (model.seoTableSections.isNotEmpty)
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1016),
+                      child: SeoSectionWidget(
+                        sectionTitle: "Не релевантные запросы",
+                        querySimilarities: model.seoTableSections["nowhere"]!,
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -1569,24 +1578,33 @@ class SeoSectionWidget extends StatelessWidget {
                   ),
                 ],
               ),
-              ...querySimilarities.map((row) => TableRow(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(row.normquery),
+              ...querySimilarities.map((row) {
+                final similarities = sectionTitle == 'Заголовок'
+                    ? row.titleSimilarity
+                    : sectionTitle == 'Описание'
+                        ? row.descriptionSimilarity
+                        : sectionTitle == 'Характеристики'
+                            ? row.characteristicsSimilarity
+                            : 0.0;
+                return TableRow(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(row.normquery),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        '${(similarities * 100).toStringAsFixed(1)}%',
                       ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          '${(row.titleSimilarity * 100).toStringAsFixed(1)}%',
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text('${row.freq}'),
-                      ),
-                    ],
-                  )),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text('${row.freq}'),
+                    ),
+                  ],
+                );
+              }),
             ],
           ),
         ],

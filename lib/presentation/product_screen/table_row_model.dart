@@ -28,11 +28,11 @@ class SEOTableRowModel {
     return SEOTableRowModel(
       normquery: normquery,
       freq: freq,
-      titleSimilarity: calculateCosineSimilarity(lemma, lemmatizedTitle),
+      titleSimilarity: calculateCosineSimilarity(lemmatizedTitle, lemma),
       descriptionSimilarity:
-          calculateCosineSimilarity(lemma, lemmatizedDescription),
+          calculateCosineSimilarity(lemmatizedDescription, lemma),
       characteristicsSimilarity:
-          calculateCosineSimilarity(lemma, lemmatizedCharacteristics),
+          calculateCosineSimilarity(lemmatizedCharacteristics, lemma),
     );
   }
 }
@@ -48,7 +48,8 @@ Future<Map<String, List<SEOTableRowModel>>> generateSEOTableSections(
   final Map<String, List<SEOTableRowModel>> sections = {
     "title": [],
     "characteristics": [],
-    "description": []
+    "description": [],
+    "nowhere": [],
   };
 
   for (var normqueryProduct in normqueryProducts) {
@@ -77,17 +78,18 @@ Future<Map<String, List<SEOTableRowModel>>> generateSEOTableSections(
     ];
 
     final maxSimilarity = similarities.reduce((a, b) => a > b ? a : b);
-    final similarityDiff =
-        similarities.map((s) => (maxSimilarity - s).abs()).toList();
 
     // Условие выбора секции
-    if (row.titleSimilarity == maxSimilarity || similarityDiff[0] <= 0.05) {
+    if (row.titleSimilarity == maxSimilarity && row.titleSimilarity > 0.70) {
       sections["title"]!.add(row);
-    } else if (row.characteristicsSimilarity == maxSimilarity ||
-        similarityDiff[1] <= 0.05) {
+    } else if (row.characteristicsSimilarity == maxSimilarity &&
+        row.characteristicsSimilarity > 0.10) {
       sections["characteristics"]!.add(row);
-    } else {
+    } else if (row.descriptionSimilarity == maxSimilarity &&
+        row.descriptionSimilarity > 0.10) {
       sections["description"]!.add(row);
+    } else {
+      sections["nowhere"]!.add(row);
     }
   }
 
