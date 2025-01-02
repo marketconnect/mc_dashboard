@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 
 import 'package:material_table_view/material_table_view.dart';
 
@@ -18,36 +19,36 @@ class SubjectProductsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final model = context.watch<SubjectProductsViewModel>();
-    final selectedRows = model.selectedRows;
+
     final isFilterVisible = model.isFilterVisible;
     final theme = Theme.of(context);
     final surfaceContainerHighest = theme.colorScheme.surfaceContainerHighest;
 
     return Scaffold(
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: selectedRows.isEmpty
-          ? null
-          : MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: GestureDetector(
-                onTap: () => model.navigateToSeoRequestsExtendScreen(),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.secondary,
-                    borderRadius: BorderRadius.circular(8.0),
-                    border: Border.all(color: theme.colorScheme.onSecondary),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                      vertical: 20.0, horizontal: 16.0),
-                  child: Text(
-                    "Расширение запросов",
-                    style: TextStyle(
-                        color: theme.colorScheme.onSecondary,
-                        fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
-            ),
+      // floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      // floatingActionButton: selectedRows.isEmpty
+      //     ? null
+      //     : MouseRegion(
+      //         cursor: SystemMouseCursors.click,
+      //         child: GestureDetector(
+      //           onTap: () => model.navigateToSeoRequestsExtendScreen(),
+      //           child: Container(
+      //             decoration: BoxDecoration(
+      //               color: theme.colorScheme.secondary,
+      //               borderRadius: BorderRadius.circular(8.0),
+      //               border: Border.all(color: theme.colorScheme.onSecondary),
+      //             ),
+      //             padding: const EdgeInsets.symmetric(
+      //                 vertical: 20.0, horizontal: 16.0),
+      //             child: Text(
+      //               "Расширение запросов",
+      //               style: TextStyle(
+      //                   color: theme.colorScheme.onSecondary,
+      //                   fontWeight: FontWeight.w600),
+      //             ),
+      //           ),
+      //         ),
+      //       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final maxWidth = constraints.maxWidth;
@@ -702,6 +703,20 @@ class _TableWidgetState extends State<_TableWidget> {
                                 child: Checkbox(
                                   checkColor: theme.colorScheme.secondary,
                                   activeColor: Colors.transparent,
+                                  side: WidgetStateBorderSide.resolveWith(
+                                    (states) {
+                                      if (states
+                                          .contains(WidgetState.selected)) {
+                                        return BorderSide(
+                                          color: Colors.transparent,
+                                        );
+                                      }
+                                      return BorderSide(
+                                          color: theme.colorScheme.onSurface
+                                              .withOpacity(.3),
+                                          width: 2.0);
+                                    },
+                                  ),
                                   value: selectedRows.contains(item.productId),
                                   onChanged: (bool? value) {
                                     selectRow(item.productId);
@@ -966,6 +981,39 @@ class _TableWidgetState extends State<_TableWidget> {
                       ),
                     ),
                   ),
+                  if (selectedRows.isNotEmpty)
+                    Positioned(
+                      bottom: 24,
+                      right: 24,
+                      child: SpeedDial(
+                        icon: Icons.more_vert,
+                        activeIcon: Icons.close,
+                        backgroundColor: theme.colorScheme.secondary,
+                        foregroundColor: theme.colorScheme.onSecondary,
+                        onClose: () {
+                          setState(() {
+                            selectedRows.clear();
+                          });
+                        },
+                        children: [
+                          SpeedDialChild(
+                            backgroundColor: theme.colorScheme.secondary,
+                            child: Icon(Icons.analytics,
+                                color: theme.colorScheme.onSecondary),
+                            label: "Расширение запросов",
+                            onTap: () =>
+                                model.navigateToSeoRequestsExtendScreen(),
+                          ),
+                          SpeedDialChild(
+                            backgroundColor: theme.colorScheme.secondary,
+                            child: Icon(Icons.visibility,
+                                color: theme.colorScheme.onSecondary),
+                            label: "Отслеживать",
+                            onTap: () => print("AAAA"),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               );
             },

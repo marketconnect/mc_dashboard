@@ -338,15 +338,17 @@ class ProductViewModel extends ViewModelBase {
           if (normqueryOrEither.isRight()) {
             final fetchedNormqueries = normqueryOrEither.fold(
                 (l) => throw UnimplementedError, (r) => r);
-            List<NormqueryProduct> _uNormqueries = [];
+            List<NormqueryProduct> uNormqueries = [];
             // exclude normqueries that are already used
             for (final normquery in fetchedNormqueries) {
-              if (!_normqueries
-                  .any((e) => e.normqueryId == normquery.normqueryId)) {
-                _uNormqueries.add(normquery);
+              if ((!_normqueries
+                      .any((e) => e.normqueryId == normquery.normqueryId) &&
+                  !uNormqueries
+                      .any((e) => e.normqueryId == normquery.normqueryId))) {
+                uNormqueries.add(normquery);
               }
             }
-            _unusedNormqueries = _uNormqueries.toSet().toList();
+            _unusedNormqueries = uNormqueries.toSet().toList();
           }
         }
       }

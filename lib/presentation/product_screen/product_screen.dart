@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:material_table_view/material_table_view.dart';
 
 import 'package:mc_dashboard/core/utils/dates.dart';
@@ -1247,7 +1248,7 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
       return _noDataPlaceholder();
     }
 
-    final columnProportions = [0.05, 0.2, 0.1, 0.1, 0.1];
+    final columnProportions = [0.03, 0.2, 0.1, 0.1, 0.1];
     final mobColumnProportions = [0.1, 0.3, 0.2, 0.15, 0.15];
     final columnHeaders = [
       "Выбор",
@@ -1296,6 +1297,19 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
                             checkColor: theme.colorScheme.secondary,
                             activeColor: Colors.transparent,
                             value: selectAll,
+                            side: WidgetStateBorderSide.resolveWith(
+                              (states) {
+                                if (states.contains(WidgetState.selected)) {
+                                  return BorderSide(
+                                    color: Colors.transparent,
+                                  );
+                                }
+                                return BorderSide(
+                                    color: theme.colorScheme.onSurface
+                                        .withOpacity(.3),
+                                    width: 2.0);
+                              },
+                            ),
                             onChanged: (value) {
                               setState(() {
                                 selectAll = value ?? false;
@@ -1346,6 +1360,19 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
                             activeColor: Colors.transparent,
                             checkColor: theme.colorScheme.secondary,
                             value: selectedIndices.contains(rowIndex),
+                            side: WidgetStateBorderSide.resolveWith(
+                              (states) {
+                                if (states.contains(WidgetState.selected)) {
+                                  return BorderSide(
+                                    color: Colors.transparent,
+                                  );
+                                }
+                                return BorderSide(
+                                    color: theme.colorScheme.onSurface
+                                        .withOpacity(.3),
+                                    width: 2.0);
+                              },
+                            ),
                             onChanged: (isSelected) {
                               setState(() {
                                 if (isSelected == true) {
@@ -1403,69 +1430,66 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
               if (selectedIndices.isNotEmpty)
                 Positioned(
                   bottom: 24,
-                  right: 40,
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: GestureDetector(
-                      onTap: () {
-                        // Получение выбранных элементов
-                        final selectedItems = selectedIndices
-                            .map((index) => normqueryProducts[index])
-                            .toList();
+                  right: 24,
+                  child: SpeedDial(
+                    icon: Icons.more_vert,
+                    activeIcon: Icons.close,
+                    backgroundColor: theme.colorScheme.secondary,
+                    foregroundColor: theme.colorScheme.onSecondary,
+                    onClose: () {
+                      setState(() {
+                        selectedIndices.clear();
+                        selectAll = false;
+                      });
+                    },
+                    children: [
+                      SpeedDialChild(
+                        backgroundColor: theme.colorScheme.secondary,
+                        child: Icon(Icons.copy,
+                            color: theme.colorScheme.onSecondary),
+                        label: "Копировать",
+                        onTap: () {
+                          // Получение выбранных элементов
+                          final selectedItems = selectedIndices
+                              .map((index) => normqueryProducts[index])
+                              .toList();
 
-                        if (selectedItems.isEmpty) {
-                          // Если ничего не выбрано, можно уведомить пользователя
+                          if (selectedItems.isEmpty) {
+                            // Если ничего не выбрано, можно уведомить пользователя
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'Нет выбранных элементов для копирования')),
+                            );
+                            return;
+                          }
+
+                          // Формирование строки для копирования
+                          final clipboardContent = selectedItems.map((product) {
+                            return '${product.normquery}\t${((product.pageNumber - 1) * 100 + product.pagePos)}\t${product.freq}\t${product.total}';
+                          }).join('\n'); // Разделитель строк - перенос
+                          final clipboardContentWithColumnNames =
+                              'Ключевой запрос\tПозиция\tЧастота\tВсего товаров\n$clipboardContent';
+                          // Копирование данных в буфер обмена
+                          Clipboard.setData(ClipboardData(
+                              text: clipboardContentWithColumnNames));
+
+                          // Уведомление пользователя о выполнении копирования
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                                content: Text(
-                                    'Нет выбранных элементов для копирования')),
+                                content:
+                                    Text('Данные скопированы в буфер обмена')),
                           );
-                          return;
-                        }
-
-                        // Формирование строки для копирования
-                        final clipboardContent = selectedItems.map((product) {
-                          return '${product.normquery}\t${((product.pageNumber - 1) * 100 + product.pagePos)}\t${product.freq}\t${product.total}';
-                        }).join('\n'); // Разделитель строк - перенос
-                        final clipboardContentWithColumnNames =
-                            'Ключевой запрос\tПозиция\tЧастота\tВсего товаров\n$clipboardContent';
-                        // Копирование данных в буфер обмена
-                        Clipboard.setData(ClipboardData(
-                            text: clipboardContentWithColumnNames));
-
-                        // Уведомление пользователя о выполнении копирования
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content:
-                                  Text('Данные скопированы в буфер обмена')),
-                        );
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.secondary,
-                          borderRadius: BorderRadius.circular(8.0),
-                          border:
-                              Border.all(color: theme.colorScheme.onSecondary),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 20.0, horizontal: 16.0),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.copy,
-                              color: theme.colorScheme.onSecondary,
-                            ),
-                            const SizedBox(width: 8.0),
-                            Text(
-                              "Копировать",
-                              style: TextStyle(
-                                  color: theme.colorScheme.onSecondary,
-                                  fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
+                        },
                       ),
-                    ),
+                      SpeedDialChild(
+                        backgroundColor: theme.colorScheme.secondary,
+                        child: Icon(Icons.visibility,
+                            color: theme.colorScheme.onSecondary),
+                        label: "Отслеживать",
+                        onTap: () => print("AAAA"),
+                      ),
+                    ],
                   ),
                 ),
             ],
@@ -1817,6 +1841,19 @@ class _UnusedQueryTableWidgetState extends State<UnusedQueryTableWidget> {
                     // Первый столбец - чекбокс "Выбрать все"
                     if (columnIndex == 0) {
                       return Checkbox(
+                        side: WidgetStateBorderSide.resolveWith(
+                          (states) {
+                            if (states.contains(WidgetState.selected)) {
+                              return BorderSide(
+                                color: Colors.transparent,
+                              );
+                            }
+                            return BorderSide(
+                                color:
+                                    theme.colorScheme.onSurface.withOpacity(.3),
+                                width: 2.0);
+                          },
+                        ),
                         checkColor: theme.colorScheme.secondary,
                         activeColor: Colors.transparent,
                         value: selectAll,
@@ -1871,6 +1908,19 @@ class _UnusedQueryTableWidgetState extends State<UnusedQueryTableWidget> {
                         activeColor: Colors.transparent,
                         checkColor: theme.colorScheme.secondary,
                         value: selectedIndices.contains(rowIndex),
+                        side: WidgetStateBorderSide.resolveWith(
+                          (states) {
+                            if (states.contains(WidgetState.selected)) {
+                              return BorderSide(
+                                color: Colors.transparent,
+                              );
+                            }
+                            return BorderSide(
+                                color:
+                                    theme.colorScheme.onSurface.withOpacity(.3),
+                                width: 2.0);
+                          },
+                        ),
                         onChanged: (isSelected) {
                           setState(() {
                             if (isSelected == true) {
@@ -1953,61 +2003,64 @@ class _UnusedQueryTableWidgetState extends State<UnusedQueryTableWidget> {
         if (selectedIndices.isNotEmpty)
           Positioned(
             bottom: 24,
-            right: 40,
-            child: MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: GestureDetector(
-                onTap: () {
-                  final selectedItems = selectedIndices
-                      .map((index) => unusedQueries[index])
-                      .toList();
-                  if (selectedItems.isEmpty) {
+            right: 24,
+            child: SpeedDial(
+              icon: Icons.more_vert,
+              activeIcon: Icons.close,
+              backgroundColor: theme.colorScheme.secondary,
+              foregroundColor: theme.colorScheme.onSecondary,
+              onClose: () {
+                setState(() {
+                  selectedIndices.clear();
+                  selectAll = false;
+                });
+              },
+              children: [
+                SpeedDialChild(
+                  backgroundColor: theme.colorScheme.secondary,
+                  child: Icon(Icons.copy, color: theme.colorScheme.onSecondary),
+                  label: "Копировать",
+                  onTap: () {
+                    // Получение выбранных элементов
+                    final selectedItems = selectedIndices
+                        .map((index) => unusedQueries[index])
+                        .toList();
+
+                    if (selectedItems.isEmpty) {
+                      // Если ничего не выбрано, можно уведомить пользователя
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text(
+                                'Нет выбранных элементов для копирования')),
+                      );
+                      return;
+                    }
+
+                    // Формирование строки для копирования
+                    final clipboardContent = selectedItems.map((product) {
+                      return '${product.normquery}\t${product.freq}\t${product.total}';
+                    }).join('\n'); // Разделитель строк - перенос
+                    final clipboardContentWithColumnNames =
+                        'Ключевой запрос\tЧастота\tВсего товаров\n$clipboardContent';
+                    // Копирование данных в буфер обмена
+                    Clipboard.setData(
+                        ClipboardData(text: clipboardContentWithColumnNames));
+
+                    // Уведомление пользователя о выполнении копирования
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content:
-                            Text('Нет выбранных элементов для копирования'),
-                      ),
+                          content: Text('Данные скопированы в буфер обмена')),
                     );
-                    return;
-                  }
-                  final clipboardContent = selectedItems.map((item) {
-                    return '${item.normquery}\t${item.freq}\t${item.total}';
-                  }).join('\n');
-                  final withColumns =
-                      'Ключевой запрос\tЧастота\tВсего товаров\n$clipboardContent';
-                  Clipboard.setData(ClipboardData(text: withColumns));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Данные скопированы в буфер обмена'),
-                    ),
-                  );
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.secondary,
-                    borderRadius: BorderRadius.circular(8.0),
-                    border: Border.all(color: theme.colorScheme.onSecondary),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                      vertical: 20.0, horizontal: 16.0),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.copy,
-                        color: theme.colorScheme.onSecondary,
-                      ),
-                      const SizedBox(width: 8.0),
-                      Text(
-                        "Копировать",
-                        style: TextStyle(
-                          color: theme.colorScheme.onSecondary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
+                  },
                 ),
-              ),
+                SpeedDialChild(
+                  backgroundColor: theme.colorScheme.secondary,
+                  child: Icon(Icons.visibility,
+                      color: theme.colorScheme.onSecondary),
+                  label: "Отслеживать",
+                  onTap: () => print("AAAA"),
+                ),
+              ],
             ),
           ),
         if (model.isFree)
