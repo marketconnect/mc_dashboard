@@ -1009,7 +1009,11 @@ class _TableWidgetState extends State<_TableWidget> {
                             child: Icon(Icons.visibility,
                                 color: theme.colorScheme.onSecondary),
                             label: "Отслеживать",
-                            onTap: () => print("AAAA"),
+                            onTap: () =>
+                                ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Операция не поддерживается')),
+                            ),
                           ),
                         ],
                       ),

@@ -1487,7 +1487,10 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
                         child: Icon(Icons.visibility,
                             color: theme.colorScheme.onSecondary),
                         label: "Отслеживать",
-                        onTap: () => print("AAAA"),
+                        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Операция не поддерживается')),
+                        ),
                       ),
                     ],
                   ),
@@ -2058,7 +2061,9 @@ class _UnusedQueryTableWidgetState extends State<UnusedQueryTableWidget> {
                   child: Icon(Icons.visibility,
                       color: theme.colorScheme.onSecondary),
                   label: "Отслеживать",
-                  onTap: () => print("AAAA"),
+                  onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Операция не поддерживается')),
+                  ),
                 ),
               ],
             ),

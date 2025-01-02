@@ -58,18 +58,29 @@ List<Map<String, dynamic>> aggregateOrdersByDay(List<OrderWb> orders) {
 }
 
 List<Map<String, dynamic>> aggregatePricesByDay(List<OrderWb> orders) {
-  final Map<DateTime, int> aggregatedPrices = {};
+  final Map<DateTime, List<int>> pricesByDate = {};
 
   for (var order in orders) {
     final date = DateTime(
         order.timestamp.year, order.timestamp.month, order.timestamp.day);
-    aggregatedPrices[date] = order.price;
+    if (order.price > 0) {
+      pricesByDate.putIfAbsent(date, () => []).add(order.price);
+    }
   }
 
-  return aggregatedPrices.entries.map((entry) {
+  return pricesByDate.entries.map((entry) {
+    final prices = entry.value;
+    final price = prices.isNotEmpty
+        ? prices.reduce((value, element) =>
+            prices.where((p) => p == value).length >
+                    prices.where((p) => p == element).length
+                ? value
+                : element)
+        : 0; // Если все записи для дня с ценой 0, возвращаем 0
+
     return {
       'date': entry.key,
-      'price': entry.value,
+      'price': price,
     };
   }).toList();
 }
