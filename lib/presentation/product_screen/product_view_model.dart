@@ -319,32 +319,35 @@ class ProductViewModel extends ViewModelBase {
         setSeoTableSections(fetchedSeoTableSections);
       }
 
-      // Unused queries
-      // get top 20 products ids
-      final detailedOrdersForUnusedQueriesOrEither = await detailedOrdersService
-          .fetchDetailedOrders(subjectId: subjectId, isFbs: 0, pageSize: '20');
+      if (normqueries.isNotEmpty) {
+        // Unused queries
+        // get top 20 products ids
+        final detailedOrdersForUnusedQueriesOrEither =
+            await detailedOrdersService.fetchDetailedOrders(
+                subjectId: subjectId, isFbs: 0, pageSize: '20');
 
-      if (detailedOrdersForUnusedQueriesOrEither.isRight()) {
-        final detailedOrdersForUnusedQueries =
-            detailedOrdersForUnusedQueriesOrEither.fold(
+        if (detailedOrdersForUnusedQueriesOrEither.isRight()) {
+          final detailedOrdersForUnusedQueries =
+              detailedOrdersForUnusedQueriesOrEither.fold(
+                  (l) => throw UnimplementedError, (r) => r);
+          final top20productsIds =
+              detailedOrdersForUnusedQueries.map((e) => e.productId).toList();
+          // get top 20 normqueries
+          final normqueryOrEither =
+              await normqueryService.get(ids: top20productsIds);
+          if (normqueryOrEither.isRight()) {
+            final fetchedNormqueries = normqueryOrEither.fold(
                 (l) => throw UnimplementedError, (r) => r);
-        final top20productsIds =
-            detailedOrdersForUnusedQueries.map((e) => e.productId).toList();
-        // get top 20 normqueries
-        final normqueryOrEither =
-            await normqueryService.get(ids: top20productsIds);
-        if (normqueryOrEither.isRight()) {
-          final fetchedNormqueries =
-              normqueryOrEither.fold((l) => throw UnimplementedError, (r) => r);
-          List<NormqueryProduct> _uNormqueries = [];
-          // exclude normqueries that are already used
-          for (final normquery in fetchedNormqueries) {
-            if (!_normqueries
-                .any((e) => e.normqueryId == normquery.normqueryId)) {
-              _uNormqueries.add(normquery);
+            List<NormqueryProduct> _uNormqueries = [];
+            // exclude normqueries that are already used
+            for (final normquery in fetchedNormqueries) {
+              if (!_normqueries
+                  .any((e) => e.normqueryId == normquery.normqueryId)) {
+                _uNormqueries.add(normquery);
+              }
             }
+            _unusedNormqueries = _uNormqueries.toSet().toList();
           }
-          _unusedNormqueries = _uNormqueries;
         }
       }
     } else {
