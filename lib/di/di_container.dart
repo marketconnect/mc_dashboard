@@ -168,6 +168,7 @@ class _DIContainer {
         normqueryService: _makeNormqueryService(),
         kwLemmaService: _makeKwLemmaService(),
         onNavigateBack: onNavigateBack,
+        detailedOrdersService: _makeDetailedOrdersService(),
         onNavigateToEmptyProductScreen: onNavigateToEmptyProductScreen,
         whService: _makeWhService(),
         authService: _makeAuthService(),

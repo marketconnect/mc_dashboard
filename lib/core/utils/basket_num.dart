@@ -68,9 +68,11 @@ Future<CardInfo> fetchCardInfo(String cardUrl) async {
         imtName: "",
         imtId: 0,
         photoCount: 0,
+        subjId: 0,
         subjName: "",
         description: "",
-        characteristics: "");
+        characteristicFull: "",
+        characteristicValues: "");
   }
 }
 

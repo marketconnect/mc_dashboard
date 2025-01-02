@@ -3,6 +3,7 @@ import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
 import 'package:mc_dashboard/core/utils/basket_num.dart';
 import 'package:mc_dashboard/core/utils/similarity.dart';
 import 'package:mc_dashboard/domain/entities/card_info.dart';
+import 'package:mc_dashboard/domain/entities/detailed_order_item.dart';
 import 'package:mc_dashboard/domain/entities/feedback_info.dart';
 import 'package:mc_dashboard/domain/entities/kw_lemmas.dart';
 import 'package:mc_dashboard/domain/entities/lemmatize.dart';
@@ -52,6 +53,15 @@ abstract class ProductViewModelLemmatizeService {
       {required LemmatizeRequest req});
 }
 
+abstract class ProductViewModelDetailedOrdersService {
+  Future<Either<AppErrorBase, List<DetailedOrderItem>>> fetchDetailedOrders({
+    int? subjectId,
+    int? productId,
+    int? isFbs,
+    String pageSize = '10000',
+  });
+}
+
 class ProductViewModel extends ViewModelBase {
   ProductViewModel(
       {required super.context,
@@ -64,6 +74,7 @@ class ProductViewModel extends ViewModelBase {
       required this.normqueryService,
       required this.kwLemmaService,
       required this.onNavigateToEmptyProductScreen,
+      required this.detailedOrdersService,
       required this.lemmatizeService,
       required this.productPrice}) {
     _asyncInit();
@@ -77,6 +88,7 @@ class ProductViewModel extends ViewModelBase {
   final ProductAuthService authService;
   final ProductViewModelKwLemmaService kwLemmaService;
   final ProductViewModelLemmatizeService lemmatizeService;
+  final ProductViewModelDetailedOrdersService detailedOrdersService;
   final void Function() onNavigateBack;
   final void Function() onNavigateToEmptyProductScreen;
 
@@ -118,6 +130,10 @@ class ProductViewModel extends ViewModelBase {
   String _characteristics = "";
   String get characteristics => _characteristics;
 
+  // subject id
+  int _subjectId = 0;
+  int get subjectId => _subjectId;
+
   // subject
   String _subjectName = "";
   String get subjectName => _subjectName;
@@ -155,9 +171,13 @@ class ProductViewModel extends ViewModelBase {
   Map<String, int> _dailyStocksSums = {};
   Map<String, int> get dailyStocksSums => _dailyStocksSums;
 
-  // Normqueries
+  // Used Normqueries
   List<NormqueryProduct> _normqueries = [];
   List<NormqueryProduct> get normqueries => _normqueries;
+
+  // Unused Normqueries
+  List<NormqueryProduct> _unusedNormqueries = [];
+  List<NormqueryProduct> get unusedNormqueries => _unusedNormqueries;
 
   // pros and cons
   List<String> pros = [];
@@ -168,13 +188,16 @@ class ProductViewModel extends ViewModelBase {
   String _lemmatizedCharacteristics = "";
 
   // Seo table rows
-  Map<String, List<SEOTableRowModel>> _seoTableSections = {};
+  final Map<String, List<SEOTableRowModel>> _seoTableSections = {};
   Map<String, List<SEOTableRowModel>> get seoTableSections => _seoTableSections;
   // setters ///////////////////////////////////////////////////////////////////
   void setKwLemmas(List<KwLemmaItem> value) {
     _kwLemmas.clear();
     _kwLemmas.addAll(value);
   }
+
+  void setSeoTableSections(Map<String, List<SEOTableRowModel>> value) =>
+      _seoTableSections.addAll(value);
 
   void setPros(List<String> value) {
     // lowercase
@@ -207,6 +230,14 @@ class ProductViewModel extends ViewModelBase {
 
     // card info
     final cardInfo = vals[0] as CardInfo;
+    _pics = cardInfo.photoCount;
+    _name = cardInfo.imtName;
+
+    _description = cardInfo.description;
+
+    _characteristics = cardInfo.characteristicFull;
+    _subjectId = cardInfo.subjId;
+    _subjectName = cardInfo.subjName;
 
     // token and sub info
     final tokenInfoOrEither =
@@ -245,23 +276,81 @@ class ProductViewModel extends ViewModelBase {
       _dailyStocksSums = calculateDailyStockSums(stocks);
     }
 
-    // Normqueries
     if (!isFree) {
+      // Normqueries
       final normqueryOrEither = await normqueryService.get(ids: [productId]);
       if (normqueryOrEither.isRight()) {
         _normqueries =
             normqueryOrEither.fold((l) => <NormqueryProduct>[], (r) => r);
       }
+
+      // kw lemmas
+      final normqueryIds = _normqueries.map((e) => e.normqueryId).toList();
+      final kwLemmasOrEither = await kwLemmaService.get(ids: normqueryIds);
+      if (kwLemmasOrEither.isRight()) {
+        final kwLemmas =
+            kwLemmasOrEither.fold((l) => <KwLemmaItem>[], (r) => r);
+        setKwLemmas(kwLemmas);
+      }
+      // Lemmatization
+      final lemmatizedOrEither = await lemmatizeService.get(
+        req: LemmatizeRequest(
+          title: cardInfo.imtName,
+          characteristics: cardInfo.characteristicValues,
+          description: cardInfo.description,
+        ),
+      );
+
+      if (lemmatizedOrEither.isRight()) {
+        // create cosine similarity
+        final lemmatized =
+            lemmatizedOrEither.fold((l) => throw UnimplementedError, (r) => r);
+        _lemmatizedName = lemmatized.title;
+        _lemmatizedDescription = lemmatized.description;
+        _lemmatizedCharacteristics = lemmatized.characteristics;
+        final fetchedSeoTableSections = await generateSEOTableSections(
+            _normqueries,
+            _kwLemmas,
+            _lemmatizedName,
+            _lemmatizedDescription,
+            _lemmatizedCharacteristics,
+            calculateCosineSimilarity);
+
+        setSeoTableSections(fetchedSeoTableSections);
+      }
+
+      // Unused queries
+      // get top 20 products ids
+      final detailedOrdersForUnusedQueriesOrEither = await detailedOrdersService
+          .fetchDetailedOrders(subjectId: subjectId, isFbs: 0, pageSize: '20');
+
+      if (detailedOrdersForUnusedQueriesOrEither.isRight()) {
+        final detailedOrdersForUnusedQueries =
+            detailedOrdersForUnusedQueriesOrEither.fold(
+                (l) => throw UnimplementedError, (r) => r);
+        final top20productsIds =
+            detailedOrdersForUnusedQueries.map((e) => e.productId).toList();
+        // get top 20 normqueries
+        final normqueryOrEither =
+            await normqueryService.get(ids: top20productsIds);
+        if (normqueryOrEither.isRight()) {
+          final fetchedNormqueries =
+              normqueryOrEither.fold((l) => throw UnimplementedError, (r) => r);
+          List<NormqueryProduct> _uNormqueries = [];
+          // exclude normqueries that are already used
+          for (final normquery in fetchedNormqueries) {
+            if (!_normqueries
+                .any((e) => e.normqueryId == normquery.normqueryId)) {
+              _uNormqueries.add(normquery);
+            }
+          }
+          _unusedNormqueries = _uNormqueries;
+        }
+      }
     } else {
       _normqueries = generateRandomNormqueryProducts(15);
-    }
-
-    // kw lemmas
-    final normqueryIds = _normqueries.map((e) => e.normqueryId).toList();
-    final kwLemmasOrEither = await kwLemmaService.get(ids: normqueryIds);
-    if (kwLemmasOrEither.isRight()) {
-      final kwLemmas = kwLemmasOrEither.fold((l) => <KwLemmaItem>[], (r) => r);
-      setKwLemmas(kwLemmas);
+      final randomSeoTableSections = generateRandomSEOTableRows(15);
+      setSeoTableSections(randomSeoTableSections);
     }
 
     final whOrEither =
@@ -275,36 +364,6 @@ class ProductViewModel extends ViewModelBase {
       _warehousesOrdersSum = getTotalOrdersByWarehouse(orders, warehousesList);
     }
 
-    // set card info
-    _pics = cardInfo.photoCount;
-    _name = cardInfo.imtName;
-    _description = cardInfo.description;
-
-    _characteristics = cardInfo.characteristics;
-
-    final lemmatizedOrEither = await lemmatizeService.get(
-      req: LemmatizeRequest(
-        title: cardInfo.imtName,
-        characteristics: cardInfo.characteristics,
-        description: cardInfo.description,
-      ),
-    );
-
-    if (lemmatizedOrEither.isRight()) {
-      final lemmatized =
-          lemmatizedOrEither.fold((l) => throw UnimplementedError, (r) => r);
-      _lemmatizedName = lemmatized.title;
-      _lemmatizedDescription = lemmatized.description;
-      _lemmatizedCharacteristics = lemmatized.characteristics;
-      _seoTableSections = await generateSEOTableSections(
-          _normqueries,
-          _kwLemmas,
-          _lemmatizedName,
-          _lemmatizedDescription,
-          _lemmatizedCharacteristics,
-          calculateCosineSimilarity);
-    }
-    _subjectName = cardInfo.subjName;
     final image = calculateImageUrl(_basketNum, productId);
     _images.add(image);
 
@@ -320,6 +379,29 @@ class ProductViewModel extends ViewModelBase {
     }
     _paymentUrl = authService.getPaymentUrl();
     setLoaded();
+  } // _asyncInit
+
+  String getSeoNameDescChar(String name) {
+    final keys = seoTableSections.keys.toList();
+    double titleSim = 0;
+    double descSim = 0;
+    double charSim = 0;
+    for (int i = 0; i < keys.length; i++) {
+      final seoSectionRows = seoTableSections[keys[i]]!;
+      for (int j = 0; j < seoSectionRows.length; j++) {
+        if (seoSectionRows[j].normquery == name) {
+          if (keys[i] == 'title') {
+            titleSim = seoSectionRows[j].titleSimilarity;
+          } else if (keys[i] == 'description') {
+            descSim = seoSectionRows[j].descriptionSimilarity;
+          } else if (keys[i] == 'characteristics') {
+            charSim = seoSectionRows[j].characteristicsSimilarity;
+          }
+        }
+      }
+    }
+
+    return 'Заголовок:${(titleSim * 100).toStringAsFixed(1)}% Описание:${(descSim * 100).toStringAsFixed(1)}% Характеристики:${(charSim * 100).toStringAsFixed(1)}%';
   }
 
   // payment

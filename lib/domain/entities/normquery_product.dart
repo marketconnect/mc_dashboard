@@ -56,9 +56,19 @@ List<NormqueryProduct> generateRandomNormqueryProducts(int count) {
     final freq = random.nextInt(1000) + 1;
     final total = random.nextInt(10000) + 1;
 
+    final someRandomKeywords = [
+      "женская обувь",
+      "летние платья",
+      "мужские кроссовки",
+      "аксессуары для авто",
+      "косметика и парфюмерия",
+      "спортивный инвентарь",
+      "детские игрушки",
+    ];
     products.add(NormqueryProduct(
       normqueryId: normqueryId,
-      normquery: 'Query $normqueryId',
+      normquery:
+          '${someRandomKeywords[random.nextInt(someRandomKeywords.length)]} $normqueryId',
       total: total,
       freq: freq,
       pagePos: pagePos,

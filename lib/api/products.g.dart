@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'lemmatize.dart';
+part of 'products.dart';
 
 // **************************************************************************
 // RetrofitGenerator
@@ -8,13 +8,13 @@ part of 'lemmatize.dart';
 
 // ignore_for_file: unnecessary_brace_in_string_interps,no_leading_underscores_for_local_identifiers,unused_element,unnecessary_string_interpolations
 
-class _LemmatizeApiClient implements LemmatizeApiClient {
-  _LemmatizeApiClient(
+class _ProductsApiClient implements ProductsApiClient {
+  _ProductsApiClient(
     this._dio, {
     this.baseUrl,
     this.errorLogger,
   }) {
-    baseUrl ??= 'https://marketconnect.website/stem/';
+    baseUrl ??= 'https://marketconnect.website/api';
   }
 
   final Dio _dio;
@@ -24,20 +24,32 @@ class _LemmatizeApiClient implements LemmatizeApiClient {
   final ParseErrorLogger? errorLogger;
 
   @override
-  Future<LemmatizeResponse> lemmatize(LemmatizeRequest request) async {
+  Future<ProductsResponse> getProducts({
+    int? brandId,
+    int? subjectId,
+    int? supplierId,
+    int? page,
+    int? pageSize,
+  }) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{
+      r'brand_id': brandId,
+      r'subject_id': subjectId,
+      r'supplier_id': supplierId,
+      r'page': page,
+      r'page_size': pageSize,
+    };
+    queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
-    _data.addAll(request.toJson());
-    final _options = _setStreamType<LemmatizeResponse>(Options(
-      method: 'POST',
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<ProductsResponse>(Options(
+      method: 'GET',
       headers: _headers,
       extra: _extra,
     )
         .compose(
           _dio.options,
-          '/lemmatize',
+          '/products',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -47,9 +59,9 @@ class _LemmatizeApiClient implements LemmatizeApiClient {
           baseUrl,
         )));
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late LemmatizeResponse _value;
+    late ProductsResponse _value;
     try {
-      _value = LemmatizeResponse.fromJson(_result.data!);
+      _value = ProductsResponse.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;

@@ -1,17 +1,21 @@
 import 'dart:math';
 
 double calculateCosineSimilarity(String text1, String text2) {
-  // Преобразуем тексты в нижний регистр для корректного сравнения
   final normalizedText1 = text1.toLowerCase();
   final normalizedText2 = text2.toLowerCase();
 
-  // Если один текст полностью входит в другой, возвращаем 100% релевантность
   if (normalizedText1.contains(normalizedText2) ||
       normalizedText2.contains(normalizedText1)) {
     return 1.0;
   }
 
-  // В противном случае используем стандартный расчет Cosine Similarity
+  final words1 = normalizedText1.split(RegExp(r'\s+')).toSet();
+  final words2 = normalizedText2.split(RegExp(r'\s+')).toSet();
+
+  if (words1.containsAll(words2) || words2.containsAll(words1)) {
+    return 1.0;
+  }
+
   final vector1 = _getWordFrequencyVector(normalizedText1);
   final vector2 = _getWordFrequencyVector(normalizedText2);
 
@@ -20,14 +24,19 @@ double calculateCosineSimilarity(String text1, String text2) {
   final magnitude2 = _calculateMagnitude(vector2);
 
   if (magnitude1 == 0 || magnitude2 == 0) {
-    return 0.0; // Избегаем деления на 0
+    return 0.0;
   }
 
   return dotProduct / (magnitude1 * magnitude2);
 }
 
 Map<String, int> _getWordFrequencyVector(String text) {
-  final words = text.split(RegExp(r'\\s+'));
+  String cleanedText = text
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^\p{L}\p{N}\s]+', unicode: true), ' ');
+
+  final words = cleanedText.split(RegExp(r'\s+'));
+
   final frequency = <String, int>{};
 
   for (final word in words) {
@@ -42,7 +51,6 @@ Map<String, int> _getWordFrequencyVector(String text) {
 double _calculateDotProduct(
     Map<String, int> vector1, Map<String, int> vector2) {
   double dotProduct = 0.0;
-
   for (final key in vector1.keys) {
     if (vector2.containsKey(key)) {
       dotProduct += vector1[key]! * vector2[key]!;

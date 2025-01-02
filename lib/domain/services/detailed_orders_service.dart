@@ -4,10 +4,13 @@ import 'package:mc_dashboard/api/detailed_orders.dart';
 
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/domain/entities/detailed_order_item.dart';
+import 'package:mc_dashboard/presentation/product_screen/product_view_model.dart';
 import 'package:mc_dashboard/presentation/subject_products_screen/subject_products_view_model.dart';
 
 class DetailedOrdersService
-    implements SubjectProductsViewModelDetailedOrdersService {
+    implements
+        SubjectProductsViewModelDetailedOrdersService,
+        ProductViewModelDetailedOrdersService {
   final DetailedOrdersApiClient detailedOrdersApiClient;
 
   DetailedOrdersService({required this.detailedOrdersApiClient});
@@ -16,12 +19,13 @@ class DetailedOrdersService
     int? subjectId,
     int? productId,
     int? isFbs,
+    String pageSize = '10000',
   }) async {
     try {
       final result = await detailedOrdersApiClient.getDetailedOrders(
         subjectId: subjectId,
         productId: productId,
-        pageSize: '10000',
+        pageSize: pageSize,
         isFbs: isFbs,
       );
 
