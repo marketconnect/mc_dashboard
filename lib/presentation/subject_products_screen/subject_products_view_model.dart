@@ -4,14 +4,23 @@ import 'package:material_table_view/material_table_view.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
 import 'package:mc_dashboard/domain/entities/detailed_order_item.dart';
+import 'package:mc_dashboard/domain/entities/saved_product.dart';
+import 'package:mc_dashboard/domain/services/saved_products_service.dart';
 
+// Detailed Orders Service
 abstract class SubjectProductsViewModelDetailedOrdersService {
   Future<Either<AppErrorBase, List<DetailedOrderItem>>> fetchDetailedOrders(
       {required int subjectId, required int isFbs});
 }
 
+// Auth Service
 abstract class SubjectProductsAuthService {
   Future<Either<AppErrorBase, Map<String, String?>>> getTokenAndType();
+}
+
+// Saved Products Service
+abstract class SubjectProductsSavedProductsService {
+  Future<Either<AppError, void>> saveProducts(List<SavedProduct> products);
 }
 
 class SubjectProductsViewModel extends ViewModelBase {
@@ -24,7 +33,9 @@ class SubjectProductsViewModel extends ViewModelBase {
       required this.onNavigateBack,
       required this.detailedOrdersService,
       required this.authService,
-      required this.onNavigateToSeoRequestsExtendScreen}) {
+      required this.savedProductsService,
+      required this.onNavigateToSeoRequestsExtendScreen,
+      required this.onSaveProductsToTrack}) {
     _asyncInit();
   }
 
@@ -34,9 +45,11 @@ class SubjectProductsViewModel extends ViewModelBase {
   final void Function() onNavigateBack;
   final void Function(int productId, int productPrice)
       onNavigateToProductScreen;
+  final void Function(List<int>) onSaveProductsToTrack;
 
   final SubjectProductsAuthService authService;
   final SubjectProductsViewModelDetailedOrdersService detailedOrdersService;
+  final SubjectProductsSavedProductsService savedProductsService;
   final void Function(List<int>) onNavigateToSeoRequestsExtendScreen;
 
   // Fields ////////////////////////////////////////////////////////////////////
@@ -62,6 +75,13 @@ class SubjectProductsViewModel extends ViewModelBase {
 
   Map<String, Map<String, TextEditingController>> get filterControllers =>
       _filterControllers;
+
+  Map<int, (String, String)> _productImageProductName = {};
+
+  // Setters
+  void addProductImage(int productId, String imageUrl, String productName) {
+    _productImageProductName[productId] = (imageUrl, productName);
+  }
 
   // Methods //////////////////////////////////////////////////////////////////
   void selectRow(int index) {
@@ -342,5 +362,35 @@ class SubjectProductsViewModel extends ViewModelBase {
   void navigateToSeoRequestsExtendScreen() {
     final ids = _selectedRows.toList();
     onNavigateToSeoRequestsExtendScreen(ids);
+  }
+
+  Future<void> saveProducts() async {
+    // get selected orders
+    final selectedOrders = _filteredOrders.where((item) {
+      return _selectedRows.contains(item.productId);
+    });
+
+    // prepare products to save
+    List<SavedProduct> productsToSave = [];
+    for (var item in selectedOrders) {
+      final imageUrlProductName = _productImageProductName[item.productId];
+      if (imageUrlProductName != null) {
+        productsToSave.add(SavedProduct(
+            productId: item.productId,
+            sellerId: item.supplierId,
+            sellerName: item.supplier,
+            brandId: item.brandId,
+            brandName: item.brand,
+            imageUrl: imageUrlProductName.$1,
+            name: imageUrlProductName.$2));
+      }
+    }
+
+    // save products
+    await savedProductsService.saveProducts(productsToSave);
+
+    // callback to update the SavedProductsScreen
+    onSaveProductsToTrack(
+        productsToSave.map((item) => item.productId).toList());
   }
 }

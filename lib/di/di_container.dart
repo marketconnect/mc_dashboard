@@ -17,6 +17,8 @@ import 'package:mc_dashboard/domain/services/kw_lemmas_service.dart';
 import 'package:mc_dashboard/domain/services/lemmatize_service.dart';
 import 'package:mc_dashboard/domain/services/normqueries_service.dart';
 import 'package:mc_dashboard/domain/services/orders_service.dart';
+import 'package:mc_dashboard/domain/services/saved_key_phrases_service.dart';
+import 'package:mc_dashboard/domain/services/saved_products_service.dart';
 import 'package:mc_dashboard/domain/services/stocks_service.dart';
 import 'package:mc_dashboard/domain/services/subjects_summary_service.dart';
 import 'package:mc_dashboard/domain/services/warehouses_service.dart';
@@ -31,14 +33,22 @@ import 'package:mc_dashboard/presentation/empty_subjects_screen/empty_subjects_s
 import 'package:mc_dashboard/presentation/empty_subjects_screen/empty_subjects_view_model.dart';
 import 'package:mc_dashboard/presentation/login_screen/login_screen.dart';
 import 'package:mc_dashboard/presentation/login_screen/login_view_model.dart';
+import 'package:mc_dashboard/presentation/mailing_settings_screen/mailing_settings_screen.dart';
+import 'package:mc_dashboard/presentation/mailing_settings_screen/mailing_settings_view_model.dart';
 import 'package:mc_dashboard/presentation/product_screen/product_screen.dart';
 import 'package:mc_dashboard/presentation/product_screen/product_view_model.dart';
+import 'package:mc_dashboard/presentation/saved_key_phrases_screen/saved_key_phrases_screen.dart';
+import 'package:mc_dashboard/presentation/saved_key_phrases_screen/saved_key_phrases_view_model.dart';
+import 'package:mc_dashboard/presentation/saved_products_screen/saved_products_screen.dart';
+import 'package:mc_dashboard/presentation/saved_products_screen/saved_products_view_model.dart';
 import 'package:mc_dashboard/presentation/seo_requests_extend_screen/seo_requests_extend_screen.dart';
 import 'package:mc_dashboard/presentation/seo_requests_extend_screen/seo_requests_extend_view_model.dart';
 import 'package:mc_dashboard/presentation/subject_products_screen/subject_products_screen.dart';
 import 'package:mc_dashboard/presentation/subject_products_screen/subject_products_view_model.dart';
 
 import 'package:mc_dashboard/repositories/local_storage.dart';
+import 'package:mc_dashboard/repositories/saved_key_phrases_repo.dart';
+import 'package:mc_dashboard/repositories/saved_products_repo.dart';
 import 'package:mc_dashboard/routes/main_navigation.dart';
 import 'package:provider/provider.dart';
 
@@ -68,6 +78,10 @@ class _DIContainer {
   // CookiesRepo _makeCookiesRepo() => const CookiesRepo();
 
   LocalStorageRepo _makeLocalStorageRepo() => LocalStorageRepo();
+
+  SavedProductsRepo _makeSavedProductsRepo() => SavedProductsRepo();
+
+  SavedKeyPhrasesRepo _makeSavedKeyPhrasesRepo() => SavedKeyPhrasesRepo();
   // Api clients ///////////////////////////////////////////////////////////////
   AuthApiClient _makeAuthApiClient() => const AuthApiClient();
   // Services //////////////////////////////////////////////////////////////////
@@ -101,6 +115,15 @@ class _DIContainer {
   LemmatizeService _makeLemmatizeService() => LemmatizeService(
         apiClient: LemmatizeApiClient(dio),
       );
+
+  SavedProductsService _makeSavedProductsService() => SavedProductsService(
+        savedProductsRepo: _makeSavedProductsRepo(),
+      );
+
+  SavedKeyPhrasesService _makeSavedKeyPhrasesService() =>
+      SavedKeyPhrasesService(
+        savedKeyPhrasesRepo: _makeSavedKeyPhrasesRepo(),
+      );
   // ViewModels ////////////////////////////////////////////////////////////////
   ChoosingNicheViewModel _makeChoosingNicheViewModel(
           BuildContext context,
@@ -120,6 +143,7 @@ class _DIContainer {
     void Function() onNavigateBack,
     void Function(int productId, int productPrice) onNavigateToProductScreen,
     void Function(List<int>) onNavigateToSeoRequestsExtendScreen,
+    void Function(List<int> productIds) onSaveProductsToTrack,
   ) =>
       SubjectProductsViewModel(
           subjectId: subjectId,
@@ -128,9 +152,11 @@ class _DIContainer {
           onNavigateToEmptySubject: onNavigateToEmptySubject,
           onNavigateToProductScreen: onNavigateToProductScreen,
           onNavigateBack: onNavigateBack,
+          onSaveProductsToTrack: onSaveProductsToTrack,
           onNavigateToSeoRequestsExtendScreen:
               onNavigateToSeoRequestsExtendScreen,
           detailedOrdersService: _makeDetailedOrdersService(),
+          savedProductsService: _makeSavedProductsService(),
           authService: _makeAuthService());
 
   EmptySubjectViewModel _makeEmptySubjectProductsViewModel(
@@ -159,6 +185,7 @@ class _DIContainer {
           int productId,
           int productPrice,
           void Function() onNavigateToEmptyProductScreen,
+          void Function(List<String> keyPhrasesStr) onSaveKeyPhraseToTrack,
           void Function() onNavigateBack) =>
       ProductViewModel(
         context: context,
@@ -169,10 +196,12 @@ class _DIContainer {
         kwLemmaService: _makeKwLemmaService(),
         onNavigateBack: onNavigateBack,
         detailedOrdersService: _makeDetailedOrdersService(),
+        savedKeyPhrasesService: _makeSavedKeyPhrasesService(),
         onNavigateToEmptyProductScreen: onNavigateToEmptyProductScreen,
         whService: _makeWhService(),
         authService: _makeAuthService(),
         lemmatizeService: _makeLemmatizeService(),
+        onSaveKeyPhrasesToTrack: onSaveKeyPhraseToTrack,
         productPrice: productPrice,
       );
 
@@ -186,6 +215,23 @@ class _DIContainer {
           normqueryService: _makeNormqueryService(),
           authService: _makeAuthService(),
           productIds: productIds);
+
+  MailingSettingsViewModel _makeMailingSettingsViewModel(
+          BuildContext context) =>
+      MailingSettingsViewModel(context: context);
+
+  SavedProductsViewModel _makeSavedProductsViewModel(BuildContext context) =>
+      SavedProductsViewModel(
+        context: context,
+        savedProductsService: _makeSavedProductsService(),
+      );
+
+  SavedKeyPhrasesViewModel _makeSavedKeyPhrasesViewModel(
+          BuildContext context) =>
+      SavedKeyPhrasesViewModel(
+        context: context,
+        keyPhrasesService: _makeSavedKeyPhrasesService(),
+      );
 
   LoginViewModel _makeLoginViewModel(BuildContext context) => LoginViewModel(
         context: context,
@@ -218,6 +264,7 @@ class ScreenFactoryDefault implements ScreenFactory {
           onNavigateToProductScreen,
       required void Function() onNavigateToEmptySubject,
       required void Function(List<int>) onNavigateToSeoRequestsExtendScreen,
+      required void Function(List<int> productIds) onSaveProductsToTrack,
       required void Function() onNavigateBack}) {
     return ChangeNotifierProvider(
       create: (context) => _diContainer._makeSubjectProductsViewModel(
@@ -227,7 +274,8 @@ class ScreenFactoryDefault implements ScreenFactory {
           onNavigateToEmptySubject,
           onNavigateBack,
           onNavigateToProductScreen,
-          onNavigateToSeoRequestsExtendScreen),
+          onNavigateToSeoRequestsExtendScreen,
+          onSaveProductsToTrack),
       child: const SubjectProductsScreen(),
     );
   }
@@ -261,6 +309,8 @@ class ScreenFactoryDefault implements ScreenFactory {
       {required int productId,
       required int productPrice,
       required void Function() onNavigateToEmptyProductScreen,
+      required void Function(List<String> keyPhrasesStr)
+          onSaveKeyPhrasesToTrack,
       required void Function() onNavigateBack}) {
     return ChangeNotifierProvider(
       create: (context) => _diContainer._makeProductViewModel(
@@ -268,6 +318,7 @@ class ScreenFactoryDefault implements ScreenFactory {
           productId,
           productPrice,
           onNavigateToEmptyProductScreen,
+          onSaveKeyPhrasesToTrack,
           onNavigateBack),
       child: const ProductScreen(),
     );
@@ -284,6 +335,36 @@ class ScreenFactoryDefault implements ScreenFactory {
         productIds,
       ),
       child: const SeoRequestsExtendScreen(),
+    );
+  }
+
+  @override
+  Widget makeMailingSettingsScreen() {
+    return ChangeNotifierProvider(
+      create: (context) => _diContainer._makeMailingSettingsViewModel(
+        context,
+      ),
+      child: const MailingSettingsScreen(),
+    );
+  }
+
+  @override
+  Widget makeSavedProductsScreen() {
+    return ChangeNotifierProvider(
+      create: (context) => _diContainer._makeSavedProductsViewModel(
+        context,
+      ),
+      child: const SavedProductsScreen(),
+    );
+  }
+
+  @override
+  Widget makeSavedKeyPhrasesScreen() {
+    return ChangeNotifierProvider(
+      create: (context) => _diContainer._makeSavedKeyPhrasesViewModel(
+        context,
+      ),
+      child: const SavedKeyPhrasesScreen(),
     );
   }
 

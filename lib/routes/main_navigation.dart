@@ -12,6 +12,7 @@ abstract class ScreenFactory {
           onNavigateToProductScreen,
       required void Function() onNavigateToEmptySubject,
       required void Function(List<int>) onNavigateToSeoRequestsExtendScreen,
+      required void Function(List<int> productIds) onSaveProductsToTrack,
       required void Function() onNavigateBack});
   Widget makeEmptySubjectProductsScreen(
       {required void Function(int subjectId, String subjectName)
@@ -26,12 +27,19 @@ abstract class ScreenFactory {
       {required int productId,
       required int productPrice,
       required void Function() onNavigateToEmptyProductScreen,
+      required void Function(List<String> keyPhrases) onSaveKeyPhrasesToTrack,
       required void Function() onNavigateBack});
 
   Widget makeSeoRequestsExtendScreen({
     required List<int> productIds,
     required void Function() onNavigateBack,
   });
+
+  Widget makeSavedKeyPhrasesScreen();
+
+  Widget makeSavedProductsScreen();
+
+  Widget makeMailingSettingsScreen();
 
   Widget makeLoginScreen();
 }

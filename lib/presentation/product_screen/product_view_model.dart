@@ -5,6 +5,7 @@ import 'package:mc_dashboard/core/utils/similarity.dart';
 import 'package:mc_dashboard/domain/entities/card_info.dart';
 import 'package:mc_dashboard/domain/entities/detailed_order_item.dart';
 import 'package:mc_dashboard/domain/entities/feedback_info.dart';
+import 'package:mc_dashboard/domain/entities/key_phrase.dart';
 import 'package:mc_dashboard/domain/entities/kw_lemmas.dart';
 import 'package:mc_dashboard/domain/entities/lemmatize.dart';
 import 'package:mc_dashboard/domain/entities/normquery_product.dart';
@@ -12,47 +13,56 @@ import 'package:mc_dashboard/domain/entities/order.dart';
 import 'package:mc_dashboard/domain/entities/stock.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/domain/entities/warehouse.dart';
+import 'package:mc_dashboard/domain/services/saved_products_service.dart';
 import 'package:mc_dashboard/presentation/product_screen/table_row_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+// Stocks service
 abstract class ProductViewModelStocksService {
   Future<Either<AppErrorBase, List<Stock>>> getMonthStocks({
     int? productId,
   });
 }
 
+// Orders service
 abstract class ProductViewModelNormqueryService {
   Future<Either<AppErrorBase, List<NormqueryProduct>>> get(
       {required List<int> ids});
 }
 
+// Orders service
 abstract class ProductViewModelOrderService {
   Future<Either<AppErrorBase, List<OrderWb>>> getOneMonthOrders({
     int? productId,
   });
 }
 
+// Warehouses service
 abstract class ProductViewModelWhService {
   Future<Either<AppErrorBase, List<Warehouse>>> getWarehouses({
     required List<int> ids,
   });
 }
 
+// Auth service
 abstract class ProductAuthService {
   Future<Either<AppErrorBase, Map<String, String?>>> getTokenAndType();
   String? getPaymentUrl();
   logout();
 }
 
+// Kw lemma service
 abstract class ProductViewModelKwLemmaService {
   Future<Either<AppErrorBase, List<KwLemmaItem>>> get({required List<int> ids});
 }
 
+// Lemmatize service
 abstract class ProductViewModelLemmatizeService {
   Future<Either<AppErrorBase, LemmatizeResponse>> get(
       {required LemmatizeRequest req});
 }
 
+// Detailed Orders service
 abstract class ProductViewModelDetailedOrdersService {
   Future<Either<AppErrorBase, List<DetailedOrderItem>>> fetchDetailedOrders({
     int? subjectId,
@@ -60,6 +70,11 @@ abstract class ProductViewModelDetailedOrdersService {
     int? isFbs,
     String pageSize = '10000',
   });
+}
+
+// Saved key phrases service
+abstract class ProductViewModelSavedKeyPhrasesService {
+  Future<Either<AppError, void>> saveKeyPhrases(List<KeyPhrase> keyPhrases);
 }
 
 class ProductViewModel extends ViewModelBase {
@@ -76,6 +91,8 @@ class ProductViewModel extends ViewModelBase {
       required this.onNavigateToEmptyProductScreen,
       required this.detailedOrdersService,
       required this.lemmatizeService,
+      required this.savedKeyPhrasesService,
+      required this.onSaveKeyPhrasesToTrack,
       required this.productPrice}) {
     _asyncInit();
   }
@@ -89,6 +106,8 @@ class ProductViewModel extends ViewModelBase {
   final ProductViewModelKwLemmaService kwLemmaService;
   final ProductViewModelLemmatizeService lemmatizeService;
   final ProductViewModelDetailedOrdersService detailedOrdersService;
+  final ProductViewModelSavedKeyPhrasesService savedKeyPhrasesService;
+  final void Function(List<String> keyPhrase) onSaveKeyPhrasesToTrack;
   final void Function() onNavigateBack;
   final void Function() onNavigateToEmptyProductScreen;
 
@@ -388,6 +407,7 @@ class ProductViewModel extends ViewModelBase {
 
   String getSeoNameDescChar(String name) {
     final keys = seoTableSections.keys.toList();
+    int pos = 0;
     double titleSim = 0;
     double descSim = 0;
     double charSim = 0;
@@ -395,6 +415,7 @@ class ProductViewModel extends ViewModelBase {
       final seoSectionRows = seoTableSections[keys[i]]!;
       for (int j = 0; j < seoSectionRows.length; j++) {
         if (seoSectionRows[j].normquery == name) {
+          pos = seoSectionRows[j].pos;
           if (keys[i] == 'title') {
             titleSim = seoSectionRows[j].titleSimilarity;
           } else if (keys[i] == 'description') {
@@ -406,7 +427,7 @@ class ProductViewModel extends ViewModelBase {
       }
     }
 
-    return 'Заголовок:${(titleSim * 100).toStringAsFixed(1)}% Описание:${(descSim * 100).toStringAsFixed(1)}% Характеристики:${(charSim * 100).toStringAsFixed(1)}%';
+    return 'Заголовок:${(titleSim * 100).toStringAsFixed(1)}% Описание:${(descSim * 100).toStringAsFixed(1)}% Характеристики:${(charSim * 100).toStringAsFixed(1)}%; Место:$pos';
   }
 
   // payment
@@ -415,5 +436,14 @@ class ProductViewModel extends ViewModelBase {
       launchUrl(Uri.parse(paymentUrl!));
       authService.logout();
     }
+  }
+
+  Future<void> saveKeyPhrases(List<String> keyPhrasesStr) async {
+    //
+    await savedKeyPhrasesService.saveKeyPhrases(
+        keyPhrasesStr.map((e) => KeyPhrase(phraseText: e)).toList());
+
+    // Update mailing keyphrases screen
+    onSaveKeyPhrasesToTrack(keyPhrasesStr);
   }
 }

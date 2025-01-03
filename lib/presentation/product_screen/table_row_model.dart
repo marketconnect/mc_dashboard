@@ -6,6 +6,7 @@ import 'package:mc_dashboard/domain/entities/normquery_product.dart';
 class SEOTableRowModel {
   final String normquery;
   final int freq;
+  final int pos;
   final double titleSimilarity;
   final double descriptionSimilarity;
   final double characteristicsSimilarity;
@@ -13,6 +14,7 @@ class SEOTableRowModel {
   SEOTableRowModel({
     required this.normquery,
     required this.freq,
+    required this.pos,
     required this.titleSimilarity,
     required this.descriptionSimilarity,
     required this.characteristicsSimilarity,
@@ -22,6 +24,7 @@ class SEOTableRowModel {
     String normquery,
     String lemma,
     int freq,
+    int pos,
     String lemmatizedTitle,
     String lemmatizedDescription,
     String lemmatizedCharacteristics,
@@ -30,6 +33,7 @@ class SEOTableRowModel {
     return SEOTableRowModel(
       normquery: normquery,
       freq: freq,
+      pos: pos,
       titleSimilarity: calculateCosineSimilarity(lemmatizedTitle, lemma),
       descriptionSimilarity:
           calculateCosineSimilarity(lemmatizedDescription, lemma),
@@ -66,6 +70,7 @@ Future<Map<String, List<SEOTableRowModel>>> generateSEOTableSections(
       normqueryProduct.normquery,
       lemma,
       normqueryProduct.freq,
+      (normqueryProduct.pageNumber - 1) * 100 + normqueryProduct.pagePos,
       lemmatizedTitle,
       lemmatizedDescription,
       lemmatizedCharacteristics,
@@ -120,6 +125,7 @@ Map<String, List<SEOTableRowModel>> generateRandomSEOTableRows(
       normquery,
       lemma,
       freq,
+      random.nextInt(100) + 1,
       lemmatizedTitle,
       lemmatizedDescription,
       lemmatizedCharacteristics,

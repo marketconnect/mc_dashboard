@@ -130,6 +130,9 @@ class __ScaffoldState extends State<_Scaffold> {
 
   List<int>?
       _selectedProductIds; // List to store selected product IDs for SeoRequestsExtendScreen
+  List<int> _savedProductIds = []; // List to store saved to track product IDs
+
+  List<String> _keyPhrases = [];
 
   final List<_Section> sections = [
     _Section(
@@ -142,18 +145,19 @@ class __ScaffoldState extends State<_Scaffold> {
         // _Subsection(title: 'Бренды'),
       ],
     ),
-    // _Section(
-    //   title: 'Рейтинги',
-    //   icon: Icons.star,
-    //   subsections: [
-    //     _Subsection(title: 'Рейтинг брендов'),
-    //     _Subsection(title: 'Рейтинг продавцов'),
-    //   ],
-    // ),
-    // _Section(title: 'Поиск по SKU', icon: Icons.search, subsections: []),
     _Section(title: 'SEO', icon: Icons.query_stats, subsections: [
       _Subsection(title: 'Расширение запросов'),
     ]),
+    _Section(
+      title: 'Рассылка',
+      icon: Icons.mail,
+      subsections: [
+        _Subsection(title: 'Настройки рассылки'),
+        _Subsection(title: 'Карточки товаров'),
+        _Subsection(title: 'Ключевые запросы  '),
+      ],
+    ),
+    // _Section(title: 'Поиск по SKU', icon: Icons.search, subsections: []),
     // _Section(        title: 'Настройка рассылок', icon: Icons.settings, subsections: []),
     // Section(title: 'Настройка', icon: Icons.settings, subsections: []),
     // Section(title: 'Помощь', icon: Icons.help, subsections: []),
@@ -226,6 +230,12 @@ class __ScaffoldState extends State<_Scaffold> {
                           child: widget.screenFactory.makeSubjectProductsScreen(
                               subjectId: _currentSubjectId!,
                               subjectName: _currentSubjectName!,
+                              onSaveProductsToTrack: (List<int> productIds) {
+                                setState(() {
+                                  _savedProductIds = List.from(_savedProductIds)
+                                    ..addAll(productIds);
+                                });
+                              },
                               onNavigateToProductScreen:
                                   (int productId, int productPrice) {
                                 setState(() {
@@ -287,6 +297,13 @@ class __ScaffoldState extends State<_Scaffold> {
                                   _selectedSubsectionIndex = 1;
                                 });
                               },
+                              onSaveKeyPhrasesToTrack:
+                                  (List<String> keyPhrases) {
+                                setState(() {
+                                  _keyPhrases = List.from(_keyPhrases)
+                                    ..addAll(keyPhrases);
+                                });
+                              },
                               onNavigateToEmptyProductScreen: () {
                                 setState(() {
                                   _selectedSectionIndex = 0;
@@ -332,6 +349,16 @@ class __ScaffoldState extends State<_Scaffold> {
                             ),
                           ),
                         ),
+                  widget.screenFactory
+                      .makeMailingSettingsScreen(), // MailingSettings
+                  KeyedSubtree(
+                      // Mailing products
+                      key: ValueKey(_savedProductIds.hashCode),
+                      child: widget.screenFactory.makeSavedProductsScreen()),
+                  KeyedSubtree(
+                      // Mailing KeyPhrases
+                      key: ValueKey(_keyPhrases.hashCode),
+                      child: widget.screenFactory.makeSavedKeyPhrasesScreen()),
                 ],
               ),
             ),
@@ -346,12 +373,14 @@ class __ScaffoldState extends State<_Scaffold> {
       return 1;
     } else if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 2) {
       return 2;
-    }
-    // else if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 3) {
-    //   return 3;
-    // }
-    else if (_selectedSectionIndex == 1 && _selectedSubsectionIndex == 0) {
+    } else if (_selectedSectionIndex == 1 && _selectedSubsectionIndex == 0) {
       return 3;
+    } else if (_selectedSectionIndex == 2 && _selectedSubsectionIndex == 0) {
+      return 4;
+    } else if (_selectedSectionIndex == 2 && _selectedSubsectionIndex == 1) {
+      return 5;
+    } else if (_selectedSectionIndex == 2 && _selectedSubsectionIndex == 2) {
+      return 6;
     }
     return 0;
   }
@@ -437,6 +466,7 @@ class __ScaffoldState extends State<_Scaffold> {
                   return ListTile(
                     leading: Icon(
                       section.icon,
+                      size: 18,
                       color: sectionIndex == _selectedSectionIndex
                           ? theme.colorScheme.onPrimary
                           : theme.colorScheme.onSurface,
@@ -462,6 +492,7 @@ class __ScaffoldState extends State<_Scaffold> {
                     controller: _controllers[sectionIndex],
                     leading: Icon(
                       section.icon,
+                      size: 18,
                       color: sectionIndex == _selectedSectionIndex
                           ? theme.colorScheme.onPrimary
                           : theme.colorScheme.onSurface,
@@ -485,6 +516,10 @@ class __ScaffoldState extends State<_Scaffold> {
                       _Subsection subsection = subEntry.value;
 
                       return ListTile(
+                        selectedTileColor: theme.colorScheme.surfaceBright,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(8.0)),
+                        ),
                         title: Text(
                           subsection.title,
                           style: const TextStyle(fontSize: 14),

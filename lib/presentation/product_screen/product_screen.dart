@@ -1241,7 +1241,7 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final model = context.watch<ProductViewModel>();
-
+    final saveKeyPhrases = model.saveKeyPhrases;
     final normqueryProducts = model.normqueries;
 
     if (normqueryProducts.isEmpty) {
@@ -1487,10 +1487,15 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
                         child: Icon(Icons.visibility,
                             color: theme.colorScheme.onSecondary),
                         label: "Отслеживать",
-                        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Операция не поддерживается')),
-                        ),
+                        onTap: () {
+                          final selectedItems = selectedIndices
+                              .map((index) => normqueryProducts[index])
+                              .toList();
+
+                          saveKeyPhrases(selectedItems
+                              .map((product) => product.normquery)
+                              .toList());
+                        },
                       ),
                     ],
                   ),

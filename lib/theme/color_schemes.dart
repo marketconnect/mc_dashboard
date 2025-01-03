@@ -20,6 +20,7 @@ const lightColorScheme = ColorScheme(
     onErrorContainer: Color(0xFF410002),
     // body background
     surface: Color(0xFFfafafa),
+    surfaceBright: Color(0xFFf1f2f4),
     onSurface: Color(0xFF4c647f),
     onSurfaceVariant: Color(0xFF4c647f),
     // side menu background
@@ -44,7 +45,9 @@ const darkColorScheme = ColorScheme(
   onError: Color(0xFF690005),
   onErrorContainer: Color(0xFFFFDAD6),
   // body background
-  surface: Color(0xFF1c1c1c),
+  // surface: Color(0xFF1c1c1c),
+  surface: Color(0xFF101115),
+  surfaceBright: Color(0xFF101115),
   onSurface: Color(0xFFb5b1b2),
   onSurfaceVariant: Color(0xFFb5b1b2),
   // side menu background

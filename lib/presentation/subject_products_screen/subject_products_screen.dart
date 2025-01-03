@@ -543,7 +543,7 @@ class _TableWidgetState extends State<_TableWidget> {
     final theme = Theme.of(context);
     final toggleFilterVisibility = model.toggleFilterVisibility;
     final navigateToProduct = model.onNavigateToProductScreen;
-
+    final addProductImage = model.addProductImage;
     return Column(
       children: [
         Expanded(
@@ -637,7 +637,6 @@ class _TableWidgetState extends State<_TableWidget> {
 
                             return GestureDetector(
                               onTap: () {
-                                // "Детали" = последний индекс (6), не сортируем
                                 if (headerIndex == 6) return;
                                 sortData(headerIndex);
                               },
@@ -693,7 +692,6 @@ class _TableWidgetState extends State<_TableWidget> {
                           final imageUrl =
                               calculateImageUrl(basketNum, item.productId);
                           final cardUrl = calculateCardUrl(imageUrl);
-
                           return contentBuilder(context,
                               (context, columnIndex) {
                             // 0-й столбец: чекбокс выбора
@@ -719,7 +717,9 @@ class _TableWidgetState extends State<_TableWidget> {
                                   ),
                                   value: selectedRows.contains(item.productId),
                                   onChanged: (bool? value) {
-                                    selectRow(item.productId);
+                                    selectRow(
+                                      item.productId,
+                                    );
                                   },
                                 ),
                               );
@@ -747,6 +747,8 @@ class _TableWidgetState extends State<_TableWidget> {
                                         builder: (context, snapshot) {
                                           final description =
                                               snapshot.data ?? "Загрузка...";
+                                          addProductImage(item.productId,
+                                              imageUrl, snapshot.data ?? "");
                                           final wildberriesUrl =
                                               "https://wildberries.ru/catalog/${item.productId}/detail.aspx?targetUrl=EX";
                                           return Row(
@@ -1009,11 +1011,7 @@ class _TableWidgetState extends State<_TableWidget> {
                             child: Icon(Icons.visibility,
                                 color: theme.colorScheme.onSecondary),
                             label: "Отслеживать",
-                            onTap: () =>
-                                ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text('Операция не поддерживается')),
-                            ),
+                            onTap: () => model.saveProducts(),
                           ),
                         ],
                       ),
