@@ -25,30 +25,6 @@ class SubjectProductsScreen extends StatelessWidget {
     final surfaceContainerHighest = theme.colorScheme.surfaceContainerHighest;
 
     return Scaffold(
-      // floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      // floatingActionButton: selectedRows.isEmpty
-      //     ? null
-      //     : MouseRegion(
-      //         cursor: SystemMouseCursors.click,
-      //         child: GestureDetector(
-      //           onTap: () => model.navigateToSeoRequestsExtendScreen(),
-      //           child: Container(
-      //             decoration: BoxDecoration(
-      //               color: theme.colorScheme.secondary,
-      //               borderRadius: BorderRadius.circular(8.0),
-      //               border: Border.all(color: theme.colorScheme.onSecondary),
-      //             ),
-      //             padding: const EdgeInsets.symmetric(
-      //                 vertical: 20.0, horizontal: 16.0),
-      //             child: Text(
-      //               "Расширение запросов",
-      //               style: TextStyle(
-      //                   color: theme.colorScheme.onSecondary,
-      //                   fontWeight: FontWeight.w600),
-      //             ),
-      //           ),
-      //         ),
-      //       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final maxWidth = constraints.maxWidth;
@@ -67,38 +43,67 @@ class SubjectProductsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _Header(),
-                  Container(
-                    height: constraints.maxHeight * 0.3, // Height for graph
-                    margin: const EdgeInsets.all(8.0),
-                    padding: const EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      color: surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    child: _PieChartWithList(
-                      isClearButtonVisible: isFilteredBySeller,
-                      dataMap: model.sellersDataMap,
-                      title: "Продавцы (ТОП-30)",
-                      onTapValue: model.filterBySeller,
-                      clearFilter: clearSellerBrandFilter,
-                    ),
-                  ),
-                  Container(
-                    height: constraints.maxHeight * 0.3, // Height for bar
-                    margin: const EdgeInsets.all(8.0),
-                    padding: const EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      color: surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    child: _PieChartWithList(
-                      isClearButtonVisible: isFilteredByBrand,
-                      title: "Бренды (ТОП-30)",
-                      onTapValue: model.filterByBrand,
-                      dataMap: model.brandsDataMap,
-                      clearFilter: clearSellerBrandFilter,
-                    ),
-                  ),
+                  model.loading
+                      ? Shimmer(
+                          gradient:
+                              Theme.of(context).colorScheme.shimmerGradient,
+                          child: Container(
+                            height: constraints.maxHeight * 0.3,
+                            width: double.infinity,
+                            margin: const EdgeInsets.all(16.0),
+                            decoration: BoxDecoration(
+                              color: Colors.grey,
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                          ),
+                        )
+                      : Container(
+                          height:
+                              constraints.maxHeight * 0.3, // Height for graph
+                          margin: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(16.0),
+                          decoration: BoxDecoration(
+                            color: surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          child: _PieChartWithList(
+                            isClearButtonVisible: isFilteredBySeller,
+                            dataMap: model.sellersDataMap,
+                            title: "Продавцы (ТОП-30)",
+                            onTapValue: model.filterBySeller,
+                            clearFilter: clearSellerBrandFilter,
+                          ),
+                        ),
+                  model.loading
+                      ? Shimmer(
+                          gradient:
+                              Theme.of(context).colorScheme.shimmerGradient,
+                          child: Container(
+                            height: constraints.maxHeight * 0.3,
+                            width: double.infinity,
+                            margin: const EdgeInsets.all(16.0),
+                            decoration: BoxDecoration(
+                              color: Colors.grey,
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                          ),
+                        )
+                      : Container(
+                          height: constraints.maxHeight * 0.3, // Height for bar
+                          margin: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(16.0),
+                          decoration: BoxDecoration(
+                            color: surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          child: _PieChartWithList(
+                            isClearButtonVisible: isFilteredByBrand,
+                            title: "Бренды (ТОП-30)",
+                            onTapValue: model.filterByBrand,
+                            dataMap: model.brandsDataMap,
+                            clearFilter: clearSellerBrandFilter,
+                          ),
+                        ),
                   if (isFilterVisible) _buildFiltersWidget(context),
                   Container(
                     height: constraints.maxHeight * 0.6, // Height for table
@@ -126,46 +131,74 @@ class SubjectProductsScreen extends StatelessWidget {
                     children: [
                       Flexible(
                         flex: 1,
-                        child: Container(
-                          margin: const EdgeInsets.all(8.0),
-                          padding: const EdgeInsets.all(16.0),
-                          decoration: BoxDecoration(
-                            color: surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          child: _PieChartWithList(
-                            isClearButtonVisible: isFilteredBySeller,
-                            dataMap: model.sellersDataMap,
-                            title: "Продавцы (ТОП-30)",
-                            onTapValue: model.filterBySeller,
-                            clearFilter: clearSellerBrandFilter,
-                          ),
-                        ),
-                      ),
-                      Flexible(
-                        flex: 1,
-                        child: Container(
-                          margin: const EdgeInsets.all(8.0),
-                          padding: const EdgeInsets.all(16.0),
-                          decoration: BoxDecoration(
-                            color: surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          child: Column(
-                            children: [
-                              Flexible(
-                                flex: 1,
+                        child: model.loading
+                            ? Shimmer(
+                                gradient: Theme.of(context)
+                                    .colorScheme
+                                    .shimmerGradient,
+                                child: Container(
+                                  width: double.infinity,
+                                  margin: const EdgeInsets.all(16.0),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey,
+                                    borderRadius: BorderRadius.circular(8.0),
+                                  ),
+                                ),
+                              )
+                            : Container(
+                                margin: const EdgeInsets.all(8.0),
+                                padding: const EdgeInsets.all(16.0),
+                                decoration: BoxDecoration(
+                                  color: surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
                                 child: _PieChartWithList(
-                                  isClearButtonVisible: isFilteredByBrand,
-                                  title: "Бренды (ТОП-30)",
-                                  onTapValue: model.filterByBrand,
-                                  dataMap: model.brandsDataMap,
+                                  isClearButtonVisible: isFilteredBySeller,
+                                  dataMap: model.sellersDataMap,
+                                  title: "Продавцы (ТОП-30)",
+                                  onTapValue: model.filterBySeller,
                                   clearFilter: clearSellerBrandFilter,
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
+                      ),
+                      Flexible(
+                        flex: 1,
+                        child: model.loading
+                            ? Shimmer(
+                                gradient: Theme.of(context)
+                                    .colorScheme
+                                    .shimmerGradient,
+                                child: Container(
+                                  width: double.infinity,
+                                  margin: const EdgeInsets.all(16.0),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey,
+                                    borderRadius: BorderRadius.circular(8.0),
+                                  ),
+                                ),
+                              )
+                            : Container(
+                                margin: const EdgeInsets.all(8.0),
+                                padding: const EdgeInsets.all(16.0),
+                                decoration: BoxDecoration(
+                                  color: surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Flexible(
+                                      flex: 1,
+                                      child: _PieChartWithList(
+                                        isClearButtonVisible: isFilteredByBrand,
+                                        title: "Бренды (ТОП-30)",
+                                        onTapValue: model.filterByBrand,
+                                        dataMap: model.brandsDataMap,
+                                        clearFilter: clearSellerBrandFilter,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                       ),
                     ],
                   ),
@@ -384,22 +417,8 @@ class _PieChartWithList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final model = context.watch<SubjectProductsViewModel>();
     final theme = Theme.of(context);
-    if (model.loading) {
-      return Shimmer(
-        gradient: Theme.of(context).colorScheme.shimmerGradient,
-        child: Container(
-          height: 300,
-          width: double.infinity,
-          margin: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            color: Colors.grey,
-            borderRadius: BorderRadius.circular(8.0),
-          ),
-        ),
-      );
-    }
+
     if (dataMap.isEmpty) {
       return const Center(child: Text("Нет данных"));
     }

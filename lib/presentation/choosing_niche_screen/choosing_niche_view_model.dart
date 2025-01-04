@@ -18,9 +18,7 @@ class ChoosingNicheViewModel extends ViewModelBase {
       {required super.context,
       required this.subjectsSummaryService,
       required this.authService,
-      required this.onNavigateToSubjectProducts}) {
-    _asyncInit();
-  }
+      required this.onNavigateToSubjectProducts});
 
   final void Function(int subjectId, String subjectName)
       onNavigateToSubjectProducts;
@@ -122,8 +120,8 @@ class ChoosingNicheViewModel extends ViewModelBase {
   // Search end
 
   // Methods
-  _asyncInit() async {
-    setLoading();
+  @override
+  Future<void> asyncInit() async {
     final result = await subjectsSummaryService.fetchSubjectsSummary();
 
     if (result.isRight()) {
@@ -136,8 +134,6 @@ class ChoosingNicheViewModel extends ViewModelBase {
     } else {
       setError("Сервер временно недоступен");
     }
-
-    setLoaded();
   }
 
   set subjectsSummary(List<SubjectSummaryItem> value) {

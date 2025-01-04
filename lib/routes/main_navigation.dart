@@ -35,11 +35,7 @@ abstract class ScreenFactory {
     required void Function() onNavigateBack,
   });
 
-  Widget makeSavedKeyPhrasesScreen();
-
-  Widget makeSavedProductsScreen();
-
-  Widget makeMailingSettingsScreen();
+  Widget makeMailingScreen();
 
   Widget makeLoginScreen();
 }

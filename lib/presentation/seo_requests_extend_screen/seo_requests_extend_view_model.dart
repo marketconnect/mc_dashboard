@@ -23,9 +23,7 @@ class SeoRequestsExtendViewModel extends ViewModelBase {
     required this.productIds,
     required this.normqueryService,
     required this.authService,
-  }) {
-    _asyncInit();
-  }
+  });
 
   final void Function() onNavigateBack;
   final List<int> productIds;
@@ -48,8 +46,8 @@ class SeoRequestsExtendViewModel extends ViewModelBase {
   bool get selectAll => _selectAll;
 
   // methods ///////////////////////////////////////////////////////////////////
-  Future<void> _asyncInit() async {
-    setLoading();
+  @override
+  Future<void> asyncInit() async {
     final tokenInfoOrEither = await authService.getTokenAndType();
     if (tokenInfoOrEither.isRight()) {
       _tokenInfo = tokenInfoOrEither.fold((l) => {}, (r) => r);
@@ -64,7 +62,6 @@ class SeoRequestsExtendViewModel extends ViewModelBase {
       _paymentUrl = authService.getPaymentUrl();
       _setNormqueries(generateRandomNormqueries(25));
     }
-    setLoaded();
   }
 
   void setSelectAll(bool value) {

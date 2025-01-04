@@ -13,7 +13,7 @@ import 'package:mc_dashboard/domain/entities/order.dart';
 import 'package:mc_dashboard/domain/entities/stock.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/domain/entities/warehouse.dart';
-import 'package:mc_dashboard/domain/services/saved_products_service.dart';
+
 import 'package:mc_dashboard/presentation/product_screen/table_row_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -74,7 +74,7 @@ abstract class ProductViewModelDetailedOrdersService {
 
 // Saved key phrases service
 abstract class ProductViewModelSavedKeyPhrasesService {
-  Future<Either<AppError, void>> saveKeyPhrases(List<KeyPhrase> keyPhrases);
+  Future<Either<AppErrorBase, void>> saveKeyPhrases(List<KeyPhrase> keyPhrases);
 }
 
 class ProductViewModel extends ViewModelBase {
@@ -93,9 +93,7 @@ class ProductViewModel extends ViewModelBase {
       required this.lemmatizeService,
       required this.savedKeyPhrasesService,
       required this.onSaveKeyPhrasesToTrack,
-      required this.productPrice}) {
-    _asyncInit();
-  }
+      required this.productPrice});
   final int productId;
   final int productPrice;
   final ProductViewModelStocksService stocksService;
@@ -116,10 +114,6 @@ class ProductViewModel extends ViewModelBase {
   // token and sub info
   Map<String, String?> _tokenInfo = {};
   bool get isFree => _tokenInfo["type"] == "free";
-
-  // payment url
-  String? _paymentUrl;
-  String? get paymentUrl => _paymentUrl;
 
   // basket num
   String? _basketNum;
@@ -237,8 +231,8 @@ class ProductViewModel extends ViewModelBase {
   }
 
   // Methods ///////////////////////////////////////////////////////////////////
-  Future<void> _asyncInit() async {
-    setLoading();
+  @override
+  Future<void> asyncInit() async {
     _basketNum = getBasketNum(productId);
 
     final vals = await Future.wait([
@@ -372,9 +366,15 @@ class ProductViewModel extends ViewModelBase {
         }
       }
     } else {
+      // free ////////////////////////////////////////////////////// free
       _normqueries = generateRandomNormqueryProducts(15);
       final randomSeoTableSections = generateRandomSEOTableRows(15);
       setSeoTableSections(randomSeoTableSections);
+      List<NormqueryProduct> uNormqueries = [];
+      for (final normquery in _normqueries) {
+        uNormqueries.add(normquery);
+      }
+      _unusedNormqueries = uNormqueries;
     }
 
     final whOrEither =
@@ -401,8 +401,6 @@ class ProductViewModel extends ViewModelBase {
       final imageNext = image.replaceFirst('/1.webp', '/$i.webp');
       _images.add(imageNext);
     }
-    _paymentUrl = authService.getPaymentUrl();
-    setLoaded();
   } // _asyncInit
 
   String getSeoNameDescChar(String name) {
@@ -432,8 +430,9 @@ class ProductViewModel extends ViewModelBase {
 
   // payment
   void onPaymentComplete() {
+    final paymentUrl = authService.getPaymentUrl();
     if (paymentUrl != null) {
-      launchUrl(Uri.parse(paymentUrl!));
+      launchUrl(Uri.parse(paymentUrl));
       authService.logout();
     }
   }

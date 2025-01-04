@@ -39,6 +39,9 @@ class LoginViewModel extends ViewModelBase {
     notifyListeners();
   }
 
+  @override
+  Future<void> asyncInit() async {}
+
   Future<void> signInOrRegister() async {
     setShowBtn(false);
     errorMessage = null;

@@ -1803,7 +1803,7 @@ class _UnusedQueryTableWidgetState extends State<UnusedQueryTableWidget> {
 
     // unusedQueries - список "неиспользуемых" запросов
     final unusedQueries = model.unusedNormqueries;
-
+    final saveKeyPhrases = model.saveKeyPhrases;
     if (unusedQueries.isEmpty) {
       return _noDataPlaceholder();
     }
@@ -2066,9 +2066,15 @@ class _UnusedQueryTableWidgetState extends State<UnusedQueryTableWidget> {
                   child: Icon(Icons.visibility,
                       color: theme.colorScheme.onSecondary),
                   label: "Отслеживать",
-                  onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Операция не поддерживается')),
-                  ),
+                  onTap: () {
+                    final selectedItems = selectedIndices
+                        .map((index) => unusedQueries[index])
+                        .toList();
+
+                    saveKeyPhrases(selectedItems
+                        .map((product) => product.normquery)
+                        .toList());
+                  },
                 ),
               ],
             ),

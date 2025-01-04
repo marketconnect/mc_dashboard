@@ -5,7 +5,6 @@ import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
 import 'package:mc_dashboard/domain/entities/detailed_order_item.dart';
 import 'package:mc_dashboard/domain/entities/saved_product.dart';
-import 'package:mc_dashboard/domain/services/saved_products_service.dart';
 
 // Detailed Orders Service
 abstract class SubjectProductsViewModelDetailedOrdersService {
@@ -20,7 +19,7 @@ abstract class SubjectProductsAuthService {
 
 // Saved Products Service
 abstract class SubjectProductsSavedProductsService {
-  Future<Either<AppError, void>> saveProducts(List<SavedProduct> products);
+  Future<Either<AppErrorBase, void>> saveProducts(List<SavedProduct> products);
 }
 
 class SubjectProductsViewModel extends ViewModelBase {
@@ -35,9 +34,7 @@ class SubjectProductsViewModel extends ViewModelBase {
       required this.authService,
       required this.savedProductsService,
       required this.onNavigateToSeoRequestsExtendScreen,
-      required this.onSaveProductsToTrack}) {
-    _asyncInit();
-  }
+      required this.onSaveProductsToTrack});
 
   final int subjectId;
   final String subjectName;
@@ -186,8 +183,8 @@ class SubjectProductsViewModel extends ViewModelBase {
   bool isFbs = false;
   // Methods ///////////////////////////////////////////////////////////////////
 
-  _asyncInit() async {
-    setLoading();
+  @override
+  Future<void> asyncInit() async {
     final result = await detailedOrdersService.fetchDetailedOrders(
         subjectId: subjectId, isFbs: 0);
 
@@ -201,13 +198,11 @@ class SubjectProductsViewModel extends ViewModelBase {
     } else {
       setError("Сервер временно недоступен");
     }
-
-    setLoaded();
   }
 
   Future<void> switchToFbs() async {
     if (isFbs) {
-      _asyncInit();
+      await asyncInit();
       isFbs = false;
       return;
     }

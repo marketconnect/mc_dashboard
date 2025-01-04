@@ -148,15 +148,7 @@ class __ScaffoldState extends State<_Scaffold> {
     _Section(title: 'SEO', icon: Icons.query_stats, subsections: [
       _Subsection(title: 'Расширение запросов'),
     ]),
-    _Section(
-      title: 'Рассылка',
-      icon: Icons.mail,
-      subsections: [
-        _Subsection(title: 'Настройки рассылки'),
-        _Subsection(title: 'Карточки товаров'),
-        _Subsection(title: 'Ключевые запросы  '),
-      ],
-    ),
+    _Section(title: 'Рассылка', icon: Icons.mail, subsections: []),
     // _Section(title: 'Поиск по SKU', icon: Icons.search, subsections: []),
     // _Section(        title: 'Настройка рассылок', icon: Icons.settings, subsections: []),
     // Section(title: 'Настройка', icon: Icons.settings, subsections: []),
@@ -349,16 +341,11 @@ class __ScaffoldState extends State<_Scaffold> {
                             ),
                           ),
                         ),
-                  widget.screenFactory
-                      .makeMailingSettingsScreen(), // MailingSettings
                   KeyedSubtree(
-                      // Mailing products
-                      key: ValueKey(_savedProductIds.hashCode),
-                      child: widget.screenFactory.makeSavedProductsScreen()),
-                  KeyedSubtree(
-                      // Mailing KeyPhrases
-                      key: ValueKey(_keyPhrases.hashCode),
-                      child: widget.screenFactory.makeSavedKeyPhrasesScreen()),
+                      key: ValueKey(
+                          _savedProductIds.hashCode + _keyPhrases.hashCode),
+                      child: widget.screenFactory
+                          .makeMailingScreen()), // MailingSettings
                 ],
               ),
             ),
@@ -375,12 +362,8 @@ class __ScaffoldState extends State<_Scaffold> {
       return 2;
     } else if (_selectedSectionIndex == 1 && _selectedSubsectionIndex == 0) {
       return 3;
-    } else if (_selectedSectionIndex == 2 && _selectedSubsectionIndex == 0) {
+    } else if (_selectedSectionIndex == 2) {
       return 4;
-    } else if (_selectedSectionIndex == 2 && _selectedSubsectionIndex == 1) {
-      return 5;
-    } else if (_selectedSectionIndex == 2 && _selectedSubsectionIndex == 2) {
-      return 6;
     }
     return 0;
   }

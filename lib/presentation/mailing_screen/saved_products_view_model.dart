@@ -1,18 +1,16 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
 import 'package:mc_dashboard/domain/entities/saved_product.dart';
-import 'package:mc_dashboard/domain/services/saved_products_service.dart';
 
 abstract class SavedProductsSavedProductsService {
-  Future<Either<AppError, List<SavedProduct>>> loadProducts();
-  Future<Either<AppError, void>> deleteProduct(int productId);
+  Future<Either<AppErrorBase, List<SavedProduct>>> loadProducts();
+  Future<Either<AppErrorBase, void>> deleteProduct(int productId);
 }
 
 class SavedProductsViewModel extends ViewModelBase {
   SavedProductsViewModel(
-      {required super.context, required this.savedProductsService}) {
-    _asyncInit();
-  }
+      {required super.context, required this.savedProductsService});
 
   final SavedProductsSavedProductsService savedProductsService;
 
@@ -24,23 +22,26 @@ class SavedProductsViewModel extends ViewModelBase {
   List<SavedProduct> get savedProducts => _savedProducts;
 
   // Methods
-  void _asyncInit() async {
-    setLoading();
+  @override
+  Future<void> asyncInit() async {
     final savedProductsOrEither = await savedProductsService.loadProducts();
 
     if (savedProductsOrEither.isRight()) {
       _savedProducts = savedProductsOrEither.fold(
           (l) => throw UnimplementedError(), (r) => r);
     }
-
-    setLoaded();
   }
 
-  void removeProductsFromSaved(List<int> productIds) {
+  void removeProductsFromSaved(List<int> productIds, bool isSubscribed) {
+    if (!isSubscribed) {
+      return;
+    }
     _savedProducts
         .removeWhere((product) => productIds.contains(product.productId));
     for (int productId in productIds) {
-      savedProductsService.deleteProduct(productId);
+      savedProductsService.deleteProduct(
+        productId,
+      );
     }
     notifyListeners();
   }

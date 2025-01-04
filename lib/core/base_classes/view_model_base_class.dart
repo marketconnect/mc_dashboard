@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 
-class ViewModelBase extends ChangeNotifier {
-  ViewModelBase({required this.context});
-  final BuildContext context;
-  late bool _loading = true;
+abstract class ViewModelBase extends ChangeNotifier {
+  ViewModelBase({required this.context}) {
+    _initialize();
+  }
 
+  final BuildContext context;
+
+  late bool _loading = true;
   String? _error;
+
   void setLoading() {
     _loading = true;
     notifyListeners();
@@ -23,4 +27,17 @@ class ViewModelBase extends ChangeNotifier {
 
   String? get error => _error;
   bool get loading => _loading;
+
+  Future<void> asyncInit();
+
+  Future<void> _initialize() async {
+    try {
+      setLoading();
+      await asyncInit();
+    } catch (e) {
+      setError(e.toString());
+    } finally {
+      setLoaded();
+    }
+  }
 }

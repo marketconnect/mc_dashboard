@@ -12,9 +12,7 @@ class EmptySubjectViewModel extends ViewModelBase {
       {required super.context,
       required this.subjectsSummaryService,
       required this.onNavigateBack,
-      required this.onNavigateToSubjectProducts}) {
-    _asyncInit();
-  }
+      required this.onNavigateToSubjectProducts});
   final EmptySubjectViewModelSubjectsSummaryService subjectsSummaryService;
   final void Function(int subjectId, String subjectName)
       onNavigateToSubjectProducts;
@@ -47,8 +45,8 @@ class EmptySubjectViewModel extends ViewModelBase {
 
   // Methods
 
-  _asyncInit() async {
-    setLoading();
+  @override
+  Future<void> asyncInit() async {
     final result = await subjectsSummaryService.fetchSubjectsSummary();
 
     if (result.isRight()) {
@@ -59,8 +57,6 @@ class EmptySubjectViewModel extends ViewModelBase {
     } else {
       setError("Сервер временно недоступен");
     }
-
-    setLoaded();
   }
 
   void onSearchChanged(String value) {

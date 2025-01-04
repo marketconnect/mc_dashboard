@@ -1,8 +1,9 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/domain/entities/key_phrase.dart';
-import 'package:mc_dashboard/domain/services/saved_products_service.dart';
+
 import 'package:mc_dashboard/presentation/product_screen/product_view_model.dart';
-import 'package:mc_dashboard/presentation/saved_key_phrases_screen/saved_key_phrases_view_model.dart';
+import 'package:mc_dashboard/presentation/mailing_screen/saved_key_phrases_view_model.dart';
 
 abstract class SavedKeyPhrasesRepository {
   Future<void> saveKeyPhrase(KeyPhrase keyPhrase);
@@ -21,35 +22,59 @@ class SavedKeyPhrasesService
   final SavedKeyPhrasesRepository savedKeyPhrasesRepo;
 
   @override
-  Future<Either<AppError, void>> saveKeyPhrases(
-      List<KeyPhrase> keyPhrases) async {
+  Future<Either<AppErrorBase, void>> saveKeyPhrases(
+    List<KeyPhrase> keyPhrases,
+  ) async {
     try {
+      // TODO: send to server
+
       for (var keyPhrase in keyPhrases) {
         await savedKeyPhrasesRepo.saveKeyPhrase(keyPhrase);
       }
     } catch (e) {
-      return left(AppError());
+      return left(AppErrorBase(
+        'Caught error: $e',
+        name: 'saveKeyPhrases',
+        sendTo: true,
+        source: 'SavedKeyPhrasesService',
+      ));
     }
     return right(null);
   }
 
   @override
-  Future<Either<AppError, List<KeyPhrase>>> loadKeyPhrases() async {
+  Future<Either<AppErrorBase, List<KeyPhrase>>> loadKeyPhrases() async {
+    // TODO: send to server
+
     try {
       final keyPhrases = await savedKeyPhrasesRepo.getAllKeyPhrases();
 
       return right(keyPhrases);
     } catch (e) {
-      return left(AppError());
+      return left(AppErrorBase(
+        'Caught error: $e',
+        name: 'loadKeyPhrases',
+        sendTo: true,
+        source: 'SavedKeyPhrasesService',
+      ));
     }
   }
 
   @override
-  Future<Either<AppError, void>> deleteKeyPhrase(String phraseText) async {
+  Future<Either<AppErrorBase, void>> deleteKeyPhrase(
+    String phraseText,
+  ) async {
     try {
+      // TODO: send to server
+
       await savedKeyPhrasesRepo.deleteKeyPhrase(phraseText);
     } catch (e) {
-      return left(AppError());
+      return left(AppErrorBase(
+        'Caught error: $e',
+        name: 'deleteKeyPhrase',
+        sendTo: true,
+        source: 'SavedKeyPhrasesService',
+      ));
     }
     return right(null);
   }

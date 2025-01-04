@@ -15,6 +15,9 @@ class EmptyProductViewModel extends ViewModelBase {
   String? searchedProductName;
   int? sku;
   // Methods
+  @override
+  Future<void> asyncInit() async {}
+
   Future<void> onSearchChanged(String value) async {
     searchQuery = value;
     if (value.length > 4) {

@@ -15,12 +15,14 @@ import 'package:mc_dashboard/domain/services/auth_service.dart';
 import 'package:mc_dashboard/domain/services/detailed_orders_service.dart';
 import 'package:mc_dashboard/domain/services/kw_lemmas_service.dart';
 import 'package:mc_dashboard/domain/services/lemmatize_service.dart';
+import 'package:mc_dashboard/domain/services/mail_settings_service.dart';
 import 'package:mc_dashboard/domain/services/normqueries_service.dart';
 import 'package:mc_dashboard/domain/services/orders_service.dart';
 import 'package:mc_dashboard/domain/services/saved_key_phrases_service.dart';
 import 'package:mc_dashboard/domain/services/saved_products_service.dart';
 import 'package:mc_dashboard/domain/services/stocks_service.dart';
 import 'package:mc_dashboard/domain/services/subjects_summary_service.dart';
+import 'package:mc_dashboard/domain/services/user_emails_service.dart';
 import 'package:mc_dashboard/domain/services/warehouses_service.dart';
 import 'package:mc_dashboard/main.dart';
 
@@ -33,22 +35,24 @@ import 'package:mc_dashboard/presentation/empty_subjects_screen/empty_subjects_s
 import 'package:mc_dashboard/presentation/empty_subjects_screen/empty_subjects_view_model.dart';
 import 'package:mc_dashboard/presentation/login_screen/login_screen.dart';
 import 'package:mc_dashboard/presentation/login_screen/login_view_model.dart';
-import 'package:mc_dashboard/presentation/mailing_settings_screen/mailing_settings_screen.dart';
-import 'package:mc_dashboard/presentation/mailing_settings_screen/mailing_settings_view_model.dart';
+import 'package:mc_dashboard/presentation/mailing_screen/mailing_screen.dart';
+import 'package:mc_dashboard/presentation/mailing_screen/mailing_view_model.dart';
 import 'package:mc_dashboard/presentation/product_screen/product_screen.dart';
 import 'package:mc_dashboard/presentation/product_screen/product_view_model.dart';
-import 'package:mc_dashboard/presentation/saved_key_phrases_screen/saved_key_phrases_screen.dart';
-import 'package:mc_dashboard/presentation/saved_key_phrases_screen/saved_key_phrases_view_model.dart';
-import 'package:mc_dashboard/presentation/saved_products_screen/saved_products_screen.dart';
-import 'package:mc_dashboard/presentation/saved_products_screen/saved_products_view_model.dart';
+
+import 'package:mc_dashboard/presentation/mailing_screen/saved_key_phrases_view_model.dart';
+
+import 'package:mc_dashboard/presentation/mailing_screen/saved_products_view_model.dart';
 import 'package:mc_dashboard/presentation/seo_requests_extend_screen/seo_requests_extend_screen.dart';
 import 'package:mc_dashboard/presentation/seo_requests_extend_screen/seo_requests_extend_view_model.dart';
 import 'package:mc_dashboard/presentation/subject_products_screen/subject_products_screen.dart';
 import 'package:mc_dashboard/presentation/subject_products_screen/subject_products_view_model.dart';
 
 import 'package:mc_dashboard/repositories/local_storage.dart';
+import 'package:mc_dashboard/repositories/mailing_settings_repo.dart';
 import 'package:mc_dashboard/repositories/saved_key_phrases_repo.dart';
 import 'package:mc_dashboard/repositories/saved_products_repo.dart';
+import 'package:mc_dashboard/repositories/user_email_repo.dart';
 import 'package:mc_dashboard/routes/main_navigation.dart';
 import 'package:provider/provider.dart';
 
@@ -82,6 +86,10 @@ class _DIContainer {
   SavedProductsRepo _makeSavedProductsRepo() => SavedProductsRepo();
 
   SavedKeyPhrasesRepo _makeSavedKeyPhrasesRepo() => SavedKeyPhrasesRepo();
+
+  UserEmailsRepo _makeUserEmailsRepo() => UserEmailsRepo();
+
+  MailingSettingsRepo _makeMailingSettingsRepo() => MailingSettingsRepo();
   // Api clients ///////////////////////////////////////////////////////////////
   AuthApiClient _makeAuthApiClient() => const AuthApiClient();
   // Services //////////////////////////////////////////////////////////////////
@@ -123,6 +131,15 @@ class _DIContainer {
   SavedKeyPhrasesService _makeSavedKeyPhrasesService() =>
       SavedKeyPhrasesService(
         savedKeyPhrasesRepo: _makeSavedKeyPhrasesRepo(),
+      );
+
+  UserEmailsService _makeUserEmailsService() => UserEmailsService(
+        userEmailsRepoRepo: _makeUserEmailsRepo(),
+      );
+
+  MailingSettingsService _makeMailingSettingsService() =>
+      MailingSettingsService(
+        mailingSettingsRepo: _makeMailingSettingsRepo(),
       );
   // ViewModels ////////////////////////////////////////////////////////////////
   ChoosingNicheViewModel _makeChoosingNicheViewModel(
@@ -218,7 +235,12 @@ class _DIContainer {
 
   MailingSettingsViewModel _makeMailingSettingsViewModel(
           BuildContext context) =>
-      MailingSettingsViewModel(context: context);
+      MailingSettingsViewModel(
+        context: context,
+        userEmailsService: _makeUserEmailsService(),
+        settingsService: _makeMailingSettingsService(),
+        authService: _makeAuthService(),
+      );
 
   SavedProductsViewModel _makeSavedProductsViewModel(BuildContext context) =>
       SavedProductsViewModel(
@@ -339,32 +361,26 @@ class ScreenFactoryDefault implements ScreenFactory {
   }
 
   @override
-  Widget makeMailingSettingsScreen() {
-    return ChangeNotifierProvider(
-      create: (context) => _diContainer._makeMailingSettingsViewModel(
-        context,
-      ),
-      child: const MailingSettingsScreen(),
-    );
-  }
-
-  @override
-  Widget makeSavedProductsScreen() {
-    return ChangeNotifierProvider(
-      create: (context) => _diContainer._makeSavedProductsViewModel(
-        context,
-      ),
-      child: const SavedProductsScreen(),
-    );
-  }
-
-  @override
-  Widget makeSavedKeyPhrasesScreen() {
-    return ChangeNotifierProvider(
-      create: (context) => _diContainer._makeSavedKeyPhrasesViewModel(
-        context,
-      ),
-      child: const SavedKeyPhrasesScreen(),
+  Widget makeMailingScreen() {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (context) => _diContainer._makeMailingSettingsViewModel(
+            context,
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => _diContainer._makeSavedProductsViewModel(
+            context,
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => _diContainer._makeSavedKeyPhrasesViewModel(
+            context,
+          ),
+        ),
+      ],
+      child: const MailingScreen(),
     );
   }
 

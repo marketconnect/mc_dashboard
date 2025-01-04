@@ -8,7 +8,9 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import 'package:mc_dashboard/di/di_container.dart';
 import 'package:mc_dashboard/domain/entities/key_phrase.dart';
+import 'package:mc_dashboard/domain/entities/mailing_settings.dart';
 import 'package:mc_dashboard/domain/entities/saved_product.dart';
+import 'package:mc_dashboard/domain/entities/user_email.dart';
 import 'package:mc_dashboard/firebase_options.dart';
 
 abstract class AppFactory {
@@ -28,6 +30,8 @@ Future<void> main() async {
   await Hive.initFlutter();
   Hive.registerAdapter(SavedProductAdapter());
   Hive.registerAdapter(KeyPhraseAdapter());
+  Hive.registerAdapter(UserEmailAdapter());
+  Hive.registerAdapter(DynamicMailingSettingsAdapter());
   final app = await appFactory.makeApp();
   runApp(app);
 }
