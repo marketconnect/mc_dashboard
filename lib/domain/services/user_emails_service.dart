@@ -1,4 +1,5 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:mc_dashboard/api/user_emails.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/domain/entities/user_email.dart';
 
@@ -13,13 +14,24 @@ abstract class UserEmailsRepoRepository {
 class UserEmailsService implements MailingUserEmailsService {
   UserEmailsService({
     required this.userEmailsRepoRepo,
+    required this.userEmailsApiClient,
   });
 
+  final UserEmailsApiClient userEmailsApiClient;
   final UserEmailsRepoRepository userEmailsRepoRepo;
 
   @override
-  Future<Either<AppErrorBase, void>> saveUserEmail(String email) async {
+  Future<Either<AppErrorBase, void>> saveUserEmail(
+      {required String token,
+      required int userId,
+      required String email}) async {
     try {
+      // Save on server
+      final result = await userEmailsApiClient.saveUserEmail(
+        token: token,
+        request: SaveEmailRequest(userId: userId, email: email),
+      );
+
       final userEmail = UserEmail(email: email);
 
       await userEmailsRepoRepo.saveUserEmail(userEmail);

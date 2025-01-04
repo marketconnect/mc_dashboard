@@ -132,6 +132,7 @@ class AuthService
     return authServiceStorage.clearToken();
   }
 
+  @override
   User? getFirebaseAuthUserInfo() {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null && user.email != null) {
@@ -156,6 +157,31 @@ class AuthService
     );
     final endDateStr = endDate.toIso8601String().substring(0, 10);
     return '${SiteSettings.paymentUrl}?amount=${PaymentSettings.amount}&order=$order&email=$email&description=Подписка на месяц до ${formatDate(endDateStr)}';
+  }
+
+  int? getUserId(String token) {
+    try {
+      // Separate token into 3 parts: Header, Payload, Signature
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+
+      // Decode the payload
+      final payload = json.decode(
+        utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
+      );
+
+      // Extract userId
+      final userId = payload['userId'];
+      if (userId is int) {
+        return userId;
+      } else if (userId is String) {
+        return int.tryParse(
+            userId); // If userId is a string, try to parse it as an int
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
   }
 
   String simpleEncrypt(String email, String date) {
