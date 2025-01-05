@@ -120,7 +120,9 @@ class SubscriptionScreen extends StatelessWidget {
                             const SizedBox(height: 16),
                             const SizedBox(height: 24),
                             ElevatedButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                model.subscribe();
+                              },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: theme.colorScheme.tertiary,
                                 foregroundColor: theme.colorScheme.onTertiary,
@@ -195,7 +197,7 @@ class SubscriptionScreen extends StatelessWidget {
           const SizedBox(height: 32),
           ElevatedButton(
             onPressed: () {
-              // Логика продления подписки
+              model.subscribe();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.tertiary,

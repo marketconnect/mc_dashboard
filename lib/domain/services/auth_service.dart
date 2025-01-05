@@ -2,9 +2,9 @@ import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fpdart/fpdart.dart';
-import 'package:mc_dashboard/.env.dart';
+
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
-import 'package:mc_dashboard/core/utils/dates.dart';
+
 import 'package:mc_dashboard/domain/entities/token_info.dart';
 
 import 'package:mc_dashboard/presentation/login_screen/login_view_model.dart';
@@ -142,6 +142,7 @@ class AuthService
   // Clear token from storage
   @override
   Future<Either<AppErrorBase, void>> logout() async {
+    await FirebaseAuth.instance.signOut();
     return authServiceStorage.clearToken();
   }
 

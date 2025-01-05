@@ -86,3 +86,12 @@ String formatDateTimeToDayMonthYearHourMinute(DateTime dateTime) {
 }
 
 String _twoDigits(int value) => value < 10 ? '0$value' : value.toString();
+
+DateTime parseDateYYYYMMDD(String date) {
+  final parts = date.split("-");
+  final day = int.parse(parts[2]);
+  final month = int.parse(parts[1]);
+  final year = int.parse(parts[0]);
+
+  return DateTime(year, month, day);
+}

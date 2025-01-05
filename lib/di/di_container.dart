@@ -23,6 +23,7 @@ import 'package:mc_dashboard/domain/services/saved_key_phrases_service.dart';
 import 'package:mc_dashboard/domain/services/saved_products_service.dart';
 import 'package:mc_dashboard/domain/services/stocks_service.dart';
 import 'package:mc_dashboard/domain/services/subjects_summary_service.dart';
+import 'package:mc_dashboard/domain/services/tinkoff_payment_service.dart';
 import 'package:mc_dashboard/domain/services/user_emails_service.dart';
 import 'package:mc_dashboard/domain/services/warehouses_service.dart';
 import 'package:mc_dashboard/main.dart';
@@ -144,6 +145,8 @@ class _DIContainer {
       MailingSettingsService(
         mailingSettingsRepo: _makeMailingSettingsRepo(),
       );
+
+  TinkoffPaymentService _makeTinkoffPaymentService() => TinkoffPaymentService();
   // ViewModels ////////////////////////////////////////////////////////////////
   ChoosingNicheViewModel _makeChoosingNicheViewModel(
           BuildContext context,
@@ -269,6 +272,7 @@ class _DIContainer {
       SubscriptionViewModel(
         context: context,
         authService: _makeAuthService(),
+        tinkoffPaymentService: _makeTinkoffPaymentService(),
       );
 
   LoginViewModel _makeLoginViewModel(BuildContext context) => LoginViewModel(
