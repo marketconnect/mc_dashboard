@@ -28,7 +28,7 @@ class UserEmailsService implements MailingUserEmailsService {
     try {
       // Save on server
       await userEmailsApiClient.saveUserEmail(
-        token: token,
+        token: 'Bearer $token',
         request: SaveEmailRequest(userId: userId, email: email),
       );
 
@@ -55,7 +55,7 @@ class UserEmailsService implements MailingUserEmailsService {
     try {
       // delete on server
       await userEmailsApiClient.deleteUserEmail(
-        token: token,
+        token: 'Bearer $token',
         request: DeleteEmailRequest(userId: userId, email: email),
       );
 
@@ -78,7 +78,7 @@ class UserEmailsService implements MailingUserEmailsService {
     try {
       // get from server
       final userEmailsFromServer = await userEmailsApiClient.findUserEmails(
-        token: token,
+        token: 'Bearer $token',
         userId: userId,
       );
 

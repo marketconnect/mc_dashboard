@@ -14,7 +14,7 @@ class _UserSkusApiClient implements UserSkusApiClient {
     this.baseUrl,
     this.errorLogger,
   }) {
-    baseUrl ??= 'https://marketconnect.website/api';
+    baseUrl ??= 'https://marketconnect.website/auth';
   }
 
   final Dio _dio;

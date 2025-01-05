@@ -4,7 +4,7 @@ import 'package:dio/dio.dart';
 
 part 'user_settings.g.dart';
 
-@RestApi(baseUrl: ApiSettings.baseUrl)
+@RestApi(baseUrl: McAuthService.baseUrl)
 abstract class UserSettingsApiClient {
   factory UserSettingsApiClient(Dio dio, {String baseUrl}) =
       _UserSettingsApiClient;

@@ -4,7 +4,7 @@ import 'package:dio/dio.dart';
 
 part 'user_emails.g.dart';
 
-@RestApi(baseUrl: ApiSettings.baseUrl)
+@RestApi(baseUrl: McAuthService.baseUrl)
 abstract class UserEmailsApiClient {
   factory UserEmailsApiClient(Dio dio, {String baseUrl}) = _UserEmailsApiClient;
 

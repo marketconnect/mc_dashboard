@@ -97,28 +97,30 @@ class MailingSettingsViewModel extends ViewModelBase {
     }
 
     // Load user emails
-    final emailsOrEither = await userEmailsService.getAllUserEmails(
-        token: _tokenInfo!.token, userId: _tokenInfo!.userId);
+    if (isSubscribed) {
+      final emailsOrEither = await userEmailsService.getAllUserEmails(
+          token: _tokenInfo!.token, userId: _tokenInfo!.userId);
 
-    if (emailsOrEither.isRight()) {
-      _emails =
-          emailsOrEither.fold((l) => throw UnimplementedError(), (r) => r);
-    }
-    // If emails are empty, add the current user's email
-    if (_emails.isEmpty) {
-      final user = authService.getFirebaseAuthUserInfo();
-      if (user != null) {
-        _emails.add(user.email ?? '');
+      if (emailsOrEither.isRight()) {
+        _emails =
+            emailsOrEither.fold((l) => throw UnimplementedError(), (r) => r);
       }
-    }
+      // If emails are empty, add the current user's email
+      if (_emails.isEmpty) {
+        final user = authService.getFirebaseAuthUserInfo();
+        if (user != null) {
+          _emails.add(user.email ?? '');
+        }
+      }
 
-    // Load mailing settings
-    final settingsOrEither = await settingsService.getSettings();
-    if (settingsOrEither.isRight()) {
-      _settings =
-          settingsOrEither.fold((l) => throw UnimplementedError(), (r) => r);
-      _daily = _settings['daily'] ?? false;
-      _weekly = _settings['weekly'] ?? false;
+      // Load mailing settings
+      final settingsOrEither = await settingsService.getSettings();
+      if (settingsOrEither.isRight()) {
+        _settings =
+            settingsOrEither.fold((l) => throw UnimplementedError(), (r) => r);
+        _daily = _settings['daily'] ?? false;
+        _weekly = _settings['weekly'] ?? false;
+      }
     }
 
     notifyListeners();

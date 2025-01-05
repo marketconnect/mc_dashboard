@@ -4,7 +4,7 @@ import 'package:dio/dio.dart';
 
 part 'user_search_queries.g.dart';
 
-@RestApi(baseUrl: ApiSettings.baseUrl)
+@RestApi(baseUrl: McAuthService.baseUrl)
 abstract class UserSearchQueriesApiClient {
   factory UserSearchQueriesApiClient(Dio dio, {String baseUrl}) =
       _UserSearchQueriesApiClient;

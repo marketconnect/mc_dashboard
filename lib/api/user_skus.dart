@@ -4,7 +4,7 @@ import 'package:dio/dio.dart';
 
 part 'user_skus.g.dart';
 
-@RestApi(baseUrl: ApiSettings.baseUrl)
+@RestApi(baseUrl: McAuthService.baseUrl)
 abstract class UserSkusApiClient {
   factory UserSkusApiClient(Dio dio, {String baseUrl}) = _UserSkusApiClient;
 
