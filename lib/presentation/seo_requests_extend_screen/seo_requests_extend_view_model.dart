@@ -1,8 +1,11 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'package:flutter/material.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
 import 'package:mc_dashboard/domain/entities/normquery.dart';
+import 'package:mc_dashboard/domain/entities/token_info.dart';
+import 'package:mc_dashboard/routes/main_navigation_route_names.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 abstract class SeoRequestsExtendNormqueryService {
@@ -11,28 +14,31 @@ abstract class SeoRequestsExtendNormqueryService {
 }
 
 abstract class SeoRequestsExtendAuthService {
-  Future<Either<AppErrorBase, Map<String, String?>>> getTokenAndType();
-  String? getPaymentUrl();
+  Future<Either<AppErrorBase, TokenInfo>> getTokenInfo();
+  // String? getPaymentUrl();
   logout();
 }
 
 class SeoRequestsExtendViewModel extends ViewModelBase {
   SeoRequestsExtendViewModel({
     required super.context,
-    required this.onNavigateBack,
     required this.productIds,
     required this.normqueryService,
     required this.authService,
+    required this.onNavigateTo,
   });
 
-  final void Function() onNavigateBack;
   final List<int> productIds;
   final SeoRequestsExtendNormqueryService normqueryService;
   final SeoRequestsExtendAuthService authService;
-
+  // Navigation
+  final void Function({
+    required String routeName,
+    Map<String, dynamic>? params,
+  }) onNavigateTo;
   //  fields ///////////////////////////////////////////////////////////////////
-  Map<String, String?> _tokenInfo = {};
-  bool get isFree => _tokenInfo["type"] == "free";
+  TokenInfo? _tokenInfo;
+  bool get isFree => _tokenInfo == null || _tokenInfo!.type == "free";
   final List<Normquery> _normqueries = [];
   List<Normquery> get normqueries => _normqueries;
 
@@ -48,18 +54,29 @@ class SeoRequestsExtendViewModel extends ViewModelBase {
   // methods ///////////////////////////////////////////////////////////////////
   @override
   Future<void> asyncInit() async {
-    final tokenInfoOrEither = await authService.getTokenAndType();
-    if (tokenInfoOrEither.isRight()) {
-      _tokenInfo = tokenInfoOrEither.fold((l) => {}, (r) => r);
+    final tokenInfoOrEither = await authService.getTokenInfo();
+    if (tokenInfoOrEither.isLeft()) {
+      final error =
+          tokenInfoOrEither.fold((l) => l, (r) => throw UnimplementedError());
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(error.message ?? 'Unknown error'),
+        ));
+      }
+      return;
     }
+    _tokenInfo =
+        tokenInfoOrEither.fold((l) => throw UnimplementedError(), (r) => r);
+
     if (!isFree) {
+      // The user is not free
       final normqueriesEither =
           await normqueryService.getUniqueNormqueries(ids: productIds);
       if (normqueriesEither.isRight()) {
         _setNormqueries(normqueriesEither.fold((l) => [], (r) => r));
       }
     } else {
-      _paymentUrl = authService.getPaymentUrl();
+      _paymentUrl = "authService.getPaymentUrl()";
       _setNormqueries(generateRandomNormqueries(25));
     }
   }
@@ -90,6 +107,11 @@ class SeoRequestsExtendViewModel extends ViewModelBase {
   }
 
   void _setNormqueries(List<Normquery> value) => _normqueries.addAll(value);
+
+  // Navigation
+  void onNavigateBack() {
+    onNavigateTo(routeName: MainNavigationRouteNames.subjectProductsScreen);
+  }
 
   void onPaymentComplete() {
     if (paymentUrl != null) {

@@ -5,6 +5,9 @@ import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
 import 'package:mc_dashboard/domain/entities/detailed_order_item.dart';
 import 'package:mc_dashboard/domain/entities/saved_product.dart';
+import 'package:mc_dashboard/domain/entities/token_info.dart';
+
+import 'package:mc_dashboard/routes/main_navigation_route_names.dart';
 
 // Detailed Orders Service
 abstract class SubjectProductsViewModelDetailedOrdersService {
@@ -14,7 +17,7 @@ abstract class SubjectProductsViewModelDetailedOrdersService {
 
 // Auth Service
 abstract class SubjectProductsAuthService {
-  Future<Either<AppErrorBase, Map<String, String?>>> getTokenAndType();
+  Future<Either<AppErrorBase, TokenInfo>> getTokenInfo();
 }
 
 // Saved Products Service
@@ -27,30 +30,26 @@ class SubjectProductsViewModel extends ViewModelBase {
       {required super.context,
       required this.subjectId,
       required this.subjectName,
-      required this.onNavigateToEmptySubject,
-      required this.onNavigateToProductScreen,
-      required this.onNavigateBack,
+      required this.onNavigateTo,
       required this.detailedOrdersService,
       required this.authService,
       required this.savedProductsService,
-      required this.onNavigateToSeoRequestsExtendScreen,
       required this.onSaveProductsToTrack});
 
   final int subjectId;
   final String subjectName;
-  final void Function() onNavigateToEmptySubject;
-  final void Function() onNavigateBack;
-  final void Function(int productId, int productPrice)
-      onNavigateToProductScreen;
-  final void Function(List<int>) onSaveProductsToTrack;
-
   final SubjectProductsAuthService authService;
   final SubjectProductsViewModelDetailedOrdersService detailedOrdersService;
   final SubjectProductsSavedProductsService savedProductsService;
-  final void Function(List<int>) onNavigateToSeoRequestsExtendScreen;
+  final void Function(List<int>) onSaveProductsToTrack;
+
+  // Navigation
+  final void Function({
+    required String routeName,
+    Map<String, dynamic>? params,
+  }) onNavigateTo;
 
   // Fields ////////////////////////////////////////////////////////////////////
-
   // Table Checkbox
   // Храним индексы выбранных строк
   final Set<int> _selectedRows = {};
@@ -75,12 +74,49 @@ class SubjectProductsViewModel extends ViewModelBase {
 
   Map<int, (String, String)> _productImageProductName = {};
 
+  TokenInfo? _tokenInfo;
+  bool get isFree => _tokenInfo == null || _tokenInfo!.type == "free";
+
   // Setters
   void addProductImage(int productId, String imageUrl, String productName) {
     _productImageProductName[productId] = (imageUrl, productName);
   }
 
-  // Methods //////////////////////////////////////////////////////////////////
+  // Methods ///////////////////////////////////////////////////////////////////
+
+  @override
+  Future<void> asyncInit() async {
+    // Token
+    final tokenInfoOrEither = await authService.getTokenInfo();
+    if (tokenInfoOrEither.isLeft()) {
+      final error =
+          tokenInfoOrEither.fold((l) => l, (r) => throw UnimplementedError());
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(error.message ?? 'Unknown error'),
+        ));
+      }
+      return;
+    }
+    _tokenInfo =
+        tokenInfoOrEither.fold((l) => throw UnimplementedError(), (r) => r);
+
+    // Detailed Orders
+    final result = await detailedOrdersService.fetchDetailedOrders(
+        subjectId: subjectId, isFbs: 0);
+
+    if (result.isRight()) {
+      final fetchedOrders =
+          result.fold((l) => throw UnimplementedError(), (r) => r);
+
+      setDetailedOrders(fetchedOrders);
+      _updateSellerBrandDataMaps();
+      _initializeFilterControllers();
+    } else {
+      setError("Сервер временно недоступен");
+    }
+  }
+
   void selectRow(int index) {
     if (_selectedRows.contains(index)) {
       _selectedRows.remove(index);
@@ -181,24 +217,6 @@ class SubjectProductsViewModel extends ViewModelBase {
   final double tableRowHeight = 60.0;
 
   bool isFbs = false;
-  // Methods ///////////////////////////////////////////////////////////////////
-
-  @override
-  Future<void> asyncInit() async {
-    final result = await detailedOrdersService.fetchDetailedOrders(
-        subjectId: subjectId, isFbs: 0);
-
-    if (result.isRight()) {
-      final fetchedOrders =
-          result.fold((l) => throw UnimplementedError(), (r) => r);
-
-      setDetailedOrders(fetchedOrders);
-      _updateSellerBrandDataMaps();
-      _initializeFilterControllers();
-    } else {
-      setError("Сервер временно недоступен");
-    }
-  }
 
   Future<void> switchToFbs() async {
     if (isFbs) {
@@ -354,13 +372,21 @@ class SubjectProductsViewModel extends ViewModelBase {
     notifyListeners();
   }
 
-  void navigateToSeoRequestsExtendScreen() {
-    final ids = _selectedRows.toList();
-    onNavigateToSeoRequestsExtendScreen(ids);
-  }
-
   Future<void> saveProducts() async {
-    // get selected orders
+    if (isFree) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+            'Чтобы добавлять товары и получать по ним рассылку, вы должны быть подписчиком.'),
+        action: SnackBarAction(
+          label: 'Оформить подписку',
+          onPressed: () {
+            onNavigateToSubscriptionScreen();
+          },
+        ),
+        duration: Duration(seconds: 10),
+      ));
+      return;
+    } // get selected orders
     final selectedOrders = _filteredOrders.where((item) {
       return _selectedRows.contains(item.productId);
     });
@@ -387,5 +413,31 @@ class SubjectProductsViewModel extends ViewModelBase {
     // callback to update the SavedProductsScreen
     onSaveProductsToTrack(
         productsToSave.map((item) => item.productId).toList());
+  }
+
+  // Navigation
+  void navigateToSeoRequestsExtendScreen() {
+    final ids = _selectedRows.toList();
+    onNavigateTo(
+        routeName: MainNavigationRouteNames.seoRequestsExtend,
+        params: {"productIds": ids});
+  }
+
+  void onNavigateToProductScreen(int productId, int productPrice) {
+    onNavigateTo(
+        routeName: MainNavigationRouteNames.productScreen,
+        params: {"productId": productId, "productPrice": productPrice});
+  }
+
+  void onNavigateBack() {
+    onNavigateTo(routeName: MainNavigationRouteNames.choosingNicheScreen);
+  }
+
+  void onNavigateToEmptySubject() {
+    onNavigateTo(routeName: MainNavigationRouteNames.emptySubjectsScreen);
+  }
+
+  void onNavigateToSubscriptionScreen() {
+    onNavigateTo(routeName: MainNavigationRouteNames.subscriptionScreen);
   }
 }

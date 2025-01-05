@@ -2,21 +2,26 @@ import 'package:fpdart/fpdart.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
 import 'package:mc_dashboard/domain/entities/subject_summary_item.dart';
+import 'package:mc_dashboard/routes/main_navigation_route_names.dart';
 
 abstract class EmptySubjectViewModelSubjectsSummaryService {
   Future<Either<AppErrorBase, List<SubjectSummaryItem>>> fetchSubjectsSummary();
 }
 
 class EmptySubjectViewModel extends ViewModelBase {
-  EmptySubjectViewModel(
-      {required super.context,
-      required this.subjectsSummaryService,
-      required this.onNavigateBack,
-      required this.onNavigateToSubjectProducts});
+  EmptySubjectViewModel({
+    required super.context,
+    required this.subjectsSummaryService,
+    required this.onNavigateTo,
+  });
   final EmptySubjectViewModelSubjectsSummaryService subjectsSummaryService;
-  final void Function(int subjectId, String subjectName)
-      onNavigateToSubjectProducts;
-  final void Function() onNavigateBack;
+
+  // Navigation
+  final void Function({
+    required String routeName,
+    Map<String, dynamic>? params,
+  }) onNavigateTo;
+
   // Fields
   String searchQuery = '';
 
@@ -62,5 +67,16 @@ class EmptySubjectViewModel extends ViewModelBase {
   void onSearchChanged(String value) {
     searchQuery = value;
     notifyListeners();
+  }
+
+  // Navigation
+  void onNavigateBack() {
+    onNavigateTo(routeName: MainNavigationRouteNames.choosingNicheScreen);
+  }
+
+  void onNavigateToSubjectProducts(int subjectId, String subjectName) {
+    onNavigateTo(
+        routeName: MainNavigationRouteNames.subjectProductsScreen,
+        params: {"subjectId": subjectId, "subjectName": subjectName});
   }
 }

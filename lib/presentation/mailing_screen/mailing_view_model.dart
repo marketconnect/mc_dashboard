@@ -1,8 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:mc_dashboard/domain/entities/token_info.dart';
+import 'package:mc_dashboard/routes/main_navigation_route_names.dart';
 
 // mailing settings service
 abstract class MailingSettingsMailingSettingsService {
@@ -15,16 +17,19 @@ abstract class MailingSettingsMailingSettingsService {
 // auth service
 abstract class MailingAuthService {
   User? getFirebaseAuthUserInfo();
-  Future<Either<AppErrorBase, Map<String, String?>>> getTokenAndType();
-  String? getPaymentUrl();
+  Future<Either<AppErrorBase, TokenInfo>> getTokenInfo();
+
   logout();
 }
 
 // user emails service
 abstract class MailingUserEmailsService {
-  Future<Either<AppErrorBase, void>> saveUserEmail(String userEmail);
-  Future<Either<AppErrorBase, void>> deleteUserEmail(String email);
-  Future<Either<AppErrorBase, List<String>>> getAllUserEmails();
+  Future<Either<AppErrorBase, void>> saveUserEmail(
+      {required String token, required int userId, required String email});
+  Future<Either<AppErrorBase, void>> deleteUserEmail(
+      {required String token, required int userId, required String email});
+  Future<Either<AppErrorBase, List<String>>> getAllUserEmails(
+      {required String token, required int userId});
 }
 
 class MailingSettingsViewModel extends ViewModelBase {
@@ -32,13 +37,18 @@ class MailingSettingsViewModel extends ViewModelBase {
     required this.userEmailsService,
     required this.authService,
     required this.settingsService,
+    required this.onNavigateTo,
     required super.context,
   });
 
   final MailingUserEmailsService userEmailsService;
   final MailingAuthService authService;
   final MailingSettingsMailingSettingsService settingsService;
-
+  // Navigation
+  final void Function({
+    required String routeName,
+    Map<String, dynamic>? params,
+  }) onNavigateTo;
   // Fields ////////////////////////////////////////////////////////////////////
   bool _daily = false;
   bool _weekly = false;
@@ -46,8 +56,8 @@ class MailingSettingsViewModel extends ViewModelBase {
   String? _errorMessage;
   Map<String, dynamic> _settings = {};
 
-  Map<String, String?> _tokenInfo = {};
-  bool get isSubscribed => _tokenInfo["type"] != "free";
+  TokenInfo? _tokenInfo;
+  bool get isSubscribed => _tokenInfo != null && _tokenInfo!.type != "free";
 
   // Getters ///////////////////////////////////////////////////////////////////
   bool get daily => _daily;
@@ -61,15 +71,34 @@ class MailingSettingsViewModel extends ViewModelBase {
   Future<void> asyncInit() async {
     // Load user emails
 
-    final values = await Future.wait(
-        [authService.getTokenAndType(), userEmailsService.getAllUserEmails()]);
-
-    final tokenInfoOrEither =
-        values[0] as Either<AppErrorBase, Map<String, String?>>;
-    if (tokenInfoOrEither.isRight()) {
-      _tokenInfo = tokenInfoOrEither.fold((l) => {}, (r) => r);
+    // Token
+    final tokenInfoOrEither = await authService.getTokenInfo();
+    if (tokenInfoOrEither.isLeft()) {
+      // Token error
+      final error =
+          tokenInfoOrEither.fold((l) => l, (r) => throw UnimplementedError());
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(error.message ?? 'Unknown error'),
+        ));
+      }
+      return;
     }
-    final emailsOrEither = values[1] as Either<AppErrorBase, List<String>>;
+
+    _tokenInfo =
+        tokenInfoOrEither.fold((l) => throw UnimplementedError(), (r) => r);
+    if (_tokenInfo == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('User is not logged in'),
+        ));
+      }
+      return;
+    }
+
+    // Load user emails
+    final emailsOrEither = await userEmailsService.getAllUserEmails(
+        token: _tokenInfo!.token, userId: _tokenInfo!.userId);
 
     if (emailsOrEither.isRight()) {
       _emails =
@@ -108,25 +137,49 @@ class MailingSettingsViewModel extends ViewModelBase {
   }
 
   void addEmail(String email) async {
+    // Token check
+    if (_tokenInfo == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('User is not logged in'),
+        ));
+      }
+      return;
+    }
+    // Email check
     if (!_isValidEmail(email)) {
       _errorMessage = "Неверный формат email";
       notifyListeners();
       return;
     }
+
+    // Add email
     if (email.isNotEmpty && !_emails.contains(email)) {
       _emails.add(email);
       _errorMessage = null; // Сбрасываем ошибку
       notifyListeners();
 
-      await userEmailsService.saveUserEmail(email);
+      await userEmailsService.saveUserEmail(
+          token: _tokenInfo!.token, userId: _tokenInfo!.userId, email: email);
     }
   }
 
   void removeEmail(String email) async {
+    // Token check
+    if (_tokenInfo == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('User is not logged in'),
+        ));
+      }
+      return;
+    }
     _emails.remove(email);
     notifyListeners();
 
-    await userEmailsService.deleteUserEmail(email);
+    // Delete email
+    await userEmailsService.deleteUserEmail(
+        token: _tokenInfo!.token, userId: _tokenInfo!.userId, email: email);
   }
 
   bool _isValidEmail(String email) {
@@ -148,11 +201,7 @@ class MailingSettingsViewModel extends ViewModelBase {
     notifyListeners();
   }
 
-  void onPaymentComplete() {
-    final paymentUrl = authService.getPaymentUrl();
-    if (paymentUrl != null) {
-      launchUrl(Uri.parse(paymentUrl));
-      authService.logout();
-    }
+  void onNavigateToSubscriptionScreen() {
+    onNavigateTo(routeName: MainNavigationRouteNames.subscriptionScreen);
   }
 }

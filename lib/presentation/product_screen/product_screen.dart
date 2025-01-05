@@ -1509,7 +1509,7 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
                 onTap: () {
-                  model.onPaymentComplete();
+                  model.onNavigateToSubscriptionScreen();
                 },
                 child: ClipRect(
                   child: BackdropFilter(
@@ -1710,7 +1710,7 @@ class _SeoSectionWidgetState extends State<SeoSectionWidget> {
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
                 onTap: () {
-                  model.onPaymentComplete();
+                  model.onNavigateToSubscriptionScreen();
                 },
                 child: ClipRect(
                   child: BackdropFilter(
@@ -1990,7 +1990,7 @@ class _UnusedQueryTableWidgetState extends State<UnusedQueryTableWidget> {
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
                 onTap: () {
-                  model.onPaymentComplete();
+                  model.onNavigateToSubscriptionScreen();
                 },
                 child: Container(
                   color: Colors.black.withOpacity(0.2),
@@ -2085,7 +2085,7 @@ class _UnusedQueryTableWidgetState extends State<UnusedQueryTableWidget> {
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
                 onTap: () {
-                  model.onPaymentComplete();
+                  model.onNavigateToSubscriptionScreen();
                 },
                 child: ClipRect(
                   child: BackdropFilter(

@@ -9,21 +9,15 @@ abstract class ChoosingNicheViewModelSubjectsSummaryService {
   Future<Either<AppErrorBase, List<SubjectSummaryItem>>> fetchSubjectsSummary();
 }
 
-abstract class ChoosingNicheAuthService {
-  Future<Either<AppErrorBase, Map<String, String?>>> getTokenAndType();
-}
-
 class ChoosingNicheViewModel extends ViewModelBase {
   ChoosingNicheViewModel(
       {required super.context,
       required this.subjectsSummaryService,
-      required this.authService,
       required this.onNavigateToSubjectProducts});
 
   final void Function(int subjectId, String subjectName)
       onNavigateToSubjectProducts;
   final ChoosingNicheViewModelSubjectsSummaryService subjectsSummaryService;
-  final ChoosingNicheAuthService authService;
 
   // Fields ////////////////////////////////////////////////////////////////////
 

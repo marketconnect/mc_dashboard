@@ -5,13 +5,14 @@ import 'package:fpdart/fpdart.dart';
 import 'package:mc_dashboard/.env.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/core/utils/dates.dart';
-import 'package:mc_dashboard/presentation/choosing_niche_screen/choosing_niche_view_model.dart';
+import 'package:mc_dashboard/domain/entities/token_info.dart';
 
 import 'package:mc_dashboard/presentation/login_screen/login_view_model.dart';
 import 'package:mc_dashboard/presentation/mailing_screen/mailing_view_model.dart';
 import 'package:mc_dashboard/presentation/product_screen/product_view_model.dart';
 import 'package:mc_dashboard/presentation/seo_requests_extend_screen/seo_requests_extend_view_model.dart';
 import 'package:mc_dashboard/presentation/subject_products_screen/subject_products_view_model.dart';
+import 'package:mc_dashboard/presentation/subscription_screen/subscription_view_model.dart';
 
 abstract class AuthServiceAuthApiClient {
   Future<Either<AppErrorBase, String>> register(
@@ -28,7 +29,8 @@ abstract class AuthServiceStorage {
 class AuthService
     implements
         LoginViewModelAuthService,
-        ChoosingNicheAuthService,
+        // ChoosingNicheAuthService,
+        SubscriptionAuthService,
         MailingAuthService,
         SeoRequestsExtendAuthService,
         SubjectProductsAuthService,
@@ -81,34 +83,28 @@ class AuthService
     return now >= exp;
   }
 
-  // Get token type (free or premium)
-  String? getTokenType(String token) {
-    try {
-      final parts = token.split('.');
-      if (parts.length != 3) return null;
-
-      final payload = json
-          .decode(utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))));
-      final scopes = payload['scopes'] as int? ?? 0;
-
-      if ((scopes & 0x002) == 0x002) return "premium";
-      if ((scopes & 0x001) == 0x001) return "free";
-      return null;
-    } catch (e) {
-      return null;
-    }
-  }
-
   // Get token and its type for use in the application
   @override
-  Future<Either<AppErrorBase, Map<String, String?>>> getTokenAndType() async {
+  Future<Either<AppErrorBase, TokenInfo>> getTokenInfo() async {
     // get token from storage
     final tokenEither = authServiceStorage.getToken();
 
     final token = tokenEither.fold((l) => null, (r) => r);
     // Token is not expired
     if (token != null && !isTokenExpired(token)) {
-      return right({'token': token, 'type': getTokenType(token)});
+      final payload = getPayload(token);
+      final userId = getUserId(payload);
+      final userType = getTokenType(payload);
+      final endDate = getEndDate(payload);
+      if (userId == null || userType == null || endDate == null) {
+        return left(AppErrorBase(
+            'Не удалось получить информацию о пользователе',
+            name: 'getTokenAndType',
+            sendTo: true,
+            source: 'AuthService'));
+      }
+      return right(TokenInfo(
+          token: token, userId: userId, type: userType, endDate: endDate));
     }
 
     // Token is expired
@@ -119,7 +115,24 @@ class AuthService
     final newTokenEither = authServiceStorage.getToken();
     final newToken = newTokenEither.fold((l) => null, (r) => r);
     if (newToken != null) {
-      return right({'token': newToken, 'type': getTokenType(newToken)});
+      final newPayload = getPayload(newToken);
+      final newuserId = getUserId(newPayload);
+      final newUserType = getTokenType(newPayload);
+      final newEndDate = getEndDate(newPayload);
+      // final userId = getUserId(newToken);
+      // final userType = getTokenType(newToken);
+      if (newuserId == null || newUserType == null || newEndDate == null) {
+        return left(AppErrorBase(
+            'Не удалось получить информацию о пользователе',
+            name: 'getTokenAndType',
+            sendTo: true,
+            source: 'AuthService'));
+      }
+      return right(TokenInfo(
+          token: newToken,
+          userId: newuserId,
+          type: newUserType,
+          endDate: newEndDate));
     } else {
       return left(AppErrorBase('Token not found in storage',
           name: 'getTokenAndType', sendTo: true, source: 'AuthService'));
@@ -142,24 +155,7 @@ class AuthService
     }
   }
 
-  //
-  @override
-  String? getPaymentUrl() {
-    final email = getFirebaseAuthUserInfo()?.email;
-
-    if (email == null) {
-      return null;
-    }
-    final endDate = DateTime.now().add(Duration(days: 30));
-    final order = simpleEncrypt(
-      email,
-      endDate.toIso8601String().substring(0, 10),
-    );
-    final endDateStr = endDate.toIso8601String().substring(0, 10);
-    return '${SiteSettings.paymentUrl}?amount=${PaymentSettings.amount}&order=$order&email=$email&description=Подписка на месяц до ${formatDate(endDateStr)}';
-  }
-
-  int? getUserId(String token) {
+  dynamic getPayload(String token) {
     try {
       // Separate token into 3 parts: Header, Payload, Signature
       final parts = token.split('.');
@@ -170,6 +166,14 @@ class AuthService
         utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
       );
 
+      return payload;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  int? getUserId(dynamic payload) {
+    try {
       // Extract userId
       final userId = payload['userId'];
       if (userId is int) {
@@ -178,6 +182,32 @@ class AuthService
         return int.tryParse(
             userId); // If userId is a string, try to parse it as an int
       }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  String? getEndDate(dynamic payload) {
+    try {
+      // Extract endDate
+      final endDate = payload['endDate'];
+      if (endDate is String) {
+        return endDate;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Get token type (free or premium)
+  String? getTokenType(dynamic payload) {
+    try {
+      final scopes = payload['scopes'] as int? ?? 0;
+
+      if ((scopes & 0x002) == 0x002) return "premium";
+      if ((scopes & 0x001) == 0x001) return "free";
       return null;
     } catch (e) {
       return null;

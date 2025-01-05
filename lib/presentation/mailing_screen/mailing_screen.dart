@@ -96,7 +96,7 @@ class _MailingSettingsTab extends StatelessWidget {
                       value: model.daily,
                       onChanged: (value) {
                         if (!model.isSubscribed) {
-                          _showSubscribeAlert(context);
+                          _showSubscribeAlert(context, model);
                           return;
                         }
                         model.toggleDaily(value ?? false);
@@ -114,7 +114,7 @@ class _MailingSettingsTab extends StatelessWidget {
                       value: model.weekly,
                       onChanged: (value) {
                         if (!model.isSubscribed) {
-                          _showSubscribeAlert(context);
+                          _showSubscribeAlert(context, model);
                           return;
                         }
                         model.toggleWeekly(value ?? false);
@@ -178,7 +178,7 @@ class _MailingSettingsTab extends StatelessWidget {
           const SizedBox(width: 8),
           ElevatedButton(
             onPressed: () {
-              model.onPaymentComplete();
+              model.onNavigateToSubscriptionScreen();
             },
             child: const Text("Подписаться"),
           ),
@@ -187,13 +187,19 @@ class _MailingSettingsTab extends StatelessWidget {
     );
   }
 
-  void _showSubscribeAlert(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content:
-            Text("Для изменения настроек рассылки нужно быть подписчиком."),
+  void _showSubscribeAlert(
+      BuildContext context, MailingSettingsViewModel model) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+          'Чтобы добавлять товары и получать по ним рассылку, вы должны быть подписчиком.'),
+      action: SnackBarAction(
+        label: 'Оформить подписку',
+        onPressed: () {
+          model.onNavigateToSubscriptionScreen();
+        },
       ),
-    );
+      duration: Duration(seconds: 10),
+    ));
   }
 }
 
@@ -239,7 +245,7 @@ class _EmailsEditorState extends State<_EmailsEditor> {
             ElevatedButton(
               onPressed: () {
                 if (!model.isSubscribed) {
-                  _showSubscribeAlert(context);
+                  _showSubscribeAlert(context, model);
                   return;
                 }
                 final email = _emailController.text.trim();
@@ -268,7 +274,7 @@ class _EmailsEditorState extends State<_EmailsEditor> {
               ),
               onPressed: () {
                 if (!model.isSubscribed) {
-                  _showSubscribeAlert(context);
+                  _showSubscribeAlert(context, model);
                   return;
                 }
                 model.removeEmail(email);
@@ -280,13 +286,19 @@ class _EmailsEditorState extends State<_EmailsEditor> {
     );
   }
 
-  void _showSubscribeAlert(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content:
-            Text("Чтобы управлять email-адресами, нужно быть подписчиком."),
+  void _showSubscribeAlert(
+      BuildContext context, MailingSettingsViewModel model) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+          'Чтобы добавлять товары и получать по ним рассылку, вы должны быть подписчиком.'),
+      action: SnackBarAction(
+        label: 'Оформить подписку',
+        onPressed: () {
+          model.onNavigateToSubscriptionScreen();
+        },
       ),
-    );
+      duration: Duration(seconds: 10),
+    ));
   }
 }
 
@@ -494,12 +506,18 @@ class _SavedTableWidgetState extends State<_SavedTableWidget> {
                             onTap: () {
                               if (!widget.isSubscribed) {
                                 // if the user is not subscribed
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                        "Чтобы удалять товары, нужно быть подписчиком."),
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(SnackBar(
+                                  content: Text(
+                                      'Чтобы добавлять товары и получать по ним рассылку, вы должны быть подписчиком.'),
+                                  action: SnackBarAction(
+                                    label: 'Оформить подписку',
+                                    onPressed: () {
+                                      print('Оформить подписку');
+                                    },
                                   ),
-                                );
+                                  duration: Duration(seconds: 10),
+                                ));
                               } else {
                                 // if the user is subscribed
                                 model.removeProductsFromSaved(
@@ -896,12 +914,17 @@ class _KeyPhrasesTableWidgetState extends State<_KeyPhrasesTableWidget> {
                       label: "Удалить выбранное",
                       onTap: () async {
                         if (!widget.isSubscribed) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                  "Чтобы удалять фразы, нужно быть подписчиком."),
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text(
+                                'Чтобы добавлять товары и получать по ним рассылку, вы должны быть подписчиком.'),
+                            action: SnackBarAction(
+                              label: 'Оформить подписку',
+                              onPressed: () {
+                                print('Оформить подписку');
+                              },
                             ),
-                          );
+                            duration: Duration(seconds: 10),
+                          ));
                           return;
                         } else {
                           final selectedPhrases = selectedIndices

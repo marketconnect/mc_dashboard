@@ -1,3 +1,34 @@
+String monthFullName(int month) {
+  switch (month) {
+    case 1:
+      return 'января';
+    case 2:
+      return 'февраля';
+    case 3:
+      return 'марта';
+    case 4:
+      return 'апр еля';
+    case 5:
+      return 'мая';
+    case 6:
+      return 'июня';
+    case 7:
+      return 'июля';
+    case 8:
+      return 'августа';
+    case 9:
+      return 'сентября';
+    case 10:
+      return 'октября';
+    case 11:
+      return 'ноября';
+    case 12:
+      return 'декабря';
+    default:
+      return '';
+  }
+}
+
 String monthName(int month) {
   switch (month) {
     case 1:
@@ -29,10 +60,18 @@ String monthName(int month) {
   }
 }
 
+String formatRuFullDate(String date) {
+  final parts = date.split("-");
+  final day = parts[2];
+  final year = parts[0];
+  final month = monthFullName(int.parse(parts[1]));
+  return "$day $month $year";
+}
+
 String formatDate(String date) {
   final parts = date.split("-");
   final day = parts[2];
-  final month = monthName(int.parse(parts[1]));
+  final month = monthFullName(int.parse(parts[1]));
   return "$day $month";
 }
 

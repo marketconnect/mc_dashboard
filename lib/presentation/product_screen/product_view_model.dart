@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
 import 'package:mc_dashboard/core/utils/basket_num.dart';
@@ -12,10 +13,11 @@ import 'package:mc_dashboard/domain/entities/normquery_product.dart';
 import 'package:mc_dashboard/domain/entities/order.dart';
 import 'package:mc_dashboard/domain/entities/stock.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
+import 'package:mc_dashboard/domain/entities/token_info.dart';
 import 'package:mc_dashboard/domain/entities/warehouse.dart';
 
 import 'package:mc_dashboard/presentation/product_screen/table_row_model.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:mc_dashboard/routes/main_navigation_route_names.dart';
 
 // Stocks service
 abstract class ProductViewModelStocksService {
@@ -46,8 +48,8 @@ abstract class ProductViewModelWhService {
 
 // Auth service
 abstract class ProductAuthService {
-  Future<Either<AppErrorBase, Map<String, String?>>> getTokenAndType();
-  String? getPaymentUrl();
+  Future<Either<AppErrorBase, TokenInfo>> getTokenInfo();
+  // String? getPaymentUrl();
   logout();
 }
 
@@ -83,16 +85,15 @@ class ProductViewModel extends ViewModelBase {
       required this.productId,
       required this.stocksService,
       required this.whService,
-      required this.onNavigateBack,
       required this.ordersService,
       required this.authService,
       required this.normqueryService,
       required this.kwLemmaService,
-      required this.onNavigateToEmptyProductScreen,
       required this.detailedOrdersService,
       required this.lemmatizeService,
       required this.savedKeyPhrasesService,
       required this.onSaveKeyPhrasesToTrack,
+      required this.onNavigateTo,
       required this.productPrice});
   final int productId;
   final int productPrice;
@@ -106,14 +107,18 @@ class ProductViewModel extends ViewModelBase {
   final ProductViewModelDetailedOrdersService detailedOrdersService;
   final ProductViewModelSavedKeyPhrasesService savedKeyPhrasesService;
   final void Function(List<String> keyPhrase) onSaveKeyPhrasesToTrack;
-  final void Function() onNavigateBack;
-  final void Function() onNavigateToEmptyProductScreen;
+
+  // Navigation
+  final void Function({
+    required String routeName,
+    Map<String, dynamic>? params,
+  }) onNavigateTo;
 
   // Fields ////////////////////////////////////////////////////////////////////
 
   // token and sub info
-  Map<String, String?> _tokenInfo = {};
-  bool get isFree => _tokenInfo["type"] == "free";
+  TokenInfo? _tokenInfo;
+  bool get isFree => _tokenInfo == null || _tokenInfo!.type == "free";
 
   // basket num
   String? _basketNum;
@@ -238,7 +243,7 @@ class ProductViewModel extends ViewModelBase {
     final vals = await Future.wait([
       fetchCardInfo(
           calculateCardUrl(calculateImageUrl(_basketNum, productId))), // 0
-      authService.getTokenAndType(), // 1
+      authService.getTokenInfo(), // 1
     ]);
 
     // card info
@@ -253,11 +258,21 @@ class ProductViewModel extends ViewModelBase {
     _subjectName = cardInfo.subjName;
 
     // token and sub info
-    final tokenInfoOrEither =
-        vals[1] as Either<AppErrorBase, Map<String, String?>>;
-    if (tokenInfoOrEither.isRight()) {
-      _tokenInfo = tokenInfoOrEither.fold((l) => {}, (r) => r);
+    final tokenInfoOrEither = vals[1] as Either<AppErrorBase, TokenInfo>;
+
+    if (tokenInfoOrEither.isLeft()) {
+      final error =
+          tokenInfoOrEither.fold((l) => l, (r) => throw UnimplementedError());
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(error.message ?? 'Unknown error'),
+        ));
+      }
+      return;
     }
+
+    _tokenInfo =
+        tokenInfoOrEither.fold((l) => throw UnimplementedError(), (r) => r);
 
     final values = await Future.wait([
       fetchFeedbacks(cardInfo.imtId), // 0
@@ -428,15 +443,6 @@ class ProductViewModel extends ViewModelBase {
     return 'Заголовок:${(titleSim * 100).toStringAsFixed(1)}% Описание:${(descSim * 100).toStringAsFixed(1)}% Характеристики:${(charSim * 100).toStringAsFixed(1)}%; Место:$pos';
   }
 
-  // payment
-  void onPaymentComplete() {
-    final paymentUrl = authService.getPaymentUrl();
-    if (paymentUrl != null) {
-      launchUrl(Uri.parse(paymentUrl));
-      authService.logout();
-    }
-  }
-
   Future<void> saveKeyPhrases(List<String> keyPhrasesStr) async {
     //
     await savedKeyPhrasesService.saveKeyPhrases(
@@ -445,4 +451,26 @@ class ProductViewModel extends ViewModelBase {
     // Update mailing keyphrases screen
     onSaveKeyPhrasesToTrack(keyPhrasesStr);
   }
+
+  // Navigation
+  void onNavigateToEmptyProductScreen() {
+    onNavigateTo(routeName: MainNavigationRouteNames.emptyProductScreen);
+  }
+
+  void onNavigateBack() {
+    onNavigateTo(routeName: MainNavigationRouteNames.subjectProductsScreen);
+  }
+
+  void onNavigateToSubscriptionScreen() {
+    onNavigateTo(routeName: MainNavigationRouteNames.subscriptionScreen);
+  }
+
+  // payment
+  // void onPaymentComplete() {
+  //   final paymentUrl = authService.getPaymentUrl();
+  //   if (paymentUrl != null) {
+  //     launchUrl(Uri.parse(paymentUrl));
+  //     authService.logout();
+  //   }
+  // }
 }

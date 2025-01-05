@@ -1,15 +1,14 @@
 import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
 import 'package:mc_dashboard/core/utils/basket_num.dart';
+import 'package:mc_dashboard/routes/main_navigation_route_names.dart';
 
 class EmptyProductViewModel extends ViewModelBase {
-  EmptyProductViewModel(
-      {required super.context,
-      required this.onNavigateBack,
-      required this.onNavigateToProductScreen});
-
-  final void Function(int productId, int productPrice)
-      onNavigateToProductScreen;
-  final void Function() onNavigateBack;
+  EmptyProductViewModel({required super.context, required this.onNavigateTo});
+  // Navigation
+  final void Function({
+    required String routeName,
+    Map<String, dynamic>? params,
+  }) onNavigateTo;
   // Fields
   String searchQuery = '';
   String? searchedProductName;
@@ -36,5 +35,19 @@ class EmptyProductViewModel extends ViewModelBase {
     }
 
     notifyListeners();
+  }
+
+  // Navigation
+  void onNavigateBack() {
+    onNavigateTo(
+      routeName: MainNavigationRouteNames.choosingNicheScreen,
+    );
+  }
+
+  void onNavigateToProductScreen(int productId, int productPrice) {
+    onNavigateTo(
+      routeName: MainNavigationRouteNames.productScreen,
+      params: {"productId": productId, "productPrice": productPrice},
+    );
   }
 }

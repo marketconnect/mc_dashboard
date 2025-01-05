@@ -27,11 +27,12 @@ class UserEmailsService implements MailingUserEmailsService {
       required String email}) async {
     try {
       // Save on server
-      final result = await userEmailsApiClient.saveUserEmail(
+      await userEmailsApiClient.saveUserEmail(
         token: token,
         request: SaveEmailRequest(userId: userId, email: email),
       );
 
+      // Save locally
       final userEmail = UserEmail(email: email);
 
       await userEmailsRepoRepo.saveUserEmail(userEmail);
@@ -47,8 +48,18 @@ class UserEmailsService implements MailingUserEmailsService {
   }
 
   @override
-  Future<Either<AppErrorBase, void>> deleteUserEmail(String email) async {
+  Future<Either<AppErrorBase, void>> deleteUserEmail(
+      {required String token,
+      required int userId,
+      required String email}) async {
     try {
+      // delete on server
+      await userEmailsApiClient.deleteUserEmail(
+        token: token,
+        request: DeleteEmailRequest(userId: userId, email: email),
+      );
+
+      // delete locally
       await userEmailsRepoRepo.deleteUserEmail(email);
     } catch (e) {
       return left(AppErrorBase(
@@ -62,11 +73,33 @@ class UserEmailsService implements MailingUserEmailsService {
   }
 
   @override
-  Future<Either<AppErrorBase, List<String>>> getAllUserEmails() async {
+  Future<Either<AppErrorBase, List<String>>> getAllUserEmails(
+      {required String token, required int userId}) async {
     try {
+      // get from server
+      final userEmailsFromServer = await userEmailsApiClient.findUserEmails(
+        token: token,
+        userId: userId,
+      );
+
+      // get locally
       final userEmails = await userEmailsRepoRepo.getAllUserEmails();
-      final emails = userEmails.map((userEmail) => userEmail.email).toList();
-      return right(emails);
+      final emailsFromLocal =
+          userEmails.map((userEmail) => userEmail.email).toList();
+
+      // compare
+      if (userEmailsFromServer.emails.length != emailsFromLocal.length) {
+        for (var email in userEmailsFromServer.emails) {
+          if (!emailsFromLocal.contains(email)) {
+            // Save locally
+            final missedUserEmail = UserEmail(email: email);
+
+            await userEmailsRepoRepo.saveUserEmail(missedUserEmail);
+          }
+        }
+      }
+
+      return right(emailsFromLocal);
     } catch (e) {
       return left(AppErrorBase(
         'Caught error: $e',

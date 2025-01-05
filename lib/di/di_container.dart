@@ -9,6 +9,7 @@ import 'package:mc_dashboard/api/normqueries.dart';
 import 'package:mc_dashboard/api/orders.dart';
 import 'package:mc_dashboard/api/stocks.dart';
 import 'package:mc_dashboard/api/subjects_summary.dart';
+import 'package:mc_dashboard/api/user_emails.dart';
 import 'package:mc_dashboard/api/warehouses.dart';
 import 'package:mc_dashboard/core/dio/setup.dart';
 import 'package:mc_dashboard/domain/services/auth_service.dart';
@@ -47,6 +48,8 @@ import 'package:mc_dashboard/presentation/seo_requests_extend_screen/seo_request
 import 'package:mc_dashboard/presentation/seo_requests_extend_screen/seo_requests_extend_view_model.dart';
 import 'package:mc_dashboard/presentation/subject_products_screen/subject_products_screen.dart';
 import 'package:mc_dashboard/presentation/subject_products_screen/subject_products_view_model.dart';
+import 'package:mc_dashboard/presentation/subscription_screen/subscription_screen.dart';
+import 'package:mc_dashboard/presentation/subscription_screen/subscription_view_model.dart';
 
 import 'package:mc_dashboard/repositories/local_storage.dart';
 import 'package:mc_dashboard/repositories/mailing_settings_repo.dart';
@@ -124,6 +127,10 @@ class _DIContainer {
         apiClient: LemmatizeApiClient(dio),
       );
 
+  UserEmailsService _makeUserEmailsService() => UserEmailsService(
+        userEmailsRepoRepo: _makeUserEmailsRepo(),
+        userEmailsApiClient: UserEmailsApiClient(dio),
+      );
   SavedProductsService _makeSavedProductsService() => SavedProductsService(
         savedProductsRepo: _makeSavedProductsRepo(),
       );
@@ -131,10 +138,6 @@ class _DIContainer {
   SavedKeyPhrasesService _makeSavedKeyPhrasesService() =>
       SavedKeyPhrasesService(
         savedKeyPhrasesRepo: _makeSavedKeyPhrasesRepo(),
-      );
-
-  UserEmailsService _makeUserEmailsService() => UserEmailsService(
-        userEmailsRepoRepo: _makeUserEmailsRepo(),
       );
 
   MailingSettingsService _makeMailingSettingsService() =>
@@ -149,61 +152,60 @@ class _DIContainer {
       ChoosingNicheViewModel(
           context: context,
           subjectsSummaryService: _makeSubjectsSummaryService(),
-          authService: _makeAuthService(),
+          // authService: _makeAuthService(),
           onNavigateToSubjectProducts: onNavigateToSubjectProducts);
 
   SubjectProductsViewModel _makeSubjectProductsViewModel(
     BuildContext context,
     int subjectId,
     String subjectName,
-    void Function() onNavigateToEmptySubject,
-    void Function() onNavigateBack,
-    void Function(int productId, int productPrice) onNavigateToProductScreen,
-    void Function(List<int>) onNavigateToSeoRequestsExtendScreen,
+    void Function({
+      required String routeName,
+      Map<String, dynamic>? params,
+    }) onNavigateTo,
     void Function(List<int> productIds) onSaveProductsToTrack,
   ) =>
       SubjectProductsViewModel(
           subjectId: subjectId,
           subjectName: subjectName,
           context: context,
-          onNavigateToEmptySubject: onNavigateToEmptySubject,
-          onNavigateToProductScreen: onNavigateToProductScreen,
-          onNavigateBack: onNavigateBack,
+          onNavigateTo: onNavigateTo,
           onSaveProductsToTrack: onSaveProductsToTrack,
-          onNavigateToSeoRequestsExtendScreen:
-              onNavigateToSeoRequestsExtendScreen,
           detailedOrdersService: _makeDetailedOrdersService(),
           savedProductsService: _makeSavedProductsService(),
           authService: _makeAuthService());
 
   EmptySubjectViewModel _makeEmptySubjectProductsViewModel(
-          BuildContext context,
-          void Function(int subjectId, String subjectName)
-              onNavigateToSubjectProducts,
-          void Function() onNavigateBack) =>
+    BuildContext context,
+    void Function({
+      required String routeName,
+      Map<String, dynamic>? params,
+    }) onNavigateTo,
+  ) =>
       EmptySubjectViewModel(
           context: context,
-          onNavigateToSubjectProducts: onNavigateToSubjectProducts,
-          onNavigateBack: onNavigateBack,
+          onNavigateTo: onNavigateTo,
           subjectsSummaryService: _makeSubjectsSummaryService());
 
   EmptyProductViewModel _makeEmptyProductViewModel(
-          BuildContext context,
-          void Function(int productId, int productPrice)
-              onNavigateToProductScreen,
-          void Function() onNavigateBack) =>
-      EmptyProductViewModel(
-          context: context,
-          onNavigateToProductScreen: onNavigateToProductScreen,
-          onNavigateBack: onNavigateBack);
+    BuildContext context,
+    void Function({
+      required String routeName,
+      Map<String, dynamic>? params,
+    }) onNavigateTo,
+  ) =>
+      EmptyProductViewModel(context: context, onNavigateTo: onNavigateTo);
 
   ProductViewModel _makeProductViewModel(
-          BuildContext context,
-          int productId,
-          int productPrice,
-          void Function() onNavigateToEmptyProductScreen,
-          void Function(List<String> keyPhrasesStr) onSaveKeyPhraseToTrack,
-          void Function() onNavigateBack) =>
+    BuildContext context,
+    int productId,
+    int productPrice,
+    void Function({
+      required String routeName,
+      Map<String, dynamic>? params,
+    }) onNavigateTo,
+    void Function(List<String> keyPhrasesStr) onSaveKeyPhraseToTrack,
+  ) =>
       ProductViewModel(
         context: context,
         productId: productId,
@@ -211,10 +213,9 @@ class _DIContainer {
         stocksService: _makeStocksService(),
         normqueryService: _makeNormqueryService(),
         kwLemmaService: _makeKwLemmaService(),
-        onNavigateBack: onNavigateBack,
+        onNavigateTo: onNavigateTo,
         detailedOrdersService: _makeDetailedOrdersService(),
         savedKeyPhrasesService: _makeSavedKeyPhrasesService(),
-        onNavigateToEmptyProductScreen: onNavigateToEmptyProductScreen,
         whService: _makeWhService(),
         authService: _makeAuthService(),
         lemmatizeService: _makeLemmatizeService(),
@@ -224,22 +225,31 @@ class _DIContainer {
 
   SeoRequestsExtendViewModel _makeSeoRequestsExtendViewModel(
           BuildContext context,
-          void Function() onNavigateBack,
+          void Function({
+            required String routeName,
+            Map<String, dynamic>? params,
+          }) onNavigateTo,
           List<int> productIds) =>
       SeoRequestsExtendViewModel(
           context: context,
-          onNavigateBack: onNavigateBack,
+          onNavigateTo: onNavigateTo,
           normqueryService: _makeNormqueryService(),
           authService: _makeAuthService(),
           productIds: productIds);
 
   MailingSettingsViewModel _makeMailingSettingsViewModel(
-          BuildContext context) =>
+    BuildContext context,
+    void Function({
+      required String routeName,
+      Map<String, dynamic>? params,
+    }) onNavigateTo,
+  ) =>
       MailingSettingsViewModel(
         context: context,
         userEmailsService: _makeUserEmailsService(),
         settingsService: _makeMailingSettingsService(),
         authService: _makeAuthService(),
+        onNavigateTo: onNavigateTo,
       );
 
   SavedProductsViewModel _makeSavedProductsViewModel(BuildContext context) =>
@@ -253,6 +263,12 @@ class _DIContainer {
       SavedKeyPhrasesViewModel(
         context: context,
         keyPhrasesService: _makeSavedKeyPhrasesService(),
+      );
+
+  SubscriptionViewModel _makeSubscriptionViewModel(BuildContext context) =>
+      SubscriptionViewModel(
+        context: context,
+        authService: _makeAuthService(),
       );
 
   LoginViewModel _makeLoginViewModel(BuildContext context) => LoginViewModel(
@@ -279,81 +295,78 @@ class ScreenFactoryDefault implements ScreenFactory {
   }
 
   @override
-  Widget makeSubjectProductsScreen(
-      {required int subjectId,
-      required String subjectName,
-      required void Function(int productId, int productPrice)
-          onNavigateToProductScreen,
-      required void Function() onNavigateToEmptySubject,
-      required void Function(List<int>) onNavigateToSeoRequestsExtendScreen,
-      required void Function(List<int> productIds) onSaveProductsToTrack,
-      required void Function() onNavigateBack}) {
+  Widget makeSubjectProductsScreen({
+    required int subjectId,
+    required String subjectName,
+    required void Function({
+      required String routeName,
+      Map<String, dynamic>? params,
+    }) onNavigateTo,
+    required void Function(List<int> productIds) onSaveProductsToTrack,
+  }) {
     return ChangeNotifierProvider(
       create: (context) => _diContainer._makeSubjectProductsViewModel(
-          context,
-          subjectId,
-          subjectName,
-          onNavigateToEmptySubject,
-          onNavigateBack,
-          onNavigateToProductScreen,
-          onNavigateToSeoRequestsExtendScreen,
-          onSaveProductsToTrack),
+          context, subjectId, subjectName, onNavigateTo, onSaveProductsToTrack),
       child: const SubjectProductsScreen(),
     );
   }
 
   @override
-  Widget makeEmptySubjectProductsScreen(
-      {required void Function(int subjectId, String subjectName)
-          onNavigateToSubjectProducts,
-      required void Function() onNavigateBack}) {
+  Widget makeEmptySubjectProductsScreen({
+    required void Function({
+      required String routeName,
+      Map<String, dynamic>? params,
+    }) onNavigateTo,
+  }) {
     return ChangeNotifierProvider(
       create: (context) => _diContainer._makeEmptySubjectProductsViewModel(
-          context, onNavigateToSubjectProducts, onNavigateBack),
+          context, onNavigateTo),
       child: const EmptySubjectProductsScreen(),
     );
   }
 
   @override
-  Widget makeEmptyProductScreen(
-      {required void Function(int productId, int productPrice)
-          onNavigateToProductScreen,
-      required void Function() onNavigateBack}) {
+  Widget makeEmptyProductScreen({
+    required void Function({
+      required String routeName,
+      Map<String, dynamic>? params,
+    }) onNavigateTo,
+  }) {
     return ChangeNotifierProvider(
-      create: (context) => _diContainer._makeEmptyProductViewModel(
-          context, onNavigateToProductScreen, onNavigateBack),
+      create: (context) =>
+          _diContainer._makeEmptyProductViewModel(context, onNavigateTo),
       child: const EmptyProductScreen(),
     );
   }
 
   @override
-  Widget makeProductScreen(
-      {required int productId,
-      required int productPrice,
-      required void Function() onNavigateToEmptyProductScreen,
-      required void Function(List<String> keyPhrasesStr)
-          onSaveKeyPhrasesToTrack,
-      required void Function() onNavigateBack}) {
+  Widget makeProductScreen({
+    required int productId,
+    required int productPrice,
+    required void Function({
+      required String routeName,
+      Map<String, dynamic>? params,
+    }) onNavigateTo,
+    required void Function(List<String> keyPhrasesStr) onSaveKeyPhrasesToTrack,
+  }) {
     return ChangeNotifierProvider(
-      create: (context) => _diContainer._makeProductViewModel(
-          context,
-          productId,
-          productPrice,
-          onNavigateToEmptyProductScreen,
-          onSaveKeyPhrasesToTrack,
-          onNavigateBack),
+      create: (context) => _diContainer._makeProductViewModel(context,
+          productId, productPrice, onNavigateTo, onSaveKeyPhrasesToTrack),
       child: const ProductScreen(),
     );
   }
 
   @override
   Widget makeSeoRequestsExtendScreen(
-      {required void Function() onNavigateBack,
+      {required void Function({
+        required String routeName,
+        Map<String, dynamic>? params,
+      }) onNavigateTo,
       required List<int> productIds}) {
     return ChangeNotifierProvider(
       create: (context) => _diContainer._makeSeoRequestsExtendViewModel(
         context,
-        onNavigateBack,
+        onNavigateTo,
         productIds,
       ),
       child: const SeoRequestsExtendScreen(),
@@ -361,12 +374,18 @@ class ScreenFactoryDefault implements ScreenFactory {
   }
 
   @override
-  Widget makeMailingScreen() {
+  Widget makeMailingScreen({
+    required void Function({
+      required String routeName,
+      Map<String, dynamic>? params,
+    }) onNavigateTo,
+  }) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(
           create: (context) => _diContainer._makeMailingSettingsViewModel(
             context,
+            onNavigateTo,
           ),
         ),
         ChangeNotifierProvider(
@@ -381,6 +400,16 @@ class ScreenFactoryDefault implements ScreenFactory {
         ),
       ],
       child: const MailingScreen(),
+    );
+  }
+
+  @override
+  Widget makeSubscriptionScreen() {
+    return ChangeNotifierProvider(
+      create: (context) => _diContainer._makeSubscriptionViewModel(
+        context,
+      ),
+      child: const SubscriptionScreen(),
     );
   }
 

@@ -5,37 +5,54 @@ abstract class ScreenFactory {
       {required void Function(int subjectId, String subjectName)
           onNavigateToSubjectProducts});
 
-  Widget makeSubjectProductsScreen(
-      {required int subjectId,
-      required String subjectName,
-      required void Function(int productId, int productPrice)
-          onNavigateToProductScreen,
-      required void Function() onNavigateToEmptySubject,
-      required void Function(List<int>) onNavigateToSeoRequestsExtendScreen,
-      required void Function(List<int> productIds) onSaveProductsToTrack,
-      required void Function() onNavigateBack});
-  Widget makeEmptySubjectProductsScreen(
-      {required void Function(int subjectId, String subjectName)
-          onNavigateToSubjectProducts,
-      required void Function() onNavigateBack});
+  Widget makeSubjectProductsScreen({
+    required int subjectId,
+    required String subjectName,
+    required void Function({
+      required String routeName,
+      Map<String, dynamic>? params,
+    }) onNavigateTo,
+    required void Function(List<int> productIds) onSaveProductsToTrack,
+  });
+  Widget makeEmptySubjectProductsScreen({
+    required void Function({
+      required String routeName,
+      Map<String, dynamic>? params,
+    }) onNavigateTo,
+  });
 
-  Widget makeEmptyProductScreen(
-      {required void Function(int productId, int? productPrice)
-          onNavigateToProductScreen,
-      required void Function() onNavigateBack});
-  Widget makeProductScreen(
-      {required int productId,
-      required int productPrice,
-      required void Function() onNavigateToEmptyProductScreen,
-      required void Function(List<String> keyPhrases) onSaveKeyPhrasesToTrack,
-      required void Function() onNavigateBack});
+  Widget makeEmptyProductScreen({
+    required void Function({
+      required String routeName,
+      Map<String, dynamic>? params,
+    }) onNavigateTo,
+  });
+  Widget makeProductScreen({
+    required int productId,
+    required int productPrice,
+    required void Function({
+      required String routeName,
+      Map<String, dynamic>? params,
+    }) onNavigateTo,
+    required void Function(List<String> keyPhrases) onSaveKeyPhrasesToTrack,
+  });
 
   Widget makeSeoRequestsExtendScreen({
     required List<int> productIds,
-    required void Function() onNavigateBack,
+    required void Function({
+      required String routeName,
+      Map<String, dynamic>? params,
+    }) onNavigateTo,
   });
 
-  Widget makeMailingScreen();
+  Widget makeMailingScreen({
+    required void Function({
+      required String routeName,
+      Map<String, dynamic>? params,
+    }) onNavigateTo,
+  });
+
+  Widget makeSubscriptionScreen();
 
   Widget makeLoginScreen();
 }
