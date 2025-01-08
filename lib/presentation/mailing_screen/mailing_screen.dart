@@ -137,6 +137,16 @@ class _MailingSettingsTab extends StatelessWidget {
                 const SizedBox(height: 8),
                 const _EmailsEditor(),
                 const SizedBox(height: 24),
+                Align(
+                  alignment: Alignment.center,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      model.onSave();
+                      // print(model.settings);
+                    },
+                    child: const Text("Сохранить"),
+                  ),
+                ),
               ],
             ),
           ),
@@ -381,6 +391,8 @@ class _SavedTableWidgetState extends State<_SavedTableWidget> {
   @override
   Widget build(BuildContext context) {
     final model = context.watch<SavedProductsViewModel>();
+    final onNavigateToSubscriptionScreen =
+        context.read<MailingSettingsViewModel>().onNavigateToSubscriptionScreen;
     final theme = Theme.of(context);
     final savedList = model.savedProducts;
     if (savedList.isEmpty) {
@@ -513,7 +525,7 @@ class _SavedTableWidgetState extends State<_SavedTableWidget> {
                                   action: SnackBarAction(
                                     label: 'Оформить подписку',
                                     onPressed: () {
-                                      print('Оформить подписку');
+                                      onNavigateToSubscriptionScreen();
                                     },
                                   ),
                                   duration: Duration(seconds: 10),
@@ -779,6 +791,8 @@ class _KeyPhrasesTableWidgetState extends State<_KeyPhrasesTableWidget> {
   @override
   Widget build(BuildContext context) {
     final model = context.watch<SavedKeyPhrasesViewModel>();
+    final onNavigateToSubscriptionScreen =
+        context.read<MailingSettingsViewModel>().onNavigateToSubscriptionScreen;
     final theme = Theme.of(context);
     final phrases = model.keyPhrases;
 
@@ -920,7 +934,7 @@ class _KeyPhrasesTableWidgetState extends State<_KeyPhrasesTableWidget> {
                             action: SnackBarAction(
                               label: 'Оформить подписку',
                               onPressed: () {
-                                print('Оформить подписку');
+                                onNavigateToSubscriptionScreen();
                               },
                             ),
                             duration: Duration(seconds: 10),

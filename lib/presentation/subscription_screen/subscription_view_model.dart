@@ -58,7 +58,6 @@ class SubscriptionViewModel extends ViewModelBase {
       }
       return;
     }
-    print(_tokenInfo!.endDate);
   }
 
   void subscribe() async {

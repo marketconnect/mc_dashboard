@@ -18,15 +18,18 @@ class KeyPhraseAdapter extends TypeAdapter<KeyPhrase> {
     };
     return KeyPhrase(
       phraseText: fields[0] as String,
+      marketPlace: fields[1] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, KeyPhrase obj) {
     writer
-      ..writeByte(1)
+      ..writeByte(2)
       ..writeByte(0)
-      ..write(obj.phraseText);
+      ..write(obj.phraseText)
+      ..writeByte(1)
+      ..write(obj.marketPlace);
   }
 
   @override

@@ -7,7 +7,11 @@ class KeyPhrase {
   @HiveField(0)
   final String phraseText;
 
+  @HiveField(1)
+  final String marketPlace;
+
   KeyPhrase({
     required this.phraseText,
+    required this.marketPlace,
   });
 }

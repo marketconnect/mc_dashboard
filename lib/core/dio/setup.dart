@@ -24,7 +24,7 @@ Future<Dio> setupDio() async {
   dio.interceptors.add(DioCacheInterceptor(options: cacheOptions));
   dio.interceptors.add(DioLoggingInterceptor());
   dio.options.connectTimeout = Duration(seconds: 10);
-  dio.options.receiveTimeout = Duration(seconds: 10);
+  dio.options.receiveTimeout = Duration(seconds: 30);
 
   return dio;
 }

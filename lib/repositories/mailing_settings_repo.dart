@@ -1,8 +1,8 @@
 import 'package:hive/hive.dart';
 import 'package:mc_dashboard/domain/entities/mailing_settings.dart';
-import 'package:mc_dashboard/domain/services/mail_settings_service.dart';
+import 'package:mc_dashboard/domain/services/user_sub_settings_service.dart';
 
-class MailingSettingsRepo implements MailingSettingsRepoRepository {
+class MailingSettingsRepo implements UserSubSettingsRepoRepository {
   @override
   Future<void> saveSettings(Map<String, dynamic> newSettings) async {
     final box = await Hive.openBox<DynamicMailingSettings>('mailingSettings');

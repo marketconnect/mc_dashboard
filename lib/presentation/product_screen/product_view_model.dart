@@ -445,8 +445,9 @@ class ProductViewModel extends ViewModelBase {
 
   Future<void> saveKeyPhrases(List<String> keyPhrasesStr) async {
     //
-    await savedKeyPhrasesService.saveKeyPhrases(
-        keyPhrasesStr.map((e) => KeyPhrase(phraseText: e)).toList());
+    await savedKeyPhrasesService.saveKeyPhrases(keyPhrasesStr
+        .map((e) => KeyPhrase(phraseText: e, marketPlace: 'wb'))
+        .toList());
 
     // Update mailing keyphrases screen
     onSaveKeyPhrasesToTrack(keyPhrasesStr);

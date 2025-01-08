@@ -1,5 +1,5 @@
 import 'package:fpdart/fpdart.dart';
-import 'package:mc_dashboard/api/user_emails.dart';
+import 'package:mc_dashboard/api/user_emails_api.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/domain/entities/user_email.dart';
 
@@ -11,31 +11,86 @@ abstract class UserEmailsRepoRepository {
   Future<List<UserEmail>> getAllUserEmails();
 }
 
+abstract class UserEmailsServiceApiClient {
+  Future<UserEmailsResponse> findUserEmails({required String token});
+  Future<void> saveUserEmails(
+      {required String token, required SaveEmailsRequest request});
+  Future<void> deleteUserEmails(
+      {required String token, required DeleteEmailsRequest request});
+}
+
 class UserEmailsService implements MailingUserEmailsService {
   UserEmailsService({
     required this.userEmailsRepoRepo,
     required this.userEmailsApiClient,
   });
 
-  final UserEmailsApiClient userEmailsApiClient;
+  final UserEmailsServiceApiClient userEmailsApiClient;
   final UserEmailsRepoRepository userEmailsRepoRepo;
 
   @override
-  Future<Either<AppErrorBase, void>> saveUserEmail(
-      {required String token,
-      required int userId,
-      required String email}) async {
+  Future<Either<AppErrorBase, void>> syncUserEmails({
+    required String token,
+    required List<String> newEmails,
+  }) async {
+    try {
+      // Get current emails
+      final currentEmails = (await userEmailsRepoRepo.getAllUserEmails())
+          .map((e) => e.email)
+          .toList();
+
+      // Find added emails
+      final addedEmails =
+          newEmails.where((email) => !currentEmails.contains(email)).toList();
+
+      // Find removed emails
+      final removedEmails =
+          currentEmails.where((email) => !newEmails.contains(email)).toList();
+
+      // Save
+      if (addedEmails.isNotEmpty) {
+        final saveResult =
+            await _saveUserEmails(token: token, emails: addedEmails);
+        if (saveResult.isLeft()) {
+          return saveResult;
+        }
+      }
+
+      // Delete
+      if (removedEmails.isNotEmpty) {
+        final deleteResult =
+            await _deleteUserEmail(token: token, emails: removedEmails);
+        if (deleteResult.isLeft()) {
+          return deleteResult;
+        }
+      }
+
+      return right(null);
+    } catch (e) {
+      return left(AppErrorBase(
+        'Caught error: $e',
+        name: 'syncUserEmails',
+        sendTo: true,
+        source: 'UserEmailsService',
+      ));
+    }
+  }
+
+  Future<Either<AppErrorBase, void>> _saveUserEmails(
+      {required String token, required List<String> emails}) async {
     try {
       // Save on server
-      await userEmailsApiClient.saveUserEmail(
-        token: 'Bearer $token',
-        request: SaveEmailRequest(userId: userId, email: email),
+      await userEmailsApiClient.saveUserEmails(
+        token: token,
+        request: SaveEmailsRequest(emails: emails),
       );
 
       // Save locally
-      final userEmail = UserEmail(email: email);
+      for (final email in emails) {
+        final userEmail = UserEmail(email: email);
 
-      await userEmailsRepoRepo.saveUserEmail(userEmail);
+        await userEmailsRepoRepo.saveUserEmail(userEmail);
+      }
     } catch (e) {
       return left(AppErrorBase(
         'Caught error: $e',
@@ -47,20 +102,19 @@ class UserEmailsService implements MailingUserEmailsService {
     return right(null);
   }
 
-  @override
-  Future<Either<AppErrorBase, void>> deleteUserEmail(
-      {required String token,
-      required int userId,
-      required String email}) async {
+  Future<Either<AppErrorBase, void>> _deleteUserEmail(
+      {required String token, required List<String> emails}) async {
     try {
       // delete on server
-      await userEmailsApiClient.deleteUserEmail(
-        token: 'Bearer $token',
-        request: DeleteEmailRequest(userId: userId, email: email),
+      await userEmailsApiClient.deleteUserEmails(
+        token: token,
+        request: DeleteEmailsRequest(emails: emails),
       );
 
       // delete locally
-      await userEmailsRepoRepo.deleteUserEmail(email);
+      for (final email in emails) {
+        await userEmailsRepoRepo.deleteUserEmail(email);
+      }
     } catch (e) {
       return left(AppErrorBase(
         'Caught error: $e',
@@ -74,29 +128,43 @@ class UserEmailsService implements MailingUserEmailsService {
 
   @override
   Future<Either<AppErrorBase, List<String>>> getAllUserEmails(
-      {required String token, required int userId}) async {
+      {required String token}) async {
     try {
       // get from server
       final userEmailsFromServer = await userEmailsApiClient.findUserEmails(
-        token: 'Bearer $token',
-        userId: userId,
+        token: token,
       );
 
       // get locally
       final userEmails = await userEmailsRepoRepo.getAllUserEmails();
-      final emailsFromLocal =
+      List<String> emailsFromLocal =
           userEmails.map((userEmail) => userEmail.email).toList();
 
       // compare
-      if (userEmailsFromServer.emails.length != emailsFromLocal.length) {
-        for (var email in userEmailsFromServer.emails) {
-          if (!emailsFromLocal.contains(email)) {
-            // Save locally
-            final missedUserEmail = UserEmail(email: email);
+      bool localStorageUpdated = false;
+      for (var email in userEmailsFromServer.emails) {
+        if (!emailsFromLocal.contains(email)) {
+          // Save locally
+          final missedUserEmail = UserEmail(email: email);
 
-            await userEmailsRepoRepo.saveUserEmail(missedUserEmail);
-          }
+          await userEmailsRepoRepo.saveUserEmail(missedUserEmail);
+          localStorageUpdated = true;
         }
+      }
+
+      // Delete locally
+      for (final email in emailsFromLocal) {
+        if (!userEmailsFromServer.emails.contains(email)) {
+          await userEmailsRepoRepo.deleteUserEmail(email);
+          localStorageUpdated = true;
+        }
+      }
+
+      // get updated list
+      if (localStorageUpdated) {
+        final updatedUserEmails = await userEmailsRepoRepo.getAllUserEmails();
+        emailsFromLocal =
+            updatedUserEmails.map((userEmail) => userEmail.email).toList();
       }
 
       return right(emailsFromLocal);

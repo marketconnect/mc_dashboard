@@ -93,18 +93,17 @@ class AuthService
     // Token is not expired
     if (token != null && !isTokenExpired(token)) {
       final payload = getPayload(token);
-      final userId = getUserId(payload);
+
       final userType = getTokenType(payload);
       final endDate = getEndDate(payload);
-      if (userId == null || userType == null || endDate == null) {
+      if (userType == null || endDate == null) {
         return left(AppErrorBase(
             'Не удалось получить информацию о пользователе',
             name: 'getTokenAndType',
             sendTo: true,
             source: 'AuthService'));
       }
-      return right(TokenInfo(
-          token: token, userId: userId, type: userType, endDate: endDate));
+      return right(TokenInfo(token: token, type: userType, endDate: endDate));
     }
 
     // Token is expired
@@ -116,23 +115,19 @@ class AuthService
     final newToken = newTokenEither.fold((l) => null, (r) => r);
     if (newToken != null) {
       final newPayload = getPayload(newToken);
-      final newuserId = getUserId(newPayload);
+
       final newUserType = getTokenType(newPayload);
       final newEndDate = getEndDate(newPayload);
-      // final userId = getUserId(newToken);
-      // final userType = getTokenType(newToken);
-      if (newuserId == null || newUserType == null || newEndDate == null) {
+
+      if (newUserType == null || newEndDate == null) {
         return left(AppErrorBase(
             'Не удалось получить информацию о пользователе',
             name: 'getTokenAndType',
             sendTo: true,
             source: 'AuthService'));
       }
-      return right(TokenInfo(
-          token: newToken,
-          userId: newuserId,
-          type: newUserType,
-          endDate: newEndDate));
+      return right(
+          TokenInfo(token: newToken, type: newUserType, endDate: newEndDate));
     } else {
       return left(AppErrorBase('Token not found in storage',
           name: 'getTokenAndType', sendTo: true, source: 'AuthService'));
@@ -168,22 +163,6 @@ class AuthService
       );
 
       return payload;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  int? getUserId(dynamic payload) {
-    try {
-      // Extract userId
-      final userId = payload['userId'];
-      if (userId is int) {
-        return userId;
-      } else if (userId is String) {
-        return int.tryParse(
-            userId); // If userId is a string, try to parse it as an int
-      }
-      return null;
     } catch (e) {
       return null;
     }

@@ -5,7 +5,6 @@ import 'package:mc_dashboard/domain/services/saved_products_service.dart';
 class SavedProductsRepo implements SavedProductsRepository {
   @override
   Future<void> saveProduct(SavedProduct product) async {
-    print("Saved product: ${product.productId}");
     final box = await Hive.openBox<SavedProduct>('savedProducts');
     await box.put(product.productId, product);
   }

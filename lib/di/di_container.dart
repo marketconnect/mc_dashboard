@@ -9,14 +9,15 @@ import 'package:mc_dashboard/api/normqueries.dart';
 import 'package:mc_dashboard/api/orders.dart';
 import 'package:mc_dashboard/api/stocks.dart';
 import 'package:mc_dashboard/api/subjects_summary.dart';
-import 'package:mc_dashboard/api/user_emails.dart';
+import 'package:mc_dashboard/api/user_emails_api.dart';
+import 'package:mc_dashboard/api/user_settings_api.dart';
 import 'package:mc_dashboard/api/warehouses.dart';
 import 'package:mc_dashboard/core/dio/setup.dart';
 import 'package:mc_dashboard/domain/services/auth_service.dart';
 import 'package:mc_dashboard/domain/services/detailed_orders_service.dart';
 import 'package:mc_dashboard/domain/services/kw_lemmas_service.dart';
 import 'package:mc_dashboard/domain/services/lemmatize_service.dart';
-import 'package:mc_dashboard/domain/services/mail_settings_service.dart';
+import 'package:mc_dashboard/domain/services/user_sub_settings_service.dart';
 import 'package:mc_dashboard/domain/services/normqueries_service.dart';
 import 'package:mc_dashboard/domain/services/orders_service.dart';
 import 'package:mc_dashboard/domain/services/saved_key_phrases_service.dart';
@@ -96,6 +97,7 @@ class _DIContainer {
   MailingSettingsRepo _makeMailingSettingsRepo() => MailingSettingsRepo();
   // Api clients ///////////////////////////////////////////////////////////////
   AuthApiClient _makeAuthApiClient() => const AuthApiClient();
+  UserEmailsApiClient _makeUserEmailsApiClient() => UserEmailsApiClient();
   // Services //////////////////////////////////////////////////////////////////
   SubjectsSummaryService _makeSubjectsSummaryService() =>
       SubjectsSummaryService(
@@ -130,7 +132,7 @@ class _DIContainer {
 
   UserEmailsService _makeUserEmailsService() => UserEmailsService(
         userEmailsRepoRepo: _makeUserEmailsRepo(),
-        userEmailsApiClient: UserEmailsApiClient(dio),
+        userEmailsApiClient: _makeUserEmailsApiClient(),
       );
   SavedProductsService _makeSavedProductsService() => SavedProductsService(
         savedProductsRepo: _makeSavedProductsRepo(),
@@ -141,9 +143,10 @@ class _DIContainer {
         savedKeyPhrasesRepo: _makeSavedKeyPhrasesRepo(),
       );
 
-  MailingSettingsService _makeMailingSettingsService() =>
-      MailingSettingsService(
+  UserSubSettingsService _makeMailingSettingsService() =>
+      UserSubSettingsService(
         mailingSettingsRepo: _makeMailingSettingsRepo(),
+        userSettingsApiClient: UserSettingsApiClient(),
       );
 
   TinkoffPaymentService _makeTinkoffPaymentService() => TinkoffPaymentService();

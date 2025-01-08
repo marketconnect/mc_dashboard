@@ -8,10 +8,13 @@ import 'package:mc_dashboard/routes/main_navigation_route_names.dart';
 
 // mailing settings service
 abstract class MailingSettingsMailingSettingsService {
-  Future<Either<AppErrorBase, Map<String, dynamic>>> getSettings();
-  Future<Either<AppErrorBase, void>> saveSettings(
-      Map<String, dynamic> settings);
-  Future<Either<AppErrorBase, void>> deleteSetting(String key);
+  Future<Either<AppErrorBase, Map<String, dynamic>>> getSettings({
+    required String token,
+  });
+  Future<Either<AppErrorBase, void>> syncSettings({
+    required String token,
+    required Map<String, dynamic> newSettings,
+  });
 }
 
 // auth service
@@ -24,12 +27,12 @@ abstract class MailingAuthService {
 
 // user emails service
 abstract class MailingUserEmailsService {
-  Future<Either<AppErrorBase, void>> saveUserEmail(
-      {required String token, required int userId, required String email});
-  Future<Either<AppErrorBase, void>> deleteUserEmail(
-      {required String token, required int userId, required String email});
+  Future<Either<AppErrorBase, void>> syncUserEmails({
+    required String token,
+    required List<String> newEmails,
+  });
   Future<Either<AppErrorBase, List<String>>> getAllUserEmails(
-      {required String token, required int userId});
+      {required String token});
 }
 
 class MailingSettingsViewModel extends ViewModelBase {
@@ -99,7 +102,8 @@ class MailingSettingsViewModel extends ViewModelBase {
     // Load user emails
     if (isSubscribed) {
       final emailsOrEither = await userEmailsService.getAllUserEmails(
-          token: _tokenInfo!.token, userId: _tokenInfo!.userId);
+        token: _tokenInfo!.token,
+      );
 
       if (emailsOrEither.isRight()) {
         _emails =
@@ -114,74 +118,57 @@ class MailingSettingsViewModel extends ViewModelBase {
       }
 
       // Load mailing settings
-      final settingsOrEither = await settingsService.getSettings();
-      if (settingsOrEither.isRight()) {
-        _settings =
-            settingsOrEither.fold((l) => throw UnimplementedError(), (r) => r);
-        _daily = _settings['daily'] ?? false;
-        _weekly = _settings['weekly'] ?? false;
-      }
-    }
-
-    notifyListeners();
-  }
-
-  void toggleDaily(bool value) async {
-    _daily = value;
-    await _updateSetting('daily', value);
-    notifyListeners();
-  }
-
-  void toggleWeekly(bool value) async {
-    _weekly = value;
-    await _updateSetting('weekly', value);
-    notifyListeners();
-  }
-
-  void addEmail(String email) async {
-    // Token check
-    if (_tokenInfo == null) {
-      if (context.mounted) {
+      if (_tokenInfo == null) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('User is not logged in'),
         ));
+        return;
       }
-      return;
+      final settingsOrEither = await settingsService.getSettings(
+        token: _tokenInfo!.token,
+      );
+      if (settingsOrEither.isRight()) {
+        _settings =
+            settingsOrEither.fold((l) => throw UnimplementedError(), (r) => r);
+        _daily = (_settings['daily'] is bool)
+            ? _settings['daily'] as bool
+            : _settings['daily'].toString().toLowerCase() == 'true';
+
+        _weekly = (_settings['weekly'] is bool)
+            ? _settings['weekly'] as bool
+            : _settings['weekly'].toString().toLowerCase() == 'true';
+      }
     }
-    // Email check
+
+    notifyListeners();
+  } // asyncInit
+
+  void toggleDaily(bool value) {
+    _daily = value;
+    notifyListeners();
+  }
+
+  void toggleWeekly(bool value) {
+    _weekly = value;
+    notifyListeners();
+  }
+
+  void addEmail(String email) {
     if (!_isValidEmail(email)) {
       _errorMessage = "Неверный формат email";
       notifyListeners();
       return;
     }
-
-    // Add email
-    if (email.isNotEmpty && !_emails.contains(email)) {
+    if (!_emails.contains(email)) {
       _emails.add(email);
-      _errorMessage = null; // Сбрасываем ошибку
+      _errorMessage = null;
       notifyListeners();
-
-      await userEmailsService.saveUserEmail(
-          token: _tokenInfo!.token, userId: _tokenInfo!.userId, email: email);
     }
   }
 
-  void removeEmail(String email) async {
-    // Token check
-    if (_tokenInfo == null) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('User is not logged in'),
-        ));
-      }
-      return;
-    }
+  void removeEmail(String email) {
     _emails.remove(email);
     notifyListeners();
-
-    // Delete email
-    await userEmailsService.deleteUserEmail(
-        token: _tokenInfo!.token, userId: _tokenInfo!.userId, email: email);
   }
 
   bool _isValidEmail(String email) {
@@ -189,19 +176,48 @@ class MailingSettingsViewModel extends ViewModelBase {
     return regex.hasMatch(email);
   }
 
-  Future<void> _updateSetting(String key, dynamic value) async {
-    final updatedSettings = {..._settings, key: value};
-    final saveOrError = await settingsService.saveSettings(updatedSettings);
-    if (saveOrError.isRight()) {
-      _settings[key] = value;
+  // void deleteSetting(String key) async {
+  //   await settingsService.deleteSetting(key);
+  //   _settings.remove(key);
+  //   notifyListeners();
+  // }
+
+  Future<void> onSave() async {
+    if (_tokenInfo == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('User is not logged in'),
+      ));
+      return;
+    }
+
+    final token = _tokenInfo!.token;
+
+    // Sync settings
+    final settings = <String, dynamic>{};
+
+    settings['daily'] = _daily;
+
+    settings['weekly'] = _weekly;
+
+    await settingsService.syncSettings(
+      token: token,
+      newSettings: settings,
+    );
+
+    // Sync emails
+    await userEmailsService.syncUserEmails(
+      token: token,
+      newEmails: _emails,
+    );
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Настройки успешно сохранены')),
+      );
     }
   }
 
-  void deleteSetting(String key) async {
-    await settingsService.deleteSetting(key);
-    _settings.remove(key);
-    notifyListeners();
-  }
+  // navigation
 
   void onNavigateToSubscriptionScreen() {
     onNavigateTo(routeName: MainNavigationRouteNames.subscriptionScreen);
