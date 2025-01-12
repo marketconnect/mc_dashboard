@@ -53,9 +53,28 @@ class MailingSettingsViewModel extends ViewModelBase {
     Map<String, dynamic>? params,
   }) onNavigateTo;
   // Fields ////////////////////////////////////////////////////////////////////
-  bool _daily = false;
+  // Periodic
+  bool _daily = true;
   bool _weekly = false;
+
+  // Options
+  // Анализ позиций
+  bool productPosition = true;
+  // Уведомления о ценах
+  bool productPrice = true;
+  // Тренды
+  bool newSearchQueries = true;
+  // Акции
+  bool productPromotions = true;
+  // Изменения карточек
+  bool productCardChanges = true;
+  // Изменение ассортимента
+  bool assortmentChanges = true;
+
+  // Emails
   List<String> _emails = [];
+
+  // Error
   String? _errorMessage;
   Map<String, dynamic> _settings = {};
 
@@ -130,19 +149,54 @@ class MailingSettingsViewModel extends ViewModelBase {
       if (settingsOrEither.isRight()) {
         _settings =
             settingsOrEither.fold((l) => throw UnimplementedError(), (r) => r);
+        // daily
         _daily = (_settings['daily'] is bool)
             ? _settings['daily'] as bool
             : _settings['daily'].toString().toLowerCase() == 'true';
 
+        // weekly
         _weekly = (_settings['weekly'] is bool)
             ? _settings['weekly'] as bool
             : _settings['weekly'].toString().toLowerCase() == 'true';
+
+        // options
+        // productPosition
+        productPosition = (_settings['productPosition'] is bool)
+            ? _settings['productPosition'] as bool
+            : _settings['productPosition'].toString().toLowerCase() == 'true';
+
+        // newSearchQueries
+        newSearchQueries = (_settings['newSearchQueries'] is bool)
+            ? _settings['newSearchQueries'] as bool
+            : _settings['newSearchQueries'].toString().toLowerCase() == 'true';
+
+        // assortmentChanges
+        assortmentChanges = (_settings['assortmentChanges'] is bool)
+            ? _settings['assortmentChanges'] as bool
+            : _settings['assortmentChanges'].toString().toLowerCase() == 'true';
+
+        // productPromotions
+        productPromotions = (_settings['productPromotions'] is bool)
+            ? _settings['productPromotions'] as bool
+            : _settings['productPromotions'].toString().toLowerCase() == 'true';
+
+        // productPrice
+        productPrice = (_settings['productPrice'] is bool)
+            ? _settings['productPrice'] as bool
+            : _settings['productPrice'].toString().toLowerCase() == 'true';
+
+        // productCardChanges
+        productCardChanges = (_settings['productCardChanges'] is bool)
+            ? _settings['productCardChanges'] as bool
+            : _settings['productCardChanges'].toString().toLowerCase() ==
+                'true';
       }
     }
 
     notifyListeners();
   } // asyncInit
 
+  // Toggle
   void toggleDaily(bool value) {
     _daily = value;
     notifyListeners();
@@ -150,6 +204,36 @@ class MailingSettingsViewModel extends ViewModelBase {
 
   void toggleWeekly(bool value) {
     _weekly = value;
+    notifyListeners();
+  }
+
+  void toggleProductPosition(bool value) {
+    productPosition = value;
+    notifyListeners();
+  }
+
+  void toggleNewSearchQueries(bool value) {
+    newSearchQueries = value;
+    notifyListeners();
+  }
+
+  void toggleAssortmentChanges(bool value) {
+    assortmentChanges = value;
+    notifyListeners();
+  }
+
+  void togglePriceChanges(bool value) {
+    productPrice = value;
+    notifyListeners();
+  }
+
+  void toggleProductPromotions(bool value) {
+    productPromotions = value;
+    notifyListeners();
+  }
+
+  void toggleProductCardChanges(bool value) {
+    productCardChanges = value;
     notifyListeners();
   }
 
@@ -176,16 +260,16 @@ class MailingSettingsViewModel extends ViewModelBase {
     return regex.hasMatch(email);
   }
 
-  // void deleteSetting(String key) async {
-  //   await settingsService.deleteSetting(key);
-  //   _settings.remove(key);
-  //   notifyListeners();
-  // }
-
   Future<void> onSave() async {
     if (_tokenInfo == null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('User is not logged in'),
+      ));
+      return;
+    }
+    if (_tokenInfo!.type == "free") {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Пожалуйста, оформите подписку'),
       ));
       return;
     }
@@ -196,8 +280,13 @@ class MailingSettingsViewModel extends ViewModelBase {
     final settings = <String, dynamic>{};
 
     settings['daily'] = _daily;
-
     settings['weekly'] = _weekly;
+    settings['productPosition'] = productPosition;
+    settings['newSearchQueries'] = newSearchQueries;
+    settings['productPromotions'] = productPromotions;
+    settings['productPrice'] = productPrice;
+    settings['productCardChanges'] = productCardChanges;
+    settings['assortmentChanges'] = assortmentChanges;
 
     await settingsService.syncSettings(
       token: token,

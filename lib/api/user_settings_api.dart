@@ -1,4 +1,5 @@
 import 'dart:convert';
+// ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
 import 'package:mc_dashboard/.env.dart';
 import 'package:mc_dashboard/domain/services/user_sub_settings_service.dart';
@@ -101,12 +102,16 @@ class UserSettingsResponse {
     required this.settings,
   });
 
-  factory UserSettingsResponse.fromJson(Map<String, dynamic> json) =>
-      UserSettingsResponse(
-        settings: (json['settings'] as List<dynamic>)
-            .map((item) => Setting.fromJson(item as Map<String, dynamic>))
-            .toList(),
-      );
+  factory UserSettingsResponse.fromJson(Map<String, dynamic> json) {
+    if (json['settings'] == null || json['settings'] == '') {
+      return UserSettingsResponse(settings: []);
+    }
+    return UserSettingsResponse(
+      settings: (json['settings'] as List<dynamic>)
+          .map((item) => Setting.fromJson(item as Map<String, dynamic>))
+          .toList(),
+    );
+  }
 }
 
 class Setting {

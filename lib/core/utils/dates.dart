@@ -95,3 +95,42 @@ DateTime parseDateYYYYMMDD(String date) {
 
   return DateTime(year, month, day);
 }
+
+String weekStringPeriod(String weekString) {
+  final parts = weekString.split('_');
+  final year = int.parse('20${parts[0]}');
+  final week = int.parse(parts[1]);
+
+  final firstDayOfYear = DateTime(year, 1, 1);
+  final daysToMonday = (firstDayOfYear.weekday == DateTime.sunday)
+      ? 0
+      : (8 - firstDayOfYear.weekday);
+
+  // Previous week
+  final mondayDate =
+      firstDayOfYear.add(Duration(days: daysToMonday + (week - 2) * 7));
+  final sundayDate = mondayDate.add(const Duration(days: 6));
+
+  final formattedDate =
+      '${mondayDate.day.toString().padLeft(2, '0')} ${monthName(mondayDate.month)} - ${sundayDate.day.toString().padLeft(2, '0')} ${monthName(sundayDate.month)}';
+  return formattedDate;
+}
+
+String weekStringToMondayDate(String weekString) {
+  final parts = weekString.split('_');
+  final year = int.parse('20${parts[0]}');
+  final week = int.parse(parts[1]);
+
+  final firstDayOfYear = DateTime(year, 1, 1);
+  final daysToMonday = (firstDayOfYear.weekday == DateTime.sunday)
+      ? 0
+      : (8 - firstDayOfYear.weekday);
+  final firstMonday = firstDayOfYear.add(Duration(days: daysToMonday));
+
+  // final sundayDate = firstMonday.add(Duration(days: (week - 1) * 7 + 6));
+  final mondayDate = firstMonday.add(Duration(days: (week - 1) * 7));
+
+  final formattedDate =
+      '${mondayDate.day.toString().padLeft(2, '0')} ${monthName(mondayDate.month)}';
+  return formattedDate;
+}

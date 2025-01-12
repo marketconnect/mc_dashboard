@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class SubjectSummaryItem {
   final int subjectId;
   final String subjectName;
@@ -7,7 +9,8 @@ class SubjectSummaryItem {
   final int totalSkus;
   final int medianPrice;
   final int skusWithOrders;
-
+  final String historyData;
+  Map<String, dynamic> get decodedHistoryData => jsonDecode(historyData);
   SubjectSummaryItem({
     required this.subjectId,
     required this.subjectName,
@@ -17,6 +20,7 @@ class SubjectSummaryItem {
     required this.totalSkus,
     required this.medianPrice,
     required this.skusWithOrders,
+    required this.historyData,
   });
 
   factory SubjectSummaryItem.fromJson(Map<String, dynamic> json) {
@@ -29,6 +33,7 @@ class SubjectSummaryItem {
       totalSkus: json['total_skus'],
       medianPrice: json['median_price'],
       skusWithOrders: json['skus_with_orders'],
+      historyData: json['history_data'],
     );
   }
 
@@ -42,6 +47,7 @@ class SubjectSummaryItem {
       'total_skus': totalSkus,
       'median_price': medianPrice,
       'skus_with_orders': skusWithOrders,
+      'history_data': historyData,
     };
   }
 
@@ -54,6 +60,7 @@ class SubjectSummaryItem {
     int? totalSkus,
     int? medianPrice,
     int? skusWithOrders,
+    String? historyData,
   }) {
     return SubjectSummaryItem(
       subjectId: subjectId ?? this.subjectId,
@@ -64,6 +71,7 @@ class SubjectSummaryItem {
       totalSkus: totalSkus ?? this.totalSkus,
       medianPrice: medianPrice ?? this.medianPrice,
       skusWithOrders: skusWithOrders ?? this.skusWithOrders,
+      historyData: historyData ?? this.historyData,
     );
   }
 }

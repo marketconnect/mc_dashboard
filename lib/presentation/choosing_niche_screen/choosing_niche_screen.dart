@@ -1,6 +1,8 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:material_table_view/material_table_view.dart';
 import 'package:mc_dashboard/core/utils/colors.dart';
+import 'package:mc_dashboard/core/utils/dates.dart';
 import 'package:mc_dashboard/core/utils/strings_ext.dart';
 import 'package:pie_chart/pie_chart.dart' as pie_chart;
 import 'package:fl_chart/fl_chart.dart';
@@ -44,25 +46,36 @@ class ChoosingNicheScreen extends StatelessWidget {
                     child: PieChartWidget(maxWidth: maxWidth),
                   ),
                   Container(
-                    height: constraints.maxHeight * 0.3, // Height for bar
+                    height: constraints.maxHeight * 0.3, // Общая высота графика
                     margin: const EdgeInsets.all(8.0),
                     padding: const EdgeInsets.all(16.0),
                     decoration: BoxDecoration(
                       color: surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(8.0),
                     ),
-                    child: const BarChartWidget(isMedianPrice: true),
+                    child:
+                        const HistoryChartWidget(), // <-- Добавили ваш новый виджет
                   ),
-                  Container(
-                    height: constraints.maxHeight * 0.3, // Height for bar
-                    margin: const EdgeInsets.all(8.0),
-                    padding: const EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      color: surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    child: const BarChartWidget(isMedianPrice: false),
-                  ),
+                  // Container(
+                  //   height: constraints.maxHeight * 0.3, // Height for bar
+                  //   margin: const EdgeInsets.all(8.0),
+                  //   padding: const EdgeInsets.all(16.0),
+                  //   decoration: BoxDecoration(
+                  //     color: surfaceContainerHighest,
+                  //     borderRadius: BorderRadius.circular(8.0),
+                  //   ),
+                  //   child: const BarChartWidget(isMedianPrice: true),
+                  // ),
+                  // Container(
+                  //   height: constraints.maxHeight * 0.3, // Height for bar
+                  //   margin: const EdgeInsets.all(8.0),
+                  //   padding: const EdgeInsets.all(16.0),
+                  //   decoration: BoxDecoration(
+                  //     color: surfaceContainerHighest,
+                  //     borderRadius: BorderRadius.circular(8.0),
+                  //   ),
+                  //   child: const BarChartWidget(isMedianPrice: false),
+                  // ),
                   if (isFilterVisible) _buildFiltersWidget(context),
                   Container(
                     height: constraints.maxHeight * 0.6, // Height for table
@@ -113,17 +126,19 @@ class ChoosingNicheScreen extends StatelessWidget {
                               ),
                               child: (selectedParentName == null)
                                   ? const Center(child: Text("Не выбрано"))
-                                  : Column(
-                                      children: [
-                                        Flexible(
-                                            flex: 1,
-                                            child: const BarChartWidget(
-                                                isMedianPrice: true)),
-                                        Flexible(
-                                            flex: 1,
-                                            child: const BarChartWidget(
-                                                isMedianPrice: false)),
-                                      ],
+                                  : Container(
+                                      height: constraints.maxHeight *
+                                          0.3, // Общая высота графика
+                                      margin: const EdgeInsets.all(8.0),
+                                      // padding: const EdgeInsets.all(16.0),
+                                      decoration: BoxDecoration(
+                                        color: surfaceContainerHighest,
+                                        borderRadius:
+                                            BorderRadius.circular(8.0),
+                                      ),
+                                      child:
+                                          // const TotalOrdersHistoryChartWidget(),
+                                          const HistoryChartWidget(),
                                     ),
                             ),
                             if (selectedParentName != null)
@@ -773,6 +788,7 @@ class _TableWidgetState extends State<TableWidget> {
                             }
                             model.updateTopSubjectValue(
                                 item.subjectParentName ?? 'Unknown',
+                                item.subjectName,
                                 columnIndex);
                           },
                           child: Container(
@@ -981,5 +997,633 @@ class BarChartWidget extends StatelessWidget {
           ),
       ],
     );
+  }
+}
+
+class TotalOrdersHistoryChartWidget extends StatelessWidget {
+  const TotalOrdersHistoryChartWidget({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final model = context.watch<ChoosingNicheViewModel>();
+    final selectedSubjectName = model.selectedSubjectName;
+    // Если ничего не выбрано — показываем заглушку
+    if (selectedSubjectName == null) {
+      return const Center(child: Text("Не выбрано"));
+    }
+
+    // Находим нужный элемент в subjectsSummary
+    final item = model.subjectsSummary.where(
+      (element) => element.subjectName == selectedSubjectName,
+    );
+
+    if (item.isEmpty || item.first.historyData.isEmpty) {
+      return const Center(child: Text("Нет исторических данных"));
+    }
+
+    // Преобразуем словарь historyData в список точек для графика
+    // Ключи "24_52" и т. п. сортируем по возрастанию (чтобы по X шел год-неделя по порядку).
+
+    final sortedHistory = item.first.decodedHistoryData.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+
+    // Формируем точки для LineChart
+    final spots = <FlSpot>[];
+    for (int i = 0; i < sortedHistory.length; i++) {
+      final totalOrders =
+          sortedHistory[i].value["total_orders"]?.toDouble() ?? 0.0;
+      spots.add(FlSpot(i.toDouble(), totalOrders));
+    }
+
+    return LineChart(
+      LineChartData(
+        lineTouchData: LineTouchData(
+          touchTooltipData: LineTouchTooltipData(
+            getTooltipItems: (touchedSpots) {
+              return touchedSpots.map((touchedSpot) {
+                final index = touchedSpot.spotIndex;
+                final key = sortedHistory[index].key;
+                final value = touchedSpot.y;
+                return LineTooltipItem(
+                  '$key\n$value заказов',
+                  const TextStyle(fontWeight: FontWeight.bold),
+                );
+              }).toList();
+            },
+          ),
+        ),
+        titlesData: FlTitlesData(
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(showTitles: true),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              // Если хотите подписывать ось X год/неделю:
+              getTitlesWidget: (value, _) {
+                final index = value.toInt();
+                if (index < 0 || index >= sortedHistory.length) {
+                  return const SizedBox.shrink();
+                }
+                final key = sortedHistory[index].key; // "24_52" и т.д.
+                return Text(key, style: const TextStyle(fontSize: 10));
+              },
+              interval: 5, // Разреживаем подписи, можно менять
+            ),
+          ),
+        ),
+        borderData: FlBorderData(show: true),
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            color: Theme.of(context).colorScheme.primary,
+            isCurved: true,
+            barWidth: 3,
+            dotData: FlDotData(show: false),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class HistoryChartWidget extends StatefulWidget {
+  const HistoryChartWidget({Key? key}) : super(key: key);
+
+  @override
+  State<HistoryChartWidget> createState() => _HistoryChartWidgetState();
+}
+
+class _HistoryChartWidgetState extends State<HistoryChartWidget> {
+  @override
+  Widget build(BuildContext context) {
+    final model = context.watch<ChoosingNicheViewModel>();
+    final selectedSubjectName = model.selectedSubjectName;
+    final theme = Theme.of(context);
+
+    String firstKey = "total_skus";
+    String secondKey = "sku_with_orders";
+
+    final selectedMetric = model.historyMetric;
+    // switch (selectedMetric) {
+    //   case "Заказы":
+    //     firstKey = "total_orders";
+    //     break;
+
+    //   case "Кол-во sku/sku с заказами":
+    //   default:
+    // }
+
+    if (selectedSubjectName == null) {
+      return const Center(child: Text("Не выбрано"));
+    }
+
+    // Ищем элементы, где subjectName совпадает с нужным
+    final items = model.subjectsSummary
+        .where((element) => element.subjectName == selectedSubjectName)
+        .toList();
+
+    if (items.isEmpty || items.first.historyData.isEmpty) {
+      return const Center(child: Text("Нет исторических данных"));
+    }
+
+    final subjectItem = items.first;
+    final sortedHistory = subjectItem.decodedHistoryData.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+
+    // Находим максимальное значение для оси Y
+    final double maxYValue = sortedHistory
+        .map<double>((e) =>
+            (e.value[firstKey]?.toDouble() ?? 0) +
+            (e.value[secondKey]?.toDouble() ?? 0))
+        .reduce((a, b) => a > b ? a : b);
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          Text(
+            selectedSubjectName,
+            style: const TextStyle(fontSize: 20),
+          ),
+          _buildMetricSelector(theme, model),
+          SizedBox(width: 16),
+        ]),
+        const SizedBox(height: 16),
+        Expanded(
+          child: LayoutBuilder(builder: (context, constraints) {
+            final fullBarWidth = constraints.maxWidth / sortedHistory.length;
+            final barsSpace = fullBarWidth * 0.1;
+
+            final barsWidth = fullBarWidth - barsSpace;
+
+            if (selectedMetric == "Заказы" ||
+                selectedMetric == "Медианная цена") {
+              // Choosen total orders metric ////////////////////////////////////////
+              final sortedHistory = items.first.decodedHistoryData.entries
+                  .toList()
+                ..sort((a, b) => a.key.compareTo(b.key));
+
+              // Формируем точки для LineChart
+              final spots = <FlSpot>[];
+              for (int i = 0; i < sortedHistory.length; i++) {
+                final totalOrders =
+                    sortedHistory[i].value["total_orders"]?.toDouble() ?? 0.0;
+                spots.add(FlSpot(i.toDouble(), totalOrders));
+              }
+              return _HistoryLineChart();
+            }
+
+            if (selectedMetric == "Кол-во продавцов/брендов") {
+              return _DoubleBarChart();
+            }
+
+            return BarChart(
+              BarChartData(
+                alignment: BarChartAlignment.spaceEvenly,
+                maxY: maxYValue * 1.1,
+                groupsSpace: barsSpace,
+                barGroups: _generateStackedBarGroups(sortedHistory, barsWidth,
+                    firstKey: firstKey, secondKey: secondKey),
+                barTouchData: BarTouchData(
+                  enabled: true,
+                  touchTooltipData: BarTouchTooltipData(
+                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                      final key =
+                          weekStringPeriod(sortedHistory[group.x.toInt()].key);
+                      final totalSkus = sortedHistory[group.x.toInt()]
+                          .value[firstKey]
+                          .toDouble();
+                      final skuWithOrders = sortedHistory[group.x.toInt()]
+                          .value[secondKey]
+                          .toDouble();
+
+                      return BarTooltipItem(
+                        "$key\nТовары\nВсего: $totalSkus\nС заказами: $skuWithOrders",
+                        TextStyle(fontWeight: FontWeight.bold),
+                      );
+                    },
+                  ),
+                ),
+                titlesData: FlTitlesData(
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 30,
+                      interval: 3,
+                      getTitlesWidget: (value, _) {
+                        final index = value.toInt();
+                        if (index % 3 != 0 ||
+                            index < 0 ||
+                            index >= sortedHistory.length) {
+                          return const SizedBox.shrink();
+                        }
+                        return Transform.rotate(
+                          angle: math.pi / 4,
+                          alignment: Alignment.bottomCenter,
+                          child: Text(
+                            weekStringToMondayDate(sortedHistory[index].key),
+                            style: const TextStyle(fontSize: 8),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, _) {
+                        return Transform.rotate(
+                          angle: math.pi / 4,
+                          child: Text(formatNumber(value),
+                              style: const TextStyle(fontSize: 8)),
+                        );
+                      },
+                    ),
+                  ),
+                  topTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                ),
+                gridData: FlGridData(show: true),
+                borderData: FlBorderData(show: true),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
+  String formatNumber(double number) {
+    if (number >= 1e9) {
+      return "${(number / 1e9).floor()} млрд";
+    } else if (number >= 1e6) {
+      return "${(number / 1e6).floor()} млн";
+    } else if (number >= 1e3) {
+      return "${(number / 1e3).floor()} тыс";
+    } else {
+      return number.floor().toString();
+    }
+  }
+
+  double getYIntervals(double maxYValue, int intervalsCount) {
+    final s = nextHigherOrder(maxYValue.toInt());
+
+    if (s == 0) {
+      return 1;
+    }
+
+    final p = s / intervalsCount;
+
+    return (p.toInt()).toDouble();
+  }
+
+  int nextHigherOrder(int number) {
+    if (number <= 0) return 0; // Обработка неотрицательных чисел
+
+    int magnitude = math.pow(10, number.toString().length - 1).toInt();
+    return ((number ~/ magnitude) + 1) * magnitude;
+  }
+
+  /// Генерация стековых столбцов (Stacked Bar)
+  List<BarChartGroupData> _generateStackedBarGroups(
+    List<MapEntry<String, dynamic>> sortedHistory,
+    double barsWidth, {
+    required String firstKey,
+    required String secondKey,
+  }) {
+    final theme = Theme.of(context);
+    return List.generate(sortedHistory.length, (index) {
+      final data = sortedHistory[index].value;
+      final skusWithOrders = (data[secondKey]?.toDouble() ?? 0.0);
+      final totalSkus = (data[firstKey]?.toDouble() ?? 0.0);
+
+      return BarChartGroupData(
+        x: index,
+        barRods: [
+          BarChartRodData(
+            toY: totalSkus,
+            rodStackItems: [
+              // Нижний сегмент — sku_with_orders
+              BarChartRodStackItem(
+                0,
+                skusWithOrders,
+                theme.colorScheme.onPrimary,
+              ),
+              // Верхний сегмент — оставшиеся total_skus
+              BarChartRodStackItem(
+                skusWithOrders,
+                totalSkus,
+                theme.colorScheme.tertiary,
+              ),
+            ],
+            width: barsWidth,
+            borderRadius: BorderRadius.zero,
+          ),
+        ],
+      );
+    });
+  }
+
+  Widget _buildMetricSelector(ThemeData theme, ChoosingNicheViewModel model) {
+    final selectedMetric = model.historyMetric;
+    final metrics = model.historyMetrics;
+    final updateMetric = model.setHistoryMetric;
+
+    return LayoutBuilder(builder: (context, constraints) {
+      return SizedBox(
+        width: 200, // Ограничиваем ширину DropdownButton
+        child: DropdownButton<String>(
+          value: selectedMetric,
+          isExpanded: true, // Растягивает кнопку до ширины контейнера
+          items: metrics
+              .map((m) => DropdownMenuItem(
+                    value: m,
+                    child: Text(
+                      m,
+                      style: const TextStyle(fontSize: 14),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ))
+              .toList(),
+          onChanged: (value) {
+            if (value != null) {
+              updateMetric(value);
+            }
+          },
+        ),
+      );
+    });
+  }
+}
+
+class _HistoryLineChart extends StatelessWidget {
+  const _HistoryLineChart();
+
+  @override
+  Widget build(BuildContext context) {
+    final model = context.watch<ChoosingNicheViewModel>();
+    final selectedSubjectName = model.selectedSubjectName;
+    if (selectedSubjectName == null) {
+      return const Center(child: Text("Не выбрано"));
+    }
+    String firstKey = "";
+    switch (model.historyMetric) {
+      case "Заказы":
+        firstKey = "total_orders";
+      case "Медианная цена":
+        firstKey = "median_price";
+      case "Количество товаров":
+      default:
+        firstKey = "total_skus";
+    }
+
+    // Ищем элементы, где subjectName совпадает с нужным
+    final items = model.subjectsSummary
+        .where((element) => element.subjectName == selectedSubjectName)
+        .toList();
+
+    if (items.isEmpty || items.first.historyData.isEmpty) {
+      return const Center(child: Text("Нет исторических данных"));
+    }
+    final sortedHistory = items.first.decodedHistoryData.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+
+    // Формируем точки для LineChart
+    final spots = <FlSpot>[];
+    for (int i = 0; i < sortedHistory.length; i++) {
+      final totalOrders = firstKey == "median_price"
+          ? sortedHistory[i].value[firstKey]?.toDouble() / 100 ?? 0.0
+          : sortedHistory[i].value[firstKey]?.toDouble() ?? 0.0;
+      spots.add(FlSpot(i.toDouble(), totalOrders));
+    }
+    return LineChart(
+      LineChartData(
+        lineTouchData: LineTouchData(
+          touchTooltipData: LineTouchTooltipData(
+            getTooltipItems: (touchedSpots) {
+              return touchedSpots.map((touchedSpot) {
+                final index = touchedSpot.spotIndex;
+                final key = weekStringPeriod(sortedHistory[index].key);
+                final value = touchedSpot.y;
+                return LineTooltipItem(
+                  '$key\n$value ${model.historyMetric == "Заказы" ? 'заказов' : '₽'}',
+                  const TextStyle(fontWeight: FontWeight.bold),
+                );
+              }).toList();
+            },
+          ),
+        ),
+        titlesData: FlTitlesData(
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              // Если хотите подписывать ось X год/неделю:
+              getTitlesWidget: (value, _) {
+                final index = value.toInt();
+                if (index < 0 || index >= sortedHistory.length) {
+                  return const SizedBox.shrink();
+                }
+                final key = weekStringToMondayDate(
+                    sortedHistory[index].key); // "24_52" и т.д.
+                return Text(key, style: const TextStyle(fontSize: 10));
+              },
+              interval: 5, // Разреживаем подписи, можно менять
+            ),
+          ),
+        ),
+        borderData: FlBorderData(show: true),
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            color: model.historyMetric == "Заказы"
+                ? Theme.of(context).colorScheme.onPrimary
+                : Theme.of(context).colorScheme.tertiary,
+            isCurved: true,
+            barWidth: 3,
+            dotData: FlDotData(show: false),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DoubleBarChart extends StatelessWidget {
+  const _DoubleBarChart();
+
+  @override
+  Widget build(BuildContext context) {
+    final model = context.watch<ChoosingNicheViewModel>();
+    final selectedSubjectName = model.selectedSubjectName;
+
+    // Определяем, какие ключи будем показывать
+    String firstKey = "total_suppliers";
+    String secondKey = "total_brands";
+
+    if (selectedSubjectName == null) {
+      return const Center(child: Text("Не выбрано"));
+    }
+
+    // Получаем нужный предмет
+    final items = model.subjectsSummary
+        .where((element) => element.subjectName == selectedSubjectName)
+        .toList();
+
+    if (items.isEmpty || items.first.historyData.isEmpty) {
+      return const Center(child: Text("Нет исторических данных"));
+    }
+
+    final subjectItem = items.first;
+
+    // Сортируем historyData
+    final sortedHistory = subjectItem.decodedHistoryData.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+
+    // Считаем максимальное значение (для оси Y)
+    final double maxYValue = sortedHistory
+        .map<double>((e) =>
+            (e.value[firstKey]?.toDouble() ?? 0) +
+            (e.value[secondKey]?.toDouble() ?? 0))
+        .reduce((a, b) => a > b ? a : b);
+
+    // Ограничиваем по высоте, либо AspectRatio, либо LayoutBuilder
+    return SizedBox(
+      height: 300, // Пример фиксированной высоты
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final groupsCount = sortedHistory.length;
+          final totalSpaces =
+              groupsCount * 2; // Каждой группе дадим ~20px на отступ
+          final workableWidth = constraints.maxWidth - totalSpaces;
+          // У нас 2 столбца на группу
+          final barWidth = (workableWidth / (groupsCount * 2)).clamp(2, 50);
+
+          return BarChart(
+            BarChartData(
+              alignment: BarChartAlignment.spaceEvenly,
+              maxY: maxYValue * 1.1,
+              groupsSpace: 0, // Отступ между группами
+              barGroups: _generateGroupedBarGroups(
+                sortedHistory,
+                barWidth.toDouble(),
+                firstKey: firstKey,
+                secondKey: secondKey,
+              ),
+              barTouchData: BarTouchData(
+                enabled: true,
+                touchTooltipData: BarTouchTooltipData(
+                  getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                    final key = weekStringPeriod(
+                      sortedHistory[group.x.toInt()].key,
+                    );
+
+                    final totalValue = sortedHistory[group.x.toInt()]
+                            .value[rodIndex == 0 ? firstKey : secondKey]
+                            ?.toDouble() ??
+                        0.0;
+
+                    final label = rodIndex == 0 ? "Продавцов" : "Брендов";
+
+                    return BarTooltipItem(
+                      "$key\n$label: $totalValue",
+                      const TextStyle(fontWeight: FontWeight.bold),
+                    );
+                  },
+                ),
+              ),
+              titlesData: FlTitlesData(
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30,
+                    interval: 3,
+                    getTitlesWidget: (value, _) {
+                      final index = value.toInt();
+                      if (index % 3 != 0 ||
+                          index < 0 ||
+                          index >= sortedHistory.length) {
+                        return const SizedBox.shrink();
+                      }
+                      return Transform.rotate(
+                        angle: math.pi / 4,
+                        alignment: Alignment.bottomCenter,
+                        child: Text(
+                          weekStringToMondayDate(sortedHistory[index].key),
+                          style: const TextStyle(fontSize: 8),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    getTitlesWidget: (value, _) {
+                      return Transform.rotate(
+                        angle: math.pi / 4,
+                        child: Text(
+                          value.toStringAsFixed(0),
+                          style: const TextStyle(fontSize: 8),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                topTitles:
+                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles:
+                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              gridData: FlGridData(show: true),
+              borderData: FlBorderData(show: true),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  /// Генерация группы из двух столбцов side-by-side (не stack).
+  List<BarChartGroupData> _generateGroupedBarGroups(
+    List<MapEntry<String, dynamic>> sortedHistory,
+    double barWidth, {
+    required String firstKey,
+    required String secondKey,
+  }) {
+    return List.generate(sortedHistory.length, (index) {
+      final data = sortedHistory[index].value;
+      final firstVal = (data[firstKey]?.toDouble() ?? 0.0);
+      final secondVal = (data[secondKey]?.toDouble() ?? 0.0);
+
+      return BarChartGroupData(
+        x: index,
+        barsSpace: 0,
+        // groupVertically: true,
+        barRods: [
+          // Первый столбик
+          BarChartRodData(
+            toY: firstVal,
+            width: barWidth,
+            color: Colors.blueAccent,
+            borderRadius: BorderRadius.circular(2),
+          ),
+          // Второй столбик
+          BarChartRodData(
+            toY: secondVal,
+            width: barWidth,
+            color: Colors.greenAccent,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ],
+      );
+    });
   }
 }

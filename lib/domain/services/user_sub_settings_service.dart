@@ -199,20 +199,18 @@ class UserSubSettingsService implements MailingSettingsMailingSettingsService {
     }
   }
 
-  @override
-  Future<Either<AppErrorBase, void>> saveSettings({
-    required String token,
-    required Map<String, dynamic> settings,
-  }) async {
-    return _saveSettings(token: token, settings: settings);
-  }
+  // Future<Either<AppErrorBase, void>> saveSettings({
+  //   required String token,
+  //   required Map<String, dynamic> settings,
+  // }) async {
+  //   return _saveSettings(token: token, settings: settings);
+  // }
 
-  @override
-  Future<Either<AppErrorBase, void>> deleteSetting(String key) async {
-    return left(AppErrorBase(
-      'deleteSetting requires a token. Use _deleteSettings instead.',
-      name: 'deleteSetting',
-      sendTo: false,
-    ));
-  }
+  // Future<Either<AppErrorBase, void>> deleteSetting(String key) async {
+  //   return left(AppErrorBase(
+  //     'deleteSetting requires a token. Use _deleteSettings instead.',
+  //     name: 'deleteSetting',
+  //     sendTo: false,
+  //   ));
+  // }
 }

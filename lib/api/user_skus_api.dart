@@ -106,12 +106,16 @@ class UserSkusResponse {
     required this.skus,
   });
 
-  factory UserSkusResponse.fromJson(Map<String, dynamic> json) =>
-      UserSkusResponse(
-        skus: (json['skus'] as List<dynamic>)
-            .map((item) => Sku.fromJson(item as Map<String, dynamic>))
-            .toList(),
-      );
+  factory UserSkusResponse.fromJson(Map<String, dynamic> json) {
+    if (json['skus'] == null || json['skus'] == '') {
+      return UserSkusResponse(skus: []);
+    }
+    return UserSkusResponse(
+      skus: (json['skus'] as List<dynamic>)
+          .map((item) => Sku.fromJson(item as Map<String, dynamic>))
+          .toList(),
+    );
+  }
 }
 
 // Entity representing a SKU

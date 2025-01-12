@@ -43,6 +43,7 @@ class ChoosingNicheViewModel extends ViewModelBase {
 
   final List<SubjectSummaryItem> _subjectsSummary = [];
   void setSubjectsSummary(List<SubjectSummaryItem> value) {
+    print('F${value.first.historyData}');
     for (var item in value) {
       // if (item.totalOrders == 0) {
       //   continue;
@@ -66,6 +67,7 @@ class ChoosingNicheViewModel extends ViewModelBase {
   Map<String, double> currentDataMap = {};
 
   String? selectedParentName;
+  String? selectedSubjectName;
 
   // When in expanded BarChartWidgets container a user chooses a subject Name
   // the tableViewController is null. So to save the selected subject Name
@@ -100,6 +102,21 @@ class ChoosingNicheViewModel extends ViewModelBase {
         "Количество товаров",
         "Количество заказов",
         "Товары с заказами",
+      ];
+
+  // History metrics
+  String _historyMetric = "Заказы";
+  void setHistoryMetric(String value) {
+    _historyMetric = value;
+    notifyListeners();
+  }
+
+  String get historyMetric => _historyMetric;
+  List<String> get historyMetrics => [
+        "Заказы",
+        "Кол-во sku/sku с заказами",
+        "Медианная цена",
+        "Кол-во продавцов/брендов"
       ];
 
   Map<String, Map<String, TextEditingController>> get filterControllers =>
@@ -235,12 +252,16 @@ class ChoosingNicheViewModel extends ViewModelBase {
         break;
     }
     if (selectedParentName != null) {
-      updateTopSubjectValue(selectedParentName!, columnIndex);
+      updateTopSubjectValue(
+          selectedParentName!, selectedSubjectName!, columnIndex);
     }
   }
 
-  void updateTopSubjectValue(String parentName, int columnIndex) {
+  void updateTopSubjectValue(
+      String parentName, String subjectName, int columnIndex) {
     selectedParentName = parentName;
+
+    selectedSubjectName = subjectName;
     final subjectMap = <String, double>{};
 
     for (var item in subjectsSummary) {
@@ -344,9 +365,11 @@ class ChoosingNicheViewModel extends ViewModelBase {
               (maxMedianPrice == null || item.medianPrice <= maxMedianPrice);
 
       final withinSkusWithOrders = (minSkusWithOrders == null ||
-              item.skusWithOrders >= minSkusWithOrders) &&
+              (item.skusWithOrders / item.totalSkus) * 100 >=
+                  minSkusWithOrders) &&
           (maxSkusWithOrders == null ||
-              item.skusWithOrders <= maxSkusWithOrders);
+              (item.skusWithOrders / item.totalSkus) * 100 <=
+                  maxSkusWithOrders);
 
       return withinRevenue &&
           withinOrders &&

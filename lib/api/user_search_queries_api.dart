@@ -105,6 +105,9 @@ class UserSearchQueriesResponse {
   UserSearchQueriesResponse({required this.searchQueries});
 
   factory UserSearchQueriesResponse.fromJson(Map<String, dynamic> json) {
+    if (json['search_queries'] == null || json['search_queries'] == '') {
+      return UserSearchQueriesResponse(searchQueries: []);
+    }
     return UserSearchQueriesResponse(
       searchQueries: (json['search_queries'] as List<dynamic>)
           .map((e) => SearchQuery.fromJson(e as Map<String, dynamic>))

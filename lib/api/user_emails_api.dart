@@ -1,4 +1,5 @@
 import 'dart:convert';
+// ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
 import 'package:mc_dashboard/.env.dart';
 import 'package:mc_dashboard/domain/services/user_emails_service.dart';
@@ -18,8 +19,10 @@ class UserEmailsApiClient implements UserEmailsServiceApiClient {
         'Content-Type': 'application/json',
       },
     );
-
     if (response.statusCode == 200) {
+      if (response.body.isEmpty) {
+        return UserEmailsResponse(emails: []);
+      }
       return UserEmailsResponse.fromJson(jsonDecode(response.body));
     } else {
       throw Exception('Failed to fetch emails: ${response.body}');
@@ -108,12 +111,16 @@ class UserEmailsResponse {
     required this.emails,
   });
 
-  factory UserEmailsResponse.fromJson(Map<String, dynamic> json) =>
-      UserEmailsResponse(
-        emails: (json['emails'] as List<dynamic>)
-            .map((item) => item as String)
-            .toList(),
-      );
+  factory UserEmailsResponse.fromJson(Map<String, dynamic> json) {
+    if (json['emails'] == null || json['emails'] == '') {
+      return UserEmailsResponse(emails: []);
+    }
+    return UserEmailsResponse(
+      emails: (json['emails'] as List<dynamic>)
+          .map((item) => item as String)
+          .toList(),
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         'emails': emails,

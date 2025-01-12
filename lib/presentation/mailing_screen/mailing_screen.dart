@@ -78,6 +78,18 @@ class _MailingSettingsTab extends StatelessWidget {
               children: [
                 _buildSubscriptionNotice(context),
                 const SizedBox(height: 16),
+                if (_shouldShowDisabledMailNotice(model)) ...[
+                  DisabledNoticeWidget(
+                      text: "Рассылка отключена. Вы не ввели email-адрес."),
+                ],
+                if (!_anyOptionSelected(model)) ...[
+                  DisabledNoticeWidget(
+                      text: "Рассылка отключена. Вы не выбрали ни одну опцию."),
+                ],
+                if (_shouldShowDisabledPeriodNotice(model)) ...[
+                  DisabledNoticeWidget(
+                      text: "Рассылка отключена. Вы не выбрали периодичность."),
+                ],
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -88,41 +100,70 @@ class _MailingSettingsTab extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Checkbox(
-                      checkColor: theme.colorScheme.secondary,
-                      activeColor: Colors.transparent,
-                      value: model.daily,
-                      onChanged: (value) {
-                        if (!model.isSubscribed) {
-                          _showSubscribeAlert(context, model);
-                          return;
-                        }
-                        model.toggleDaily(value ?? false);
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    const Text("Ежедневно"),
-                  ],
+                _buildCheckboxOption(
+                  context,
+                  label: "Ежедневно",
+                  value: model.daily,
+                  onChanged: (value) => model.toggleDaily(value ?? false),
                 ),
-                Row(
-                  children: [
-                    Checkbox(
-                      checkColor: theme.colorScheme.secondary,
-                      activeColor: Colors.transparent,
-                      value: model.weekly,
-                      onChanged: (value) {
-                        if (!model.isSubscribed) {
-                          _showSubscribeAlert(context, model);
-                          return;
-                        }
-                        model.toggleWeekly(value ?? false);
-                      },
+                _buildCheckboxOption(
+                  context,
+                  label: "Еженедельно",
+                  value: model.weekly,
+                  onChanged: (value) => model.toggleWeekly(value ?? false),
+                ),
+                const SizedBox(height: 36),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "Опции",
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(width: 8),
-                    const Text("Еженедельно"),
-                  ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                _buildCheckboxOption(
+                  context,
+                  label: "Анализ позиций",
+                  value: model.productPosition,
+                  onChanged: (value) =>
+                      model.toggleProductPosition(value ?? false),
+                ),
+                _buildCheckboxOption(
+                  context,
+                  label: "Уведомления о ценах",
+                  value: model.productPrice,
+                  onChanged: (value) =>
+                      model.togglePriceChanges(value ?? false),
+                ),
+                _buildCheckboxOption(
+                  context,
+                  label: "Тренды",
+                  value: model.newSearchQueries,
+                  onChanged: (value) =>
+                      model.toggleNewSearchQueries(value ?? false),
+                ),
+                _buildCheckboxOption(
+                  context,
+                  label: "Акции",
+                  value: model.productPromotions,
+                  onChanged: (value) =>
+                      model.toggleProductPromotions(value ?? false),
+                ),
+                _buildCheckboxOption(
+                  context,
+                  label: "Изменения карточек",
+                  value: model.productCardChanges,
+                  onChanged: (value) =>
+                      model.toggleProductCardChanges(value ?? false),
+                ),
+                _buildCheckboxOption(
+                  context,
+                  label: "Изменение ассортимента",
+                  value: model.assortmentChanges,
+                  onChanged: (value) =>
+                      model.toggleAssortmentChanges(value ?? false),
                 ),
                 const SizedBox(height: 36),
                 Align(
@@ -142,7 +183,6 @@ class _MailingSettingsTab extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: () {
                       model.onSave();
-                      // print(model.settings);
                     },
                     child: const Text("Сохранить"),
                   ),
@@ -153,6 +193,72 @@ class _MailingSettingsTab extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildCheckboxOption(BuildContext context,
+      {required String label,
+      required bool value,
+      required ValueChanged<bool?> onChanged}) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Checkbox(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(6),
+          ),
+          checkColor: theme.colorScheme.onSecondary,
+          activeColor: theme.colorScheme.secondary,
+          side: BorderSide(
+            color: theme.colorScheme.onSurface
+                .withOpacity(0.5), // Цвет границы, когда неактивен
+            width: 2, // Толщина границы
+          ),
+          value: value,
+          onChanged: (newValue) {
+            final model = context.read<MailingSettingsViewModel>();
+            if (!model.isSubscribed) {
+              _showSubscribeAlert(context, model);
+              return;
+            }
+            onChanged(newValue);
+          },
+        ),
+        const SizedBox(width: 8),
+        Text(label),
+      ],
+    );
+  }
+
+  bool _shouldShowDisabledPeriodNotice(MailingSettingsViewModel model) {
+    return !model.daily && !model.weekly;
+  }
+
+  bool _shouldShowDisabledMailNotice(MailingSettingsViewModel model) {
+    return model.emails.isEmpty;
+  }
+
+  bool _anyOptionSelected(MailingSettingsViewModel model) {
+    return model.productPosition ||
+        model.productPromotions ||
+        model.newSearchQueries ||
+        model.assortmentChanges ||
+        model.productPrice ||
+        model.productCardChanges;
+  }
+
+  void _showSubscribeAlert(
+      BuildContext context, MailingSettingsViewModel model) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+          'Чтобы добавлять товары и получать по ним рассылку, вы должны быть подписчиком.'),
+      action: SnackBarAction(
+        label: 'Оформить подписку',
+        onPressed: () {
+          model.onNavigateToSubscriptionScreen();
+        },
+      ),
+      duration: Duration(seconds: 10),
+    ));
   }
 
   Widget _buildSubscriptionNotice(BuildContext context) {
@@ -196,20 +302,43 @@ class _MailingSettingsTab extends StatelessWidget {
       ),
     );
   }
+}
 
-  void _showSubscribeAlert(
-      BuildContext context, MailingSettingsViewModel model) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(
-          'Чтобы добавлять товары и получать по ним рассылку, вы должны быть подписчиком.'),
-      action: SnackBarAction(
-        label: 'Оформить подписку',
-        onPressed: () {
-          model.onNavigateToSubscriptionScreen();
-        },
+class DisabledNoticeWidget extends StatelessWidget {
+  const DisabledNoticeWidget({
+    super.key,
+    required this.text,
+  });
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.errorContainer.withOpacity(0.1),
+        border: Border.all(color: theme.colorScheme.errorContainer),
+        borderRadius: BorderRadius.circular(8),
       ),
-      duration: Duration(seconds: 10),
-    ));
+      child: Row(
+        children: [
+          Icon(Icons.warning, color: theme.colorScheme.error),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: theme.colorScheme.error,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -279,6 +408,7 @@ class _EmailsEditorState extends State<_EmailsEditor> {
                 backgroundColor: theme.colorScheme.secondary,
                 child: Icon(
                   Icons.delete,
+                  size: MediaQuery.of(context).size.width * 0.01,
                   color: theme.colorScheme.onSecondary,
                 ),
               ),
