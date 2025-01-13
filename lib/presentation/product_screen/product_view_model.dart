@@ -148,6 +148,8 @@ class ProductViewModel extends ViewModelBase {
   String _characteristics = "";
   String get characteristics => _characteristics;
 
+  String _characteristicValues = "";
+
   // subject id
   int _subjectId = 0;
   int get subjectId => _subjectId;
@@ -208,6 +210,15 @@ class ProductViewModel extends ViewModelBase {
   // Seo table rows
   final Map<String, List<SEOTableRowModel>> _seoTableSections = {};
   Map<String, List<SEOTableRowModel>> get seoTableSections => _seoTableSections;
+
+  bool _normqueriesLoaded = false;
+  bool get normqueriesLoaded => _normqueriesLoaded;
+
+  bool _seoLoaded = false;
+  bool get seoLoaded => _seoLoaded;
+
+  bool _unusedQueriesLoaded = false;
+  bool get unusedQueriesLoaded => _unusedQueriesLoaded;
   // setters ///////////////////////////////////////////////////////////////////
   void setKwLemmas(List<KwLemmaItem> value) {
     _kwLemmas.clear();
@@ -254,6 +265,7 @@ class ProductViewModel extends ViewModelBase {
     _description = cardInfo.description;
 
     _characteristics = cardInfo.characteristicFull;
+    _characteristicValues = cardInfo.characteristicValues;
     _subjectId = cardInfo.subjId;
     _subjectName = cardInfo.subjName;
 
@@ -305,81 +317,81 @@ class ProductViewModel extends ViewModelBase {
     }
 
     if (!isFree) {
-      // Normqueries
-      final normqueryOrEither = await normqueryService.get(ids: [productId]);
-      if (normqueryOrEither.isRight()) {
-        _normqueries =
-            normqueryOrEither.fold((l) => <NormqueryProduct>[], (r) => r);
-      }
+      // // Normqueries
+      // final normqueryOrEither = await normqueryService.get(ids: [productId]);
+      // if (normqueryOrEither.isRight()) {
+      //   _normqueries =
+      //       normqueryOrEither.fold((l) => <NormqueryProduct>[], (r) => r);
+      // }
 
       // kw lemmas
-      final normqueryIds = _normqueries.map((e) => e.normqueryId).toList();
-      final kwLemmasOrEither = await kwLemmaService.get(ids: normqueryIds);
-      if (kwLemmasOrEither.isRight()) {
-        final kwLemmas =
-            kwLemmasOrEither.fold((l) => <KwLemmaItem>[], (r) => r);
-        setKwLemmas(kwLemmas);
-      }
+      // final normqueryIds = _normqueries.map((e) => e.normqueryId).toList();
+      // final kwLemmasOrEither = await kwLemmaService.get(ids: normqueryIds);
+      // if (kwLemmasOrEither.isRight()) {
+      //   final kwLemmas =
+      //       kwLemmasOrEither.fold((l) => <KwLemmaItem>[], (r) => r);
+      //   setKwLemmas(kwLemmas);
+      // }
       // Lemmatization
-      final lemmatizedOrEither = await lemmatizeService.get(
-        req: LemmatizeRequest(
-          title: cardInfo.imtName,
-          characteristics: cardInfo.characteristicValues,
-          description: cardInfo.description,
-        ),
-      );
+      // final lemmatizedOrEither = await lemmatizeService.get(
+      //   req: LemmatizeRequest(
+      //     title: cardInfo.imtName,
+      //     characteristics: cardInfo.characteristicValues,
+      //     description: cardInfo.description,
+      //   ),
+      // );
 
-      if (lemmatizedOrEither.isRight()) {
-        // create cosine similarity
-        final lemmatized =
-            lemmatizedOrEither.fold((l) => throw UnimplementedError, (r) => r);
-        _lemmatizedName = lemmatized.title;
-        _lemmatizedDescription = lemmatized.description;
-        _lemmatizedCharacteristics = lemmatized.characteristics;
-        final fetchedSeoTableSections = await generateSEOTableSections(
-            _normqueries,
-            _kwLemmas,
-            _lemmatizedName,
-            _lemmatizedDescription,
-            _lemmatizedCharacteristics,
-            calculateCosineSimilarity);
+      // if (lemmatizedOrEither.isRight()) {
+      //   // create cosine similarity
+      //   final lemmatized =
+      //       lemmatizedOrEither.fold((l) => throw UnimplementedError, (r) => r);
+      //   _lemmatizedName = lemmatized.title;
+      //   _lemmatizedDescription = lemmatized.description;
+      //   _lemmatizedCharacteristics = lemmatized.characteristics;
+      //   final fetchedSeoTableSections = await generateSEOTableSections(
+      //       _normqueries,
+      //       _kwLemmas,
+      //       _lemmatizedName,
+      //       _lemmatizedDescription,
+      //       _lemmatizedCharacteristics,
+      //       calculateCosineSimilarity);
 
-        setSeoTableSections(fetchedSeoTableSections);
-      }
+      //   setSeoTableSections(fetchedSeoTableSections);
+      // }
 
-      if (normqueries.isNotEmpty) {
-        // Unused queries
-        // get top 20 products ids
-        final detailedOrdersForUnusedQueriesOrEither =
-            await detailedOrdersService.fetchDetailedOrders(
-                subjectId: subjectId, isFbs: 0, pageSize: '20');
+      // if (normqueries.isNotEmpty) {
+      //   // Unused queries
+      //   // get top 20 products ids
+      //   final detailedOrdersForUnusedQueriesOrEither =
+      //       await detailedOrdersService.fetchDetailedOrders(
+      //           subjectId: subjectId, isFbs: 0, pageSize: '20');
 
-        if (detailedOrdersForUnusedQueriesOrEither.isRight()) {
-          final detailedOrdersForUnusedQueries =
-              detailedOrdersForUnusedQueriesOrEither.fold(
-                  (l) => throw UnimplementedError, (r) => r);
-          final top20productsIds =
-              detailedOrdersForUnusedQueries.map((e) => e.productId).toList();
-          // get top 20 normqueries
-          final normqueryOrEither =
-              await normqueryService.get(ids: top20productsIds);
-          if (normqueryOrEither.isRight()) {
-            final fetchedNormqueries = normqueryOrEither.fold(
-                (l) => throw UnimplementedError, (r) => r);
-            List<NormqueryProduct> uNormqueries = [];
-            // exclude normqueries that are already used
-            for (final normquery in fetchedNormqueries) {
-              if ((!_normqueries
-                      .any((e) => e.normqueryId == normquery.normqueryId) &&
-                  !uNormqueries
-                      .any((e) => e.normqueryId == normquery.normqueryId))) {
-                uNormqueries.add(normquery);
-              }
-            }
-            _unusedNormqueries = uNormqueries.toSet().toList();
-          }
-        }
-      }
+      //   if (detailedOrdersForUnusedQueriesOrEither.isRight()) {
+      //     final detailedOrdersForUnusedQueries =
+      //         detailedOrdersForUnusedQueriesOrEither.fold(
+      //             (l) => throw UnimplementedError, (r) => r);
+      //     final top20productsIds =
+      //         detailedOrdersForUnusedQueries.map((e) => e.productId).toList();
+      //     // get top 20 normqueries
+      //     final normqueryOrEither =
+      //         await normqueryService.get(ids: top20productsIds);
+      //     if (normqueryOrEither.isRight()) {
+      //       final fetchedNormqueries = normqueryOrEither.fold(
+      //           (l) => throw UnimplementedError, (r) => r);
+      //       List<NormqueryProduct> uNormqueries = [];
+      //       // exclude normqueries that are already used
+      //       for (final normquery in fetchedNormqueries) {
+      //         if ((!_normqueries
+      //                 .any((e) => e.normqueryId == normquery.normqueryId) &&
+      //             !uNormqueries
+      //                 .any((e) => e.normqueryId == normquery.normqueryId))) {
+      //           uNormqueries.add(normquery);
+      //         }
+      //       }
+      //       _unusedNormqueries = uNormqueries.toSet().toList();
+      //     }
+      //   }
+      // }
     } else {
       // free ////////////////////////////////////////////////////// free
       _normqueries = generateRandomNormqueryProducts(15);
@@ -417,6 +429,92 @@ class ProductViewModel extends ViewModelBase {
       _images.add(imageNext);
     }
   } // _asyncInit
+
+  Future<void> loadNormqueries() async {
+    // Normqueries
+    final normqueryOrEither = await normqueryService.get(ids: [productId]);
+    if (normqueryOrEither.isRight()) {
+      _normqueries =
+          normqueryOrEither.fold((l) => <NormqueryProduct>[], (r) => r);
+    }
+    final normqueryIds = _normqueries.map((e) => e.normqueryId).toList();
+    final kwLemmasOrEither = await kwLemmaService.get(ids: normqueryIds);
+    if (kwLemmasOrEither.isRight()) {
+      final kwLemmas = kwLemmasOrEither.fold((l) => <KwLemmaItem>[], (r) => r);
+      setKwLemmas(kwLemmas);
+    }
+
+    _normqueriesLoaded = true;
+    notifyListeners();
+  }
+
+  Future<void> loadSeo() async {
+    // Здесь вызываете lemmatizeService + формируете _seoTableSections
+    final lemmatizedOrEither = await lemmatizeService.get(
+      req: LemmatizeRequest(
+        title: _name,
+        characteristics: _characteristicValues,
+        description: _description,
+      ),
+    );
+
+    if (lemmatizedOrEither.isRight()) {
+      // create cosine similarity
+      final lemmatized =
+          lemmatizedOrEither.fold((l) => throw UnimplementedError, (r) => r);
+      _lemmatizedName = lemmatized.title;
+      _lemmatizedDescription = lemmatized.description;
+      _lemmatizedCharacteristics = lemmatized.characteristics;
+      final fetchedSeoTableSections = await generateSEOTableSections(
+          _normqueries,
+          _kwLemmas,
+          _lemmatizedName,
+          _lemmatizedDescription,
+          _lemmatizedCharacteristics,
+          calculateCosineSimilarity);
+
+      setSeoTableSections(fetchedSeoTableSections);
+    }
+    _seoLoaded = true;
+    notifyListeners();
+  }
+
+  Future<void> loadUnusedQueries() async {
+    if (normqueries.isNotEmpty) {
+      // Unused queries
+      // get top 20 products ids
+      final detailedOrdersForUnusedQueriesOrEither = await detailedOrdersService
+          .fetchDetailedOrders(subjectId: subjectId, isFbs: 0, pageSize: '20');
+
+      if (detailedOrdersForUnusedQueriesOrEither.isRight()) {
+        final detailedOrdersForUnusedQueries =
+            detailedOrdersForUnusedQueriesOrEither.fold(
+                (l) => throw UnimplementedError, (r) => r);
+        final top20productsIds =
+            detailedOrdersForUnusedQueries.map((e) => e.productId).toList();
+        // get top 20 normqueries
+        final normqueryOrEither =
+            await normqueryService.get(ids: top20productsIds);
+        if (normqueryOrEither.isRight()) {
+          final fetchedNormqueries =
+              normqueryOrEither.fold((l) => throw UnimplementedError, (r) => r);
+          List<NormqueryProduct> uNormqueries = [];
+          // exclude normqueries that are already used
+          for (final normquery in fetchedNormqueries) {
+            if ((!_normqueries
+                    .any((e) => e.normqueryId == normquery.normqueryId) &&
+                !uNormqueries
+                    .any((e) => e.normqueryId == normquery.normqueryId))) {
+              uNormqueries.add(normquery);
+            }
+          }
+          _unusedNormqueries = uNormqueries.toSet().toList();
+        }
+      }
+    }
+    _unusedQueriesLoaded = true;
+    notifyListeners();
+  }
 
   String getSeoNameDescChar(String name) {
     final keys = seoTableSections.keys.toList();
@@ -465,13 +563,4 @@ class ProductViewModel extends ViewModelBase {
   void onNavigateToSubscriptionScreen() {
     onNavigateTo(routeName: MainNavigationRouteNames.subscriptionScreen);
   }
-
-  // payment
-  // void onPaymentComplete() {
-  //   final paymentUrl = authService.getPaymentUrl();
-  //   if (paymentUrl != null) {
-  //     launchUrl(Uri.parse(paymentUrl));
-  //     authService.logout();
-  //   }
-  // }
 }

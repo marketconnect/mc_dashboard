@@ -43,7 +43,6 @@ class ChoosingNicheViewModel extends ViewModelBase {
 
   final List<SubjectSummaryItem> _subjectsSummary = [];
   void setSubjectsSummary(List<SubjectSummaryItem> value) {
-    print('F${value.first.historyData}');
     for (var item in value) {
       // if (item.totalOrders == 0) {
       //   continue;

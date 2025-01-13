@@ -42,7 +42,7 @@ class SubjectProductsScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _Header(),
+                  if (!model.loading) _Header(),
                   model.loading
                       ? Shimmer(
                           gradient:
@@ -105,16 +105,32 @@ class SubjectProductsScreen extends StatelessWidget {
                           ),
                         ),
                   if (isFilterVisible) _buildFiltersWidget(context),
-                  Container(
-                    height: constraints.maxHeight * 0.6, // Height for table
-                    margin: const EdgeInsets.all(8.0),
-                    padding: const EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      color: surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    child: const _TableWidget(),
-                  ),
+                  model.loading
+                      ? Shimmer(
+                          gradient:
+                              Theme.of(context).colorScheme.shimmerGradient,
+                          child: Container(
+                            height:
+                                constraints.maxHeight * 0.6, // Height for table
+                            width: double.infinity,
+                            margin: const EdgeInsets.all(16.0),
+                            decoration: BoxDecoration(
+                              color: Colors.grey,
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                          ),
+                        )
+                      : Container(
+                          height:
+                              constraints.maxHeight * 0.6, // Height for table
+                          margin: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(16.0),
+                          decoration: BoxDecoration(
+                            color: surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          child: const _TableWidget(),
+                        ),
                 ],
               ),
             );
@@ -123,7 +139,7 @@ class SubjectProductsScreen extends StatelessWidget {
           // Desktop //////////////////////////////////////////////////////////
           return Column(
             children: [
-              _Header(),
+              if (!model.loading) _Header(),
               if (!isFilterVisible)
                 Flexible(
                   flex: 1,
@@ -206,15 +222,26 @@ class SubjectProductsScreen extends StatelessWidget {
               if (isFilterVisible) _buildFiltersWidget(context),
               Flexible(
                 flex: 2,
-                child: Container(
-                  margin: const EdgeInsets.all(8.0),
-                  padding: const EdgeInsets.all(16.0),
-                  decoration: BoxDecoration(
-                    color: surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  child: const _TableWidget(),
-                ),
+                child: model.loading
+                    ? Shimmer(
+                        gradient: Theme.of(context).colorScheme.shimmerGradient,
+                        child: Container(
+                          margin: const EdgeInsets.all(16.0),
+                          decoration: BoxDecoration(
+                            color: Colors.grey,
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                        ),
+                      )
+                    : Container(
+                        margin: const EdgeInsets.all(8.0),
+                        padding: const EdgeInsets.all(16.0),
+                        decoration: BoxDecoration(
+                          color: surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        child: const _TableWidget(),
+                      ),
               ),
             ],
           );

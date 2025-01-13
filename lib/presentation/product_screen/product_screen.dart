@@ -176,32 +176,66 @@ class _ProductScreenState extends State<ProductScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1016),
-                    child: StocksSectionWidget(),
-                  ),
+                  if (!model.loading)
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1016),
+                      child: StocksSectionWidget(),
+                    ),
                   const SizedBox(height: 24),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1016),
-                    child: _Feedback(),
-                  ),
+                  if (!model.loading)
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1016),
+                      child: _Feedback(),
+                    ),
                   const SizedBox(height: 24),
-                  Text(
-                    'Запросы с видимостью',
-                    style: theme.textTheme.titleLarge
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                  // if (!model.loading)
+                  //   Text(
+                  //     'Запросы с видимостью',
+                  //     style: theme.textTheme.titleLarge
+                  //         ?.copyWith(fontWeight: FontWeight.bold),
+                  //   ),
+                  // const SizedBox(height: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Запросы с видимостью',
+                        style: theme.textTheme.titleLarge
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Если данные НЕ загружены — показываем кнопку
+                      if (!model.normqueriesLoaded)
+                        OutlinedButton(
+                          onPressed: () async {
+                            await model.loadNormqueries();
+                            setState(
+                                () {}); // Или можно через Consumer / context.watch
+                          },
+                          child: const Text("Загрузить «Запросы с видимостью»"),
+                        ),
+
+                      // Если данные загружены — показываем сам виджет
+                      if (model.normqueriesLoaded)
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1016),
+                          child: NormqueryTableWidget(),
+                        ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1016),
-                    child: NormqueryTableWidget(),
-                  ),
+                  // if (!model.loading)
+                  //   ConstrainedBox(
+                  //     constraints: const BoxConstraints(maxWidth: 1016),
+                  //     child: NormqueryTableWidget(),
+                  //   ),
                   const SizedBox(height: 24),
-                  Text(
-                    'Анализ релевантности запросов',
-                    style: theme.textTheme.titleLarge
-                        ?.copyWith(fontWeight: FontWeight.bold),
-                  ),
+                  if (!model.loading)
+                    Text(
+                      'Анализ релевантности запросов',
+                      style: theme.textTheme.titleLarge
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
                   const SizedBox(height: 16),
                   if (model.seoTableSections.isNotEmpty)
                     ConstrainedBox(
@@ -235,16 +269,18 @@ class _ProductScreenState extends State<ProductScreen> {
                       ),
                     ),
                   const SizedBox(height: 24),
-                  Text(
-                    'Пропущенные запросы',
-                    style: theme.textTheme.titleLarge
-                        ?.copyWith(fontWeight: FontWeight.bold),
-                  ),
+                  if (!model.loading)
+                    Text(
+                      'Пропущенные запросы',
+                      style: theme.textTheme.titleLarge
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
                   const SizedBox(height: 16),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1016),
-                    child: UnusedQueryTableWidget(),
-                  ),
+                  if (!model.loading)
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1016),
+                      child: UnusedQueryTableWidget(),
+                    ),
                 ],
               ),
             ),
@@ -268,60 +304,128 @@ class _ProductScreenState extends State<ProductScreen> {
 
   Widget _buildStatCard(String title, String value) {
     final theme = Theme.of(context);
-    return Container(
-      width: 200,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: Theme.of(context)
-                .textTheme
-                .titleSmall
-                ?.copyWith(color: Colors.grey[700]),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: Theme.of(context)
-                .textTheme
-                .titleLarge
-                ?.copyWith(fontWeight: FontWeight.bold),
-          ),
-        ],
-      ),
-    );
+    final model = context.read<ProductViewModel>();
+
+    return model.loading
+        ? Shimmer(
+            gradient: Theme.of(context).colorScheme.shimmerGradient,
+            child: Container(
+              width: 200,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(2),
+                boxShadow: const [
+                  BoxShadow(color: Colors.black12, blurRadius: 4)
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "title",
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.copyWith(color: Colors.grey[700]),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "value",
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleLarge
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+          )
+        : Container(
+            width: 200,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: const [
+                BoxShadow(color: Colors.black12, blurRadius: 4)
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(color: Colors.grey[700]),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  value,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleLarge
+                      ?.copyWith(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          );
   }
 
   Widget _buildChartContainer({required String title, required Widget child}) {
     final theme = Theme.of(context);
+    final model = context.read<ProductViewModel>();
 
-    return Container(
-      width: 500,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)]),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
-          SizedBox(height: 200, child: child),
-        ],
-      ),
-    );
+    return model.loading
+        ? Shimmer(
+            gradient: Theme.of(context).colorScheme.shimmerGradient,
+            child: Container(
+              width: 500,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black12, blurRadius: 4)
+                  ]),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  SizedBox(height: 200, child: child),
+                ],
+              ),
+            ),
+          )
+        : Container(
+            width: 500,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: const [
+                  BoxShadow(color: Colors.black12, blurRadius: 4)
+                ]),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                SizedBox(height: 200, child: child),
+              ],
+            ),
+          );
   }
 
   Widget _buildLineChart(

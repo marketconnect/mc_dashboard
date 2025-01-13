@@ -4,10 +4,12 @@ import 'package:material_table_view/material_table_view.dart';
 import 'package:mc_dashboard/core/utils/colors.dart';
 import 'package:mc_dashboard/core/utils/dates.dart';
 import 'package:mc_dashboard/core/utils/strings_ext.dart';
+import 'package:mc_dashboard/theme/color_schemes.dart';
 import 'package:pie_chart/pie_chart.dart' as pie_chart;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
 import 'package:mc_dashboard/presentation/choosing_niche_screen/choosing_niche_view_model.dart';
+import 'package:shimmer/shimmer.dart';
 
 class ChoosingNicheScreen extends StatelessWidget {
   const ChoosingNicheScreen({super.key});
@@ -17,6 +19,7 @@ class ChoosingNicheScreen extends StatelessWidget {
     final surfaceContainerHighest =
         Theme.of(context).colorScheme.surfaceContainerHighest;
     final model = context.watch<ChoosingNicheViewModel>();
+    final isLoading = model.loading;
     final toggleExpandedContainer = model.toggleExpandedContainer;
     final expandedContainer = model.expandedContainer;
     final isFilterVisible = model.isFilterVisible;
@@ -35,27 +38,56 @@ class ChoosingNicheScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Container(
-                    height: constraints.maxHeight * 0.3, // Height for graph
-                    margin: const EdgeInsets.all(8.0),
-                    padding: const EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      color: surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    child: PieChartWidget(maxWidth: maxWidth),
-                  ),
-                  Container(
-                    height: constraints.maxHeight * 0.3, // Общая высота графика
-                    margin: const EdgeInsets.all(8.0),
-                    padding: const EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      color: surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    child:
-                        const HistoryChartWidget(), // <-- Добавили ваш новый виджет
-                  ),
+                  isLoading
+                      ? Shimmer(
+                          gradient:
+                              Theme.of(context).colorScheme.shimmerGradient,
+                          child: Container(
+                            height: constraints.maxHeight * 0.3,
+                            margin: const EdgeInsets.all(16.0),
+                            decoration: BoxDecoration(
+                              color: Colors.grey,
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                          ),
+                        )
+                      : Container(
+                          height:
+                              constraints.maxHeight * 0.3, // Height for graph
+                          margin: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(16.0),
+                          decoration: BoxDecoration(
+                            color: surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          child: PieChartWidget(maxWidth: maxWidth),
+                        ),
+                  isLoading
+                      ? Shimmer(
+                          gradient:
+                              Theme.of(context).colorScheme.shimmerGradient,
+                          child: Container(
+                            height: constraints.maxHeight * 0.3,
+                            width: double.infinity,
+                            margin: const EdgeInsets.all(16.0),
+                            decoration: BoxDecoration(
+                              color: Colors.grey,
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                          ),
+                        )
+                      : Container(
+                          height: constraints.maxHeight *
+                              0.3, // Общая высота графика
+                          margin: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(16.0),
+                          decoration: BoxDecoration(
+                            color: surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          child:
+                              const HistoryChartWidget(), // <-- Добавили ваш новый виджет
+                        ),
                   // Container(
                   //   height: constraints.maxHeight * 0.3, // Height for bar
                   //   margin: const EdgeInsets.all(8.0),
@@ -77,16 +109,31 @@ class ChoosingNicheScreen extends StatelessWidget {
                   //   child: const BarChartWidget(isMedianPrice: false),
                   // ),
                   if (isFilterVisible) _buildFiltersWidget(context),
-                  Container(
-                    height: constraints.maxHeight * 0.6, // Height for table
-                    margin: const EdgeInsets.all(8.0),
-                    padding: const EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      color: surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    child: const TableWidget(),
-                  ),
+                  isLoading
+                      ? Shimmer(
+                          gradient:
+                              Theme.of(context).colorScheme.shimmerGradient,
+                          child: Container(
+                            height: constraints.maxHeight * 0.6, //
+                            width: double.infinity,
+                            margin: const EdgeInsets.all(16.0),
+                            decoration: BoxDecoration(
+                              color: Colors.grey,
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                          ),
+                        )
+                      : Container(
+                          height:
+                              constraints.maxHeight * 0.6, // Height for table
+                          margin: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(16.0),
+                          decoration: BoxDecoration(
+                            color: surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          child: const TableWidget(),
+                        ),
                 ],
               ),
             );
@@ -103,44 +150,74 @@ class ChoosingNicheScreen extends StatelessWidget {
                       if (!expandedContainer)
                         Flexible(
                           flex: 1,
-                          child: Container(
-                            margin: const EdgeInsets.all(8.0),
-                            padding: const EdgeInsets.all(16.0),
-                            decoration: BoxDecoration(
-                              color: surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                            child: PieChartWidget(maxWidth: maxWidth),
-                          ),
+                          child: isLoading
+                              ? Shimmer(
+                                  gradient: Theme.of(context)
+                                      .colorScheme
+                                      .shimmerGradient,
+                                  child: Container(
+                                    margin: const EdgeInsets.all(16.0),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey,
+                                      borderRadius: BorderRadius.circular(8.0),
+                                    ),
+                                  ),
+                                )
+                              : Container(
+                                  margin: const EdgeInsets.all(8.0),
+                                  padding: const EdgeInsets.all(16.0),
+                                  decoration: BoxDecoration(
+                                    color: surfaceContainerHighest,
+                                    borderRadius: BorderRadius.circular(8.0),
+                                  ),
+                                  child: PieChartWidget(maxWidth: maxWidth),
+                                ),
                         ),
                       Flexible(
                         flex: 1,
                         child: Stack(
                           children: [
-                            Container(
-                              margin: const EdgeInsets.all(8.0),
-                              padding: const EdgeInsets.all(16.0),
-                              decoration: BoxDecoration(
-                                color: surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(8.0),
-                              ),
-                              child: (selectedParentName == null)
-                                  ? const Center(child: Text("Не выбрано"))
-                                  : Container(
-                                      height: constraints.maxHeight *
-                                          0.3, // Общая высота графика
-                                      margin: const EdgeInsets.all(8.0),
-                                      // padding: const EdgeInsets.all(16.0),
+                            isLoading
+                                ? Shimmer(
+                                    gradient: Theme.of(context)
+                                        .colorScheme
+                                        .shimmerGradient,
+                                    child: Container(
+                                      height: constraints.maxHeight * 0.3,
+                                      width: double.infinity,
+                                      margin: const EdgeInsets.all(16.0),
                                       decoration: BoxDecoration(
-                                        color: surfaceContainerHighest,
+                                        color: Colors.grey,
                                         borderRadius:
                                             BorderRadius.circular(8.0),
                                       ),
-                                      child:
-                                          // const TotalOrdersHistoryChartWidget(),
-                                          const HistoryChartWidget(),
                                     ),
-                            ),
+                                  )
+                                : Container(
+                                    margin: const EdgeInsets.all(8.0),
+                                    padding: const EdgeInsets.all(16.0),
+                                    decoration: BoxDecoration(
+                                      color: surfaceContainerHighest,
+                                      borderRadius: BorderRadius.circular(8.0),
+                                    ),
+                                    child: (selectedParentName == null)
+                                        ? const Center(
+                                            child: Text("Не выбрано"))
+                                        : Container(
+                                            height: constraints.maxHeight *
+                                                0.3, // Общая высота графика
+                                            margin: const EdgeInsets.all(8.0),
+                                            // padding: const EdgeInsets.all(16.0),
+                                            decoration: BoxDecoration(
+                                              color: surfaceContainerHighest,
+                                              borderRadius:
+                                                  BorderRadius.circular(8.0),
+                                            ),
+                                            child:
+                                                // const TotalOrdersHistoryChartWidget(),
+                                                const HistoryChartWidget(),
+                                          ),
+                                  ),
                             if (selectedParentName != null)
                               Positioned(
                                 top: 16,
@@ -163,15 +240,27 @@ class ChoosingNicheScreen extends StatelessWidget {
               if (!expandedContainer)
                 Flexible(
                   flex: 2,
-                  child: Container(
-                    margin: const EdgeInsets.all(8.0),
-                    padding: const EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      color: surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    child: const TableWidget(),
-                  ),
+                  child: isLoading
+                      ? Shimmer(
+                          gradient:
+                              Theme.of(context).colorScheme.shimmerGradient,
+                          child: Container(
+                            margin: const EdgeInsets.all(16.0),
+                            decoration: BoxDecoration(
+                              color: Colors.grey,
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                          ),
+                        )
+                      : Container(
+                          margin: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(16.0),
+                          decoration: BoxDecoration(
+                            color: surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          child: const TableWidget(),
+                        ),
                 ),
             ],
           );

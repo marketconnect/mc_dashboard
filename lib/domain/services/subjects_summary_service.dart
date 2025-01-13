@@ -5,9 +5,11 @@ import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/domain/entities/subject_summary_item.dart';
 import 'package:mc_dashboard/presentation/choosing_niche_screen/choosing_niche_view_model.dart';
 import 'package:mc_dashboard/presentation/empty_subjects_screen/empty_subjects_view_model.dart';
+import 'package:mc_dashboard/presentation/subject_products_screen/subject_products_view_model.dart';
 
 class SubjectsSummaryService
     implements
+        SubjectProductsSubjectSummaryService,
         ChoosingNicheViewModelSubjectsSummaryService,
         EmptySubjectViewModelSubjectsSummaryService {
   final SubjectsSummaryApiClient subjectsSummaryApiClient;

@@ -3,8 +3,10 @@ import 'package:fpdart/fpdart.dart';
 import 'package:material_table_view/material_table_view.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
+import 'package:mc_dashboard/core/utils/strings_ext.dart';
 import 'package:mc_dashboard/domain/entities/detailed_order_item.dart';
 import 'package:mc_dashboard/domain/entities/saved_product.dart';
+import 'package:mc_dashboard/domain/entities/subject_summary_item.dart';
 import 'package:mc_dashboard/domain/entities/token_info.dart';
 
 import 'package:mc_dashboard/routes/main_navigation_route_names.dart';
@@ -18,6 +20,10 @@ abstract class SubjectProductsViewModelDetailedOrdersService {
 // Auth Service
 abstract class SubjectProductsAuthService {
   Future<Either<AppErrorBase, TokenInfo>> getTokenInfo();
+}
+
+abstract class SubjectProductsSubjectSummaryService {
+  Future<Either<AppErrorBase, List<SubjectSummaryItem>>> fetchSubjectsSummary();
 }
 
 // Saved Products Service
@@ -34,6 +40,7 @@ class SubjectProductsViewModel extends ViewModelBase {
       required this.detailedOrdersService,
       required this.authService,
       required this.savedProductsService,
+      required this.subjectSummaryService,
       required this.onSaveProductsToTrack});
 
   final int subjectId;
@@ -41,6 +48,7 @@ class SubjectProductsViewModel extends ViewModelBase {
   final SubjectProductsAuthService authService;
   final SubjectProductsViewModelDetailedOrdersService detailedOrdersService;
   final SubjectProductsSavedProductsService savedProductsService;
+  final SubjectProductsSubjectSummaryService subjectSummaryService;
   final void Function(List<int>) onSaveProductsToTrack;
 
   // Navigation
@@ -77,6 +85,9 @@ class SubjectProductsViewModel extends ViewModelBase {
   TokenInfo? _tokenInfo;
   bool get isFree => _tokenInfo == null || _tokenInfo!.type == "free";
 
+  int _totalRevenue = 0;
+  int get totalRevenue => _totalRevenue;
+
   // Setters
   void addProductImage(int productId, String imageUrl, String productName) {
     _productImageProductName[productId] = (imageUrl, productName);
@@ -110,6 +121,20 @@ class SubjectProductsViewModel extends ViewModelBase {
           result.fold((l) => throw UnimplementedError(), (r) => r);
 
       setDetailedOrders(fetchedOrders);
+
+      final subjectSummaryOrEither =
+          await subjectSummaryService.fetchSubjectsSummary();
+      if (subjectSummaryOrEither.isRight()) {
+        final fetchedSummary = subjectSummaryOrEither.fold(
+            (l) => throw UnimplementedError(), (r) => r);
+        final subjSum =
+            fetchedSummary.where((item) => item.subjectId == subjectId);
+
+        if (subjSum.isNotEmpty) {
+          _totalRevenue = subjSum.first.totalRevenue;
+        }
+      }
+
       _updateSellerBrandDataMaps();
       _initializeFilterControllers();
     } else {
@@ -196,10 +221,11 @@ class SubjectProductsViewModel extends ViewModelBase {
     _filteredOrders.addAll(value);
   }
 
-  String get tableHeaderText => _filteredOrders.length ==
-          _originalDetailedOrders.length
-      ? "Всего товаров: ${_filteredOrders.length >= 10000 ? "более 10000" : _filteredOrders.length}"
-      : "Всего товаров: ${_filteredOrders.length} из ${_originalDetailedOrders.length}";
+  String get tableHeaderText => _originalDetailedOrders.isEmpty
+      ? ""
+      : _filteredOrders.length == _originalDetailedOrders.length
+          ? "Всего товаров: ${_filteredOrders.length >= 10000 ? "более 10000" : _filteredOrders.length} (${((_totalRevenue / 100).toInt()).toString().formatWithThousands()} ₽)"
+          : "Всего товаров: ${_filteredOrders.length} из ${_originalDetailedOrders.length}";
 
   Map<String, double> currentDataMap = {};
 

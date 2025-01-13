@@ -182,6 +182,9 @@ class __ScaffoldState extends State<_Scaffold> {
       case MainNavigationRouteNames.emptySubjectsScreen:
         _onNavigateToEmptySubjectScreen();
         break;
+      case MainNavigationRouteNames.emptyProductScreen:
+        _onNavigateToEmptyProductScreen();
+        break;
       case MainNavigationRouteNames.subjectProductsScreen:
         _onNavigateToSubjectProductsScreen();
         break;
@@ -202,6 +205,7 @@ class __ScaffoldState extends State<_Scaffold> {
 
   void _onNavigateToEmptySubjectScreen() {
     setState(() {
+      _currentSubjectId = null;
       _selectedSectionIndex = 0;
       _selectedSubsectionIndex = 1;
     });
@@ -216,6 +220,14 @@ class __ScaffoldState extends State<_Scaffold> {
 
   void _onNavigateToProductScreen() {
     setState(() {
+      _selectedSectionIndex = 0;
+      _selectedSubsectionIndex = 2;
+    });
+  }
+
+  void _onNavigateToEmptyProductScreen() {
+    setState(() {
+      _currentProductId = null;
       _selectedSectionIndex = 0;
       _selectedSubsectionIndex = 2;
     });
@@ -466,6 +478,8 @@ class __ScaffoldState extends State<_Scaffold> {
   }
 
   int _getCurrentIndex() {
+    print(
+        '$_selectedSectionIndex, $_selectedSubsectionIndex $_currentProductId');
     if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 1) {
       return 1;
     } else if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 2) {

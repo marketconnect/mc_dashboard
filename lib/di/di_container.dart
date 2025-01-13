@@ -176,6 +176,7 @@ class _DIContainer {
           subjectName: subjectName,
           context: context,
           onNavigateTo: onNavigateTo,
+          subjectSummaryService: _makeSubjectsSummaryService(),
           onSaveProductsToTrack: onSaveProductsToTrack,
           detailedOrdersService: _makeDetailedOrdersService(),
           savedProductsService: _makeSavedProductsService(),
