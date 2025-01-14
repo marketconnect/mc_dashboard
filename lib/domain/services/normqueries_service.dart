@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:fpdart/fpdart.dart';
-import 'package:mc_dashboard/api/normqueries.dart';
+import 'package:mc_dashboard/infrastructure/api/normqueries.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/domain/entities/normquery.dart';
 import 'package:mc_dashboard/domain/entities/normquery_product.dart';

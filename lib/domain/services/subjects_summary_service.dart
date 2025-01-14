@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:fpdart/fpdart.dart';
-import 'package:mc_dashboard/api/subjects_summary.dart';
+import 'package:mc_dashboard/infrastructure/api/subjects_summary.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/domain/entities/subject_summary_item.dart';
 import 'package:mc_dashboard/presentation/choosing_niche_screen/choosing_niche_view_model.dart';

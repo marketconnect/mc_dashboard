@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:fpdart/fpdart.dart';
 
-import 'package:mc_dashboard/api/stocks.dart';
+import 'package:mc_dashboard/infrastructure/api/stocks.dart';
 
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 

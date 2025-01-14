@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:fpdart/fpdart.dart';
-import 'package:mc_dashboard/api/orders.dart';
+import 'package:mc_dashboard/infrastructure/api/orders.dart';
 
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/domain/entities/order.dart';

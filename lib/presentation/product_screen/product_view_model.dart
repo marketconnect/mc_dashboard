@@ -76,7 +76,10 @@ abstract class ProductViewModelDetailedOrdersService {
 
 // Saved key phrases service
 abstract class ProductViewModelSavedKeyPhrasesService {
-  Future<Either<AppErrorBase, void>> saveKeyPhrases(List<KeyPhrase> keyPhrases);
+  Future<Either<AppErrorBase, void>> syncKeyPhrases({
+    required String token,
+    required List<KeyPhrase> newPhrases,
+  });
 }
 
 class ProductViewModel extends ViewModelBase {
@@ -316,93 +319,15 @@ class ProductViewModel extends ViewModelBase {
       _dailyStocksSums = calculateDailyStockSums(stocks);
     }
 
-    if (!isFree) {
-      // // Normqueries
-      // final normqueryOrEither = await normqueryService.get(ids: [productId]);
-      // if (normqueryOrEither.isRight()) {
-      //   _normqueries =
-      //       normqueryOrEither.fold((l) => <NormqueryProduct>[], (r) => r);
-      // }
-
-      // kw lemmas
-      // final normqueryIds = _normqueries.map((e) => e.normqueryId).toList();
-      // final kwLemmasOrEither = await kwLemmaService.get(ids: normqueryIds);
-      // if (kwLemmasOrEither.isRight()) {
-      //   final kwLemmas =
-      //       kwLemmasOrEither.fold((l) => <KwLemmaItem>[], (r) => r);
-      //   setKwLemmas(kwLemmas);
-      // }
-      // Lemmatization
-      // final lemmatizedOrEither = await lemmatizeService.get(
-      //   req: LemmatizeRequest(
-      //     title: cardInfo.imtName,
-      //     characteristics: cardInfo.characteristicValues,
-      //     description: cardInfo.description,
-      //   ),
-      // );
-
-      // if (lemmatizedOrEither.isRight()) {
-      //   // create cosine similarity
-      //   final lemmatized =
-      //       lemmatizedOrEither.fold((l) => throw UnimplementedError, (r) => r);
-      //   _lemmatizedName = lemmatized.title;
-      //   _lemmatizedDescription = lemmatized.description;
-      //   _lemmatizedCharacteristics = lemmatized.characteristics;
-      //   final fetchedSeoTableSections = await generateSEOTableSections(
-      //       _normqueries,
-      //       _kwLemmas,
-      //       _lemmatizedName,
-      //       _lemmatizedDescription,
-      //       _lemmatizedCharacteristics,
-      //       calculateCosineSimilarity);
-
-      //   setSeoTableSections(fetchedSeoTableSections);
-      // }
-
-      // if (normqueries.isNotEmpty) {
-      //   // Unused queries
-      //   // get top 20 products ids
-      //   final detailedOrdersForUnusedQueriesOrEither =
-      //       await detailedOrdersService.fetchDetailedOrders(
-      //           subjectId: subjectId, isFbs: 0, pageSize: '20');
-
-      //   if (detailedOrdersForUnusedQueriesOrEither.isRight()) {
-      //     final detailedOrdersForUnusedQueries =
-      //         detailedOrdersForUnusedQueriesOrEither.fold(
-      //             (l) => throw UnimplementedError, (r) => r);
-      //     final top20productsIds =
-      //         detailedOrdersForUnusedQueries.map((e) => e.productId).toList();
-      //     // get top 20 normqueries
-      //     final normqueryOrEither =
-      //         await normqueryService.get(ids: top20productsIds);
-      //     if (normqueryOrEither.isRight()) {
-      //       final fetchedNormqueries = normqueryOrEither.fold(
-      //           (l) => throw UnimplementedError, (r) => r);
-      //       List<NormqueryProduct> uNormqueries = [];
-      //       // exclude normqueries that are already used
-      //       for (final normquery in fetchedNormqueries) {
-      //         if ((!_normqueries
-      //                 .any((e) => e.normqueryId == normquery.normqueryId) &&
-      //             !uNormqueries
-      //                 .any((e) => e.normqueryId == normquery.normqueryId))) {
-      //           uNormqueries.add(normquery);
-      //         }
-      //       }
-      //       _unusedNormqueries = uNormqueries.toSet().toList();
-      //     }
-      //   }
-      // }
-    } else {
-      // free ////////////////////////////////////////////////////// free
-      _normqueries = generateRandomNormqueryProducts(15);
-      final randomSeoTableSections = generateRandomSEOTableRows(15);
-      setSeoTableSections(randomSeoTableSections);
-      List<NormqueryProduct> uNormqueries = [];
-      for (final normquery in _normqueries) {
-        uNormqueries.add(normquery);
-      }
-      _unusedNormqueries = uNormqueries;
+    // free ////////////////////////////////////////////////////// free
+    // _normqueries = generateRandomNormqueryProducts(15);
+    // final randomSeoTableSections = generateRandomSEOTableRows(15);
+    // setSeoTableSections(randomSeoTableSections);
+    List<NormqueryProduct> uNormqueries = [];
+    for (final normquery in _normqueries) {
+      uNormqueries.add(normquery);
     }
+    _unusedNormqueries = uNormqueries;
 
     final whOrEither =
         await whService.getWarehouses(ids: whIds.toSet().toList());
@@ -542,10 +467,18 @@ class ProductViewModel extends ViewModelBase {
   }
 
   Future<void> saveKeyPhrases(List<String> keyPhrasesStr) async {
+    if (_tokenInfo == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Сначала войдите в аккаунт'),
+      ));
+      return;
+    }
     //
-    await savedKeyPhrasesService.saveKeyPhrases(keyPhrasesStr
-        .map((e) => KeyPhrase(phraseText: e, marketPlace: 'wb'))
-        .toList());
+    await savedKeyPhrasesService.syncKeyPhrases(
+        token: _tokenInfo!.token,
+        newPhrases: keyPhrasesStr
+            .map((e) => KeyPhrase(phraseText: e, marketPlace: 'wb'))
+            .toList());
 
     // Update mailing keyphrases screen
     onSaveKeyPhrasesToTrack(keyPhrasesStr);

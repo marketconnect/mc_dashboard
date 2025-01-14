@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:fpdart/fpdart.dart';
 
-import 'package:mc_dashboard/api/lemmatize.dart';
+import 'package:mc_dashboard/infrastructure/api/lemmatize.dart';
 
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 

@@ -1288,7 +1288,7 @@ class _HistoryChartWidgetState extends State<HistoryChartWidget> {
                           .toDouble();
 
                       return BarTooltipItem(
-                        "$key\nТовары\nВсего: $totalSkus\nС заказами: $skuWithOrders",
+                        "$key\nТовары\nВсего: ${totalSkus.toInt()}\nС заказами: ${skuWithOrders.toInt()}",
                         TextStyle(fontWeight: FontWeight.bold),
                       );
                     },

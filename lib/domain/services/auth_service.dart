@@ -9,6 +9,7 @@ import 'package:mc_dashboard/domain/entities/token_info.dart';
 
 import 'package:mc_dashboard/presentation/login_screen/login_view_model.dart';
 import 'package:mc_dashboard/presentation/mailing_screen/mailing_view_model.dart';
+import 'package:mc_dashboard/presentation/mailing_screen/saved_key_phrases_view_model.dart';
 import 'package:mc_dashboard/presentation/product_screen/product_view_model.dart';
 import 'package:mc_dashboard/presentation/seo_requests_extend_screen/seo_requests_extend_view_model.dart';
 import 'package:mc_dashboard/presentation/subject_products_screen/subject_products_view_model.dart';
@@ -30,6 +31,7 @@ class AuthService
     implements
         LoginViewModelAuthService,
         // ChoosingNicheAuthService,
+        SavedKeyPhrasesAuthService,
         SubscriptionAuthService,
         MailingAuthService,
         SeoRequestsExtendAuthService,

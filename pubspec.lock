@@ -478,7 +478,7 @@ packages:
     source: hosted
     version: "1.0.4"
   js:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: js
       sha256: c1b2e9b5ea78c45e1a0788d29606ba27dc5f71f019f32ca5140f61ef071838cf
@@ -963,7 +963,7 @@ packages:
     source: hosted
     version: "1.1.0"
   web:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: web
       sha256: cd3543bd5798f6ad290ea73d210f423502e71900302dde696f8bff84bf89a1cb

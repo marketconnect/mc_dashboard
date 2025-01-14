@@ -30,8 +30,34 @@ class ProductScreen extends StatefulWidget {
 
 class _ProductScreenState extends State<ProductScreen> {
   String selectedPeriod = '30 дней';
-
   final List<String> periods = ['7 дней', '30 дней', '90 дней', 'год'];
+
+  //
+  final ScrollController _scrollController = ScrollController();
+  bool _showFab = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _scrollController.addListener(() {
+      if (_scrollController.offset > 500) {
+        if (!_showFab) {
+          setState(() => _showFab = true);
+        }
+      } else {
+        if (_showFab) {
+          setState(() => _showFab = false);
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,19 +66,14 @@ class _ProductScreenState extends State<ProductScreen> {
     final id = model.productId;
     final onNavigateToEmptyProductScreen = model.onNavigateToEmptyProductScreen;
     final name = model.name;
-    // final subjName = model.subjectName;
 
     final price = model.productPrice;
     final rating = model.rating;
 
-    // final stocks = model.stocks;
     final orders = model.orders;
-
     final dailyStockSums = model.dailyStocksSums;
-
     final pieDataMap = model.warehousesOrdersSum;
     final onNavigateBack = model.onNavigateBack;
-    //
     final orders30d = model.orders30d;
     final priceHistoryData = model.priceHistory;
 
@@ -66,11 +87,13 @@ class _ProductScreenState extends State<ProductScreen> {
     List<double> priceValues = priceHistoryData.map((e) {
       return (e["price"] as num).toDouble();
     }).toList();
+
     final wildberriesUrl =
         "https://wildberries.ru/catalog/${id}/detail.aspx?targetUrl=EX";
 
     return Scaffold(
       body: SingleChildScrollView(
+        controller: _scrollController,
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 1200),
@@ -86,7 +109,7 @@ class _ProductScreenState extends State<ProductScreen> {
                         child: Row(
                           children: [
                             IconButton(
-                              onPressed: () => onNavigateBack(),
+                              onPressed: onNavigateBack,
                               icon: Icon(
                                 Icons.arrow_back_ios,
                                 color: theme.colorScheme.primary,
@@ -108,7 +131,7 @@ class _ProductScreenState extends State<ProductScreen> {
                         ),
                       ),
                       IconButton(
-                        onPressed: () => onNavigateToEmptyProductScreen(),
+                        onPressed: onNavigateToEmptyProductScreen,
                         icon: const Icon(Icons.search_sharp, size: 24),
                         color: theme.colorScheme.primary,
                       ),
@@ -158,8 +181,12 @@ class _ProductScreenState extends State<ProductScreen> {
                     children: [
                       _buildChartContainer(
                         title: 'Динамика продаж',
-                        child: _buildLineChart(ordersDates, salesValues,
-                            isSales: true, valueSuffix: 'шт.'),
+                        child: _buildLineChart(
+                          ordersDates,
+                          salesValues,
+                          isSales: true,
+                          valueSuffix: 'шт.',
+                        ),
                       ),
                       _buildChartContainer(
                         title: 'Доля продаж по складам',
@@ -167,12 +194,17 @@ class _ProductScreenState extends State<ProductScreen> {
                       ),
                       _buildChartContainer(
                         title: 'История изменения цены',
-                        child: _buildLineChart(priceDates, priceValues,
-                            isSales: false, valueSuffix: '₽'),
+                        child: _buildLineChart(
+                          priceDates,
+                          priceValues,
+                          isSales: false,
+                          valueSuffix: '₽',
+                        ),
                       ),
                       _buildChartContainer(
-                          title: "История остатков",
-                          child: BarChartWidget(dailyStockSums: dailyStockSums))
+                        title: "История остатков",
+                        child: BarChartWidget(dailyStockSums: dailyStockSums),
+                      )
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -188,105 +220,124 @@ class _ProductScreenState extends State<ProductScreen> {
                       child: _Feedback(),
                     ),
                   const SizedBox(height: 24),
-                  // if (!model.loading)
-                  //   Text(
-                  //     'Запросы с видимостью',
-                  //     style: theme.textTheme.titleLarge
-                  //         ?.copyWith(fontWeight: FontWeight.bold),
-                  //   ),
-                  // const SizedBox(height: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Запросы с видимостью',
-                        style: theme.textTheme.titleLarge
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Если данные НЕ загружены — показываем кнопку
-                      if (!model.normqueriesLoaded)
-                        OutlinedButton(
-                          onPressed: () async {
-                            await model.loadNormqueries();
-                            setState(
-                                () {}); // Или можно через Consumer / context.watch
-                          },
-                          child: const Text("Загрузить «Запросы с видимостью»"),
-                        ),
-
-                      // Если данные загружены — показываем сам виджет
-                      if (model.normqueriesLoaded)
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 1016),
-                          child: NormqueryTableWidget(),
-                        ),
-                    ],
-                  ),
-                  // if (!model.loading)
-                  //   ConstrainedBox(
-                  //     constraints: const BoxConstraints(maxWidth: 1016),
-                  //     child: NormqueryTableWidget(),
-                  //   ),
-                  const SizedBox(height: 24),
-                  if (!model.loading)
+                  if (model.normqueriesLoaded)
                     Text(
-                      'Анализ релевантности запросов',
+                      "Поисковые запросы",
                       style: theme.textTheme.titleLarge
                           ?.copyWith(fontWeight: FontWeight.bold),
                     ),
-                  const SizedBox(height: 16),
-                  if (model.seoTableSections.isNotEmpty)
+                  const SizedBox(height: 8),
+                  if (model.normqueriesLoaded)
                     ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 1016),
-                      child: SeoSectionWidget(
-                        sectionTitle: "Заголовок",
-                        sectionText: name,
-                        querySimilarities: model.seoTableSections["title"]!,
-                      ),
-                    ),
-                  const SizedBox(height: 16),
-                  if (model.seoTableSections.isNotEmpty)
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1016),
-                      child: SeoSectionWidget(
-                        sectionTitle: "Характеристики",
-                        sectionText: model.characteristics,
-                        querySimilarities:
-                            model.seoTableSections["characteristics"]!,
-                      ),
-                    ),
-                  const SizedBox(height: 16),
-                  if (model.seoTableSections.isNotEmpty)
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1016),
-                      child: SeoSectionWidget(
-                        sectionTitle: "Описание",
-                        sectionText: model.description,
-                        querySimilarities:
-                            model.seoTableSections["description"]!,
-                      ),
+                      child: NormqueryTableWidget(),
                     ),
                   const SizedBox(height: 24),
-                  if (!model.loading)
+                  if (model.seoLoaded) ...[
+                    const SizedBox(height: 16),
                     Text(
-                      'Пропущенные запросы',
+                      "Анализ релевантности",
                       style: theme.textTheme.titleLarge
                           ?.copyWith(fontWeight: FontWeight.bold),
                     ),
-                  const SizedBox(height: 16),
-                  if (!model.loading)
+                    const SizedBox(height: 8),
+                    if (model.seoTableSections.isNotEmpty)
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1016),
+                        child: SeoSectionWidget(
+                          sectionTitle: "Заголовок",
+                          sectionText: name,
+                          querySimilarities:
+                              model.seoTableSections["title"] ?? [],
+                        ),
+                      ),
+                    const SizedBox(height: 16),
+                    if (model.seoTableSections.isNotEmpty)
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1016),
+                        child: SeoSectionWidget(
+                          sectionTitle: "Характеристики",
+                          sectionText: model.characteristics,
+                          querySimilarities:
+                              model.seoTableSections["characteristics"] ?? [],
+                        ),
+                      ),
+                    const SizedBox(height: 16),
+                    if (model.seoTableSections.isNotEmpty)
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1016),
+                        child: SeoSectionWidget(
+                          sectionTitle: "Описание",
+                          sectionText: model.description,
+                          querySimilarities:
+                              model.seoTableSections["description"] ?? [],
+                        ),
+                      ),
+                  ],
+                  const SizedBox(height: 24),
+                  if (!model.loading && model.unusedQueriesLoaded) ...[
+                    Text(
+                      "Упущенные запросы",
+                      style: theme.textTheme.titleLarge
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
                     ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 1016),
                       child: UnusedQueryTableWidget(),
                     ),
+                  ],
                 ],
               ),
             ),
           ),
         ),
       ),
+      floatingActionButton: _showFab
+          ? Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (!model.normqueriesLoaded)
+                  FloatingActionButton.extended(
+                    heroTag: 'queriesFab',
+                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                    label: const Text("Поисковые запросы"),
+                    // icon: const Icon(Icons.search),
+                    onPressed: () async {
+                      await model.loadNormqueries();
+                    },
+                  ),
+                const SizedBox(width: 8),
+
+                // Анализ релевантности
+                if (model.normqueriesLoaded && !model.seoLoaded)
+                  FloatingActionButton.extended(
+                    heroTag: 'seoFab',
+                    label: const Text("Анализ релевантности"),
+                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                    onPressed: () async {
+                      if (!model.normqueriesLoaded) {
+                        await model.loadNormqueries();
+                      }
+                      await model.loadSeo();
+                    },
+                  ),
+                const SizedBox(width: 8),
+
+                // Упущенные запросы
+                if (model.normqueriesLoaded && !model.unusedQueriesLoaded)
+                  FloatingActionButton.extended(
+                    heroTag: 'unusedFab',
+                    label: const Text("Упущенные запросы"),
+                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                    onPressed: () async {
+                      await model.loadUnusedQueries();
+                    },
+                  ),
+                const SizedBox(width: 28),
+              ],
+            )
+          : null,
     );
   }
 
@@ -1347,7 +1398,7 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
     final model = context.watch<ProductViewModel>();
     final saveKeyPhrases = model.saveKeyPhrases;
     final normqueryProducts = model.normqueries;
-
+    final isFree = model.isFree;
     if (normqueryProducts.isEmpty) {
       return _noDataPlaceholder();
     }
@@ -1362,279 +1413,263 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
       "Всего товаров",
     ];
 
-    return Stack(
-      children: [
-        LayoutBuilder(builder: (context, constraints) {
-          final maxWidth = constraints.maxWidth;
+    return LayoutBuilder(builder: (context, constraints) {
+      final maxWidth = constraints.maxWidth;
 
-          final isMobile = maxWidth < 600;
+      final isMobile = maxWidth < 600;
 
-          final proportions =
-              isMobile ? mobColumnProportions : columnProportions;
-          final columns = proportions
-              .map((widthFraction) => TableColumn(
-                  width: widthFraction * MediaQuery.of(context).size.width))
-              .toList();
+      final proportions = isMobile ? mobColumnProportions : columnProportions;
+      final columns = proportions
+          .map((widthFraction) => TableColumn(
+              width: widthFraction * MediaQuery.of(context).size.width))
+          .toList();
 
-          return Stack(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: const [
-                    BoxShadow(color: Colors.black12, blurRadius: 4)
-                  ],
-                ),
-                child: SizedBox(
-                  height: 400,
-                  child: TableView.builder(
-                    controller: tableViewController,
-                    columns: columns,
-                    rowHeight: 40,
-                    rowCount: normqueryProducts.length,
-                    headerBuilder: (context, contentBuilder) {
-                      return contentBuilder(context, (context, columnIndex) {
-                        if (columnIndex == 0) {
-                          return Checkbox(
-                            checkColor: theme.colorScheme.secondary,
-                            activeColor: Colors.transparent,
-                            value: selectAll,
-                            side: WidgetStateBorderSide.resolveWith(
-                              (states) {
-                                if (states.contains(WidgetState.selected)) {
-                                  return BorderSide(
-                                    color: Colors.transparent,
-                                  );
-                                }
-                                return BorderSide(
-                                    color: theme.colorScheme.onSurface
-                                        .withOpacity(.3),
-                                    width: 2.0);
-                              },
-                            ),
-                            onChanged: (value) {
-                              setState(() {
-                                selectAll = value ?? false;
-                                if (selectAll) {
-                                  selectedIndices.addAll(List.generate(
-                                      normqueryProducts.length,
-                                      (index) => index));
-                                } else {
-                                  selectedIndices.clear();
-                                }
-                              });
-                            },
-                          );
-                        }
-                        return GestureDetector(
-                          onTap: () => _sortData(columnIndex),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                columnHeaders[columnIndex],
-                              ),
-                              if (_sortColumnIndex == columnIndex)
-                                Icon(
-                                  _sortAscending
-                                      ? Icons.arrow_upward
-                                      : Icons.arrow_downward,
-                                  size: 16,
-                                ),
-                            ],
-                          ),
-                        );
-                      });
-                    },
-                    rowBuilder: (context, rowIndex, contentBuilder) {
-                      final product = normqueryProducts[rowIndex];
-                      final rowValues = [
-                        product.normquery,
-                        ((product.pageNumber - 1) * 100 + product.pagePos)
-                            .toString(),
-                        product.freq.toString(),
-                        product.total.toString(),
-                      ];
-
-                      return contentBuilder(context, (context, columnIndex) {
-                        if (columnIndex == 0) {
-                          return Checkbox(
-                            activeColor: Colors.transparent,
-                            checkColor: theme.colorScheme.secondary,
-                            value: selectedIndices.contains(rowIndex),
-                            side: WidgetStateBorderSide.resolveWith(
-                              (states) {
-                                if (states.contains(WidgetState.selected)) {
-                                  return BorderSide(
-                                    color: Colors.transparent,
-                                  );
-                                }
-                                return BorderSide(
-                                    color: theme.colorScheme.onSurface
-                                        .withOpacity(.3),
-                                    width: 2.0);
-                              },
-                            ),
-                            onChanged: (isSelected) {
-                              setState(() {
-                                if (isSelected == true) {
-                                  selectedIndices.add(rowIndex);
-                                  if (selectedIndices.length ==
-                                      normqueryProducts.length) {
-                                    selectAll = true;
-                                  }
-                                } else {
-                                  selectedIndices.remove(rowIndex);
-                                  selectAll = false;
-                                }
-                              });
-                            },
-                          );
-                        }
-
-                        final value = rowValues[columnIndex - 1];
-                        return GestureDetector(
-                          onTap: () {
-                            if (columnIndex == 1) {
-                              final wildberriesUrl =
-                                  "https://www.wildberries.ru/catalog/0/search.aspx?search=$value";
-                              launchUrl(Uri.parse(wildberriesUrl));
+      return Stack(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: const [
+                BoxShadow(color: Colors.black12, blurRadius: 4)
+              ],
+            ),
+            child: SizedBox(
+              height: 400,
+              child: TableView.builder(
+                controller: tableViewController,
+                columns: columns,
+                rowHeight: 40,
+                rowCount: normqueryProducts.length,
+                headerBuilder: (context, contentBuilder) {
+                  return contentBuilder(context, (context, columnIndex) {
+                    if (columnIndex == 0) {
+                      return Checkbox(
+                        checkColor: theme.colorScheme.secondary,
+                        activeColor: Colors.transparent,
+                        value: selectAll,
+                        side: WidgetStateBorderSide.resolveWith(
+                          (states) {
+                            if (states.contains(WidgetState.selected)) {
+                              return BorderSide(
+                                color: Colors.transparent,
+                              );
                             }
+                            return BorderSide(
+                                color:
+                                    theme.colorScheme.onSurface.withOpacity(.3),
+                                width: 2.0);
                           },
-                          child: Container(
-                            alignment: columnIndex == 1
-                                ? Alignment.centerLeft
-                                : Alignment.center,
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 8.0),
-                            child: MouseRegion(
-                              cursor: columnIndex == 1
-                                  ? SystemMouseCursors.click
-                                  : MouseCursor.defer,
-                              child: Text(
-                                value,
-                                style: columnIndex == 1
-                                    ? const TextStyle(
-                                        decoration: TextDecoration.underline,
-                                        decorationColor: Color(0xFF5166e3),
-                                        color: Color(0xFF5166e3),
-                                      )
-                                    : theme.textTheme.bodyMedium,
-                              ),
-                            ),
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            selectAll = value ?? false;
+                            if (selectAll) {
+                              selectedIndices.addAll(List.generate(
+                                  normqueryProducts.length, (index) => index));
+                            } else {
+                              selectedIndices.clear();
+                            }
+                          });
+                        },
+                      );
+                    }
+                    return GestureDetector(
+                      onTap: () => _sortData(columnIndex),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            columnHeaders[columnIndex],
                           ),
-                        );
-                      });
-                    },
-                  ),
-                ),
-              ),
-              if (selectedIndices.isNotEmpty)
-                Positioned(
-                  bottom: 24,
-                  right: 24,
-                  child: SpeedDial(
-                    icon: Icons.more_vert,
-                    activeIcon: Icons.close,
-                    backgroundColor: theme.colorScheme.secondary,
-                    foregroundColor: theme.colorScheme.onSecondary,
-                    onClose: () {
-                      setState(() {
-                        selectedIndices.clear();
-                        selectAll = false;
-                      });
-                    },
-                    children: [
-                      SpeedDialChild(
-                        backgroundColor: theme.colorScheme.secondary,
-                        child: Icon(Icons.copy,
-                            color: theme.colorScheme.onSecondary),
-                        label: "Копировать",
-                        onTap: () {
-                          // Получение выбранных элементов
-                          final selectedItems = selectedIndices
-                              .map((index) => normqueryProducts[index])
-                              .toList();
-
-                          if (selectedItems.isEmpty) {
-                            // Если ничего не выбрано, можно уведомить пользователя
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text(
-                                      'Нет выбранных элементов для копирования')),
-                            );
-                            return;
-                          }
-
-                          // Формирование строки для копирования
-                          final clipboardContent = selectedItems.map((product) {
-                            return '${product.normquery}\t${((product.pageNumber - 1) * 100 + product.pagePos)}\t${product.freq}\t${product.total}';
-                          }).join('\n'); // Разделитель строк - перенос
-                          final clipboardContentWithColumnNames =
-                              'Ключевой запрос\tПозиция\tЧастота\tВсего товаров\n$clipboardContent';
-                          // Копирование данных в буфер обмена
-                          Clipboard.setData(ClipboardData(
-                              text: clipboardContentWithColumnNames));
-
-                          // Уведомление пользователя о выполнении копирования
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content:
-                                    Text('Данные скопированы в буфер обмена')),
-                          );
-                        },
+                          if (_sortColumnIndex == columnIndex)
+                            Icon(
+                              _sortAscending
+                                  ? Icons.arrow_upward
+                                  : Icons.arrow_downward,
+                              size: 16,
+                            ),
+                        ],
                       ),
-                      SpeedDialChild(
-                        backgroundColor: theme.colorScheme.secondary,
-                        child: Icon(Icons.visibility,
-                            color: theme.colorScheme.onSecondary),
-                        label: "Отслеживать",
-                        onTap: () {
-                          final selectedItems = selectedIndices
-                              .map((index) => normqueryProducts[index])
-                              .toList();
-
-                          saveKeyPhrases(selectedItems
-                              .map((product) => product.normquery)
-                              .toList());
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          );
-        }),
-        if (model.isFree)
-          Positioned.fill(
-            child: MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: GestureDetector(
-                onTap: () {
-                  model.onNavigateToSubscriptionScreen();
+                    );
+                  });
                 },
-                child: ClipRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                    child: Container(
-                      color: Colors.black.withOpacity(0.2),
-                      alignment: Alignment.center,
-                      child: Text(
-                        "Доступно только для подписчиков",
-                        style: theme.textTheme.titleLarge?.copyWith(
-                            color: Colors.white, fontWeight: FontWeight.bold),
-                        textAlign: TextAlign.center,
+                rowBuilder: (context, rowIndex, contentBuilder) {
+                  final product = normqueryProducts[rowIndex];
+                  final rowValues = [
+                    product.normquery,
+                    ((product.pageNumber - 1) * 100 + product.pagePos)
+                        .toString(),
+                    product.freq.toString(),
+                    product.total.toString(),
+                  ];
+
+                  return contentBuilder(context, (context, columnIndex) {
+                    if (columnIndex == 0) {
+                      return Checkbox(
+                        activeColor: Colors.transparent,
+                        checkColor: theme.colorScheme.secondary,
+                        value: selectedIndices.contains(rowIndex),
+                        side: WidgetStateBorderSide.resolveWith(
+                          (states) {
+                            if (states.contains(WidgetState.selected)) {
+                              return BorderSide(
+                                color: Colors.transparent,
+                              );
+                            }
+                            return BorderSide(
+                                color:
+                                    theme.colorScheme.onSurface.withOpacity(.3),
+                                width: 2.0);
+                          },
+                        ),
+                        onChanged: (isSelected) {
+                          setState(() {
+                            if (isSelected == true) {
+                              selectedIndices.add(rowIndex);
+                              if (selectedIndices.length ==
+                                  normqueryProducts.length) {
+                                selectAll = true;
+                              }
+                            } else {
+                              selectedIndices.remove(rowIndex);
+                              selectAll = false;
+                            }
+                          });
+                        },
+                      );
+                    }
+
+                    final value = rowValues[columnIndex - 1];
+                    return GestureDetector(
+                      onTap: () {
+                        if (columnIndex == 1) {
+                          final wildberriesUrl =
+                              "https://www.wildberries.ru/catalog/0/search.aspx?search=$value";
+                          launchUrl(Uri.parse(wildberriesUrl));
+                        }
+                      },
+                      child: Container(
+                        alignment: columnIndex == 1
+                            ? Alignment.centerLeft
+                            : Alignment.center,
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: MouseRegion(
+                          cursor: columnIndex == 1
+                              ? SystemMouseCursors.click
+                              : MouseCursor.defer,
+                          child: Text(
+                            value,
+                            style: columnIndex == 1
+                                ? const TextStyle(
+                                    decoration: TextDecoration.underline,
+                                    decorationColor: Color(0xFF5166e3),
+                                    color: Color(0xFF5166e3),
+                                  )
+                                : theme.textTheme.bodyMedium,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ),
+                    );
+                  });
+                },
               ),
             ),
           ),
-      ],
-    );
+          if (selectedIndices.isNotEmpty)
+            Positioned(
+              bottom: 24,
+              right: 24,
+              child: SpeedDial(
+                icon: Icons.more_vert,
+                activeIcon: Icons.close,
+                backgroundColor: theme.colorScheme.secondary,
+                foregroundColor: theme.colorScheme.onSecondary,
+                onClose: () {
+                  setState(() {
+                    selectedIndices.clear();
+                    selectAll = false;
+                  });
+                },
+                children: [
+                  SpeedDialChild(
+                    backgroundColor: theme.colorScheme.secondary,
+                    child:
+                        Icon(Icons.copy, color: theme.colorScheme.onSecondary),
+                    label: "Копировать",
+                    onTap: () {
+                      // Получение выбранных элементов
+                      final selectedItems = selectedIndices
+                          .map((index) => normqueryProducts[index])
+                          .toList();
+
+                      if (selectedItems.isEmpty) {
+                        // Если ничего не выбрано, можно уведомить пользователя
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text(
+                                  'Нет выбранных элементов для копирования')),
+                        );
+                        return;
+                      }
+
+                      // Формирование строки для копирования
+                      final clipboardContent = selectedItems.map((product) {
+                        return '${product.normquery}\t${((product.pageNumber - 1) * 100 + product.pagePos)}\t${product.freq}\t${product.total}';
+                      }).join('\n'); // Разделитель строк - перенос
+                      final clipboardContentWithColumnNames =
+                          'Ключевой запрос\tПозиция\tЧастота\tВсего товаров\n$clipboardContent';
+                      // Копирование данных в буфер обмена
+                      Clipboard.setData(
+                          ClipboardData(text: clipboardContentWithColumnNames));
+
+                      // Уведомление пользователя о выполнении копирования
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Данные скопированы в буфер обмена')),
+                      );
+                    },
+                  ),
+                  SpeedDialChild(
+                    backgroundColor: theme.colorScheme.secondary,
+                    child: Icon(Icons.visibility,
+                        color: theme.colorScheme.onSecondary),
+                    label: "Отслеживать",
+                    onTap: () {
+                      if (isFree) {
+                        _showSubscribeAlert(context, model);
+                        return;
+                      }
+                      final selectedItems = selectedIndices
+                          .map((index) => normqueryProducts[index])
+                          .toList();
+
+                      saveKeyPhrases(selectedItems
+                          .map((product) => product.normquery)
+                          .toList());
+                    },
+                  ),
+                ],
+              ),
+            ),
+        ],
+      );
+    });
+  }
+
+  void _showSubscribeAlert(BuildContext context, ProductViewModel model) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+          'Чтобы добавлять запросы и получать по ним рассылку, вы должны быть подписчиком.'),
+      action: SnackBarAction(
+        label: 'Оформить подписку',
+        onPressed: () {
+          model.onNavigateToSubscriptionScreen();
+        },
+      ),
+      duration: Duration(seconds: 10),
+    ));
   }
 
   Widget _noDataPlaceholder() {
@@ -1674,167 +1709,136 @@ class _SeoSectionWidgetState extends State<SeoSectionWidget> {
     final model = context.watch<ProductViewModel>();
     final getSeoNameDescChar = model.getSeoNameDescChar;
 
-    if (widget.querySimilarities.isEmpty) {
-      return _noDataPlaceholder();
-    }
-
     final visibleRows = _isExpanded
         ? widget.querySimilarities
         : widget.querySimilarities.take(5).toList();
 
-    return Stack(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.sectionTitle,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.sectionTitle,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                widget.sectionText,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Table(
-                columnWidths: const {
-                  0: FlexColumnWidth(2),
-                  1: FlexColumnWidth(1),
-                  2: FlexColumnWidth(1),
-                },
-                border: TableBorder.all(color: theme.dividerColor),
-                children: [
-                  TableRow(
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withOpacity(0.1),
-                    ),
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          'Ключевой запрос',
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+          const SizedBox(height: 8),
+          Text(
+            widget.sectionText,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 16),
+          widget.querySimilarities.isEmpty
+              ? _noDataPlaceholder()
+              : Table(
+                  columnWidths: const {
+                    0: FlexColumnWidth(2),
+                    1: FlexColumnWidth(1),
+                    2: FlexColumnWidth(1),
+                  },
+                  border: TableBorder.all(color: theme.dividerColor),
+                  children: [
+                    TableRow(
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withOpacity(0.1),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          'Релевантность',
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          'Частотность',
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ],
-                  ),
-                  ...visibleRows.map((row) {
-                    final similarities = widget.sectionTitle == 'Заголовок'
-                        ? row.titleSimilarity
-                        : widget.sectionTitle == 'Описание'
-                            ? row.descriptionSimilarity
-                            : widget.sectionTitle == 'Характеристики'
-                                ? row.characteristicsSimilarity
-                                : 0.0;
-                    return TableRow(
                       children: [
-                        Tooltip(
-                          message: getSeoNameDescChar(row.normquery),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                              row.normquery,
-                              style: TextStyle(
-                                color: theme.colorScheme.primary,
-                              ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            'Ключевой запрос',
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
                         Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Text(
-                            '${(similarities * 100).toStringAsFixed(1)}%',
+                            'Релевантность',
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
                         ),
                         Padding(
                           padding: const EdgeInsets.all(8.0),
-                          child: Text('${row.freq}'),
+                          child: Text(
+                            'Частотность',
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
                         ),
                       ],
-                    );
-                  }),
-                ],
-              ),
-              const SizedBox(height: 16),
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _isExpanded = !_isExpanded;
-                  });
-                },
-                child: Text(
-                  _isExpanded ? 'Свернуть' : 'Показать больше',
-                  style: const TextStyle(
-                    decoration: TextDecoration.underline,
-                    decorationColor: Color(0xFF5166e3),
-                    color: Color(0xFF5166e3),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (model.isFree)
-          Positioned.fill(
-            child: MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: GestureDetector(
-                onTap: () {
-                  model.onNavigateToSubscriptionScreen();
-                },
-                child: ClipRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                    child: Container(
-                      color: Colors.black.withOpacity(0.2),
-                      alignment: Alignment.center,
-                      child: Text(
-                        "Доступно только для подписчиков",
-                        style: theme.textTheme.titleLarge?.copyWith(
-                            color: Colors.white, fontWeight: FontWeight.bold),
-                        textAlign: TextAlign.center,
-                      ),
                     ),
-                  ),
+                    ...visibleRows.map((row) {
+                      final similarities = widget.sectionTitle == 'Заголовок'
+                          ? row.titleSimilarity
+                          : widget.sectionTitle == 'Описание'
+                              ? row.descriptionSimilarity
+                              : widget.sectionTitle == 'Характеристики'
+                                  ? row.characteristicsSimilarity
+                                  : 0.0;
+
+                      return TableRow(
+                        children: [
+                          Tooltip(
+                            message: getSeoNameDescChar(row.normquery),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                row.normquery,
+                                style: TextStyle(
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              '${(similarities * 100).toStringAsFixed(1)}%',
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text('${row.freq}'),
+                          ),
+                        ],
+                      );
+                    }),
+                  ],
                 ),
+          const SizedBox(height: 16),
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _isExpanded = !_isExpanded;
+              });
+            },
+            child: Text(
+              _isExpanded ? 'Свернуть' : 'Показать больше',
+              style: const TextStyle(
+                decoration: TextDecoration.underline,
+                decorationColor: Color(0xFF5166e3),
+                color: Color(0xFF5166e3),
               ),
             ),
           ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -1843,7 +1847,6 @@ class _SeoSectionWidgetState extends State<SeoSectionWidget> {
   }
 }
 
-// Добавьте этот класс ниже (или рядом) с классом NormqueryTableWidget
 class UnusedQueryTableWidget extends StatefulWidget {
   const UnusedQueryTableWidget({super.key});
 
@@ -1853,11 +1856,11 @@ class UnusedQueryTableWidget extends StatefulWidget {
 
 class _UnusedQueryTableWidgetState extends State<UnusedQueryTableWidget> {
   late TableViewController tableViewController;
-  final Set<int> selectedIndices = {}; // Хранит индексы выбранных строк
-  bool selectAll = false; // Управляет выбором всех строк
+  final Set<int> selectedIndices = {};
+  bool selectAll = false;
 
-  int? _sortColumnIndex; // Индекс сортируемого столбца
-  bool _sortAscending = true; // Направление сортировки
+  int? _sortColumnIndex;
+  bool _sortAscending = true;
 
   @override
   void initState() {
@@ -1883,13 +1886,13 @@ class _UnusedQueryTableWidgetState extends State<UnusedQueryTableWidget> {
       context.read<ProductViewModel>().unusedNormqueries.sort((a, b) {
         int compare;
         switch (columnIndex) {
-          case 1: // Ключевой запрос
+          case 1:
             compare = a.normquery.compareTo(b.normquery);
             break;
-          case 2: // Частота (нед.)
+          case 2:
             compare = a.freq.compareTo(b.freq);
             break;
-          case 3: // Всего товаров
+          case 3:
             compare = a.total.compareTo(b.total);
             break;
           default:
@@ -1904,15 +1907,13 @@ class _UnusedQueryTableWidgetState extends State<UnusedQueryTableWidget> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final model = context.watch<ProductViewModel>();
-
-    // unusedQueries - список "неиспользуемых" запросов
+    final isFree = model.isFree;
     final unusedQueries = model.unusedNormqueries;
     final saveKeyPhrases = model.saveKeyPhrases;
     if (unusedQueries.isEmpty) {
       return _noDataPlaceholder();
     }
 
-    // Изменённые колонки: убрали «Позиция товара»
     final columnProportions = [0.05, 0.4, 0.2, 0.2];
     final mobColumnProportions = [0.1, 0.4, 0.25, 0.25];
     final columnHeaders = [
@@ -1950,7 +1951,6 @@ class _UnusedQueryTableWidgetState extends State<UnusedQueryTableWidget> {
                 rowCount: unusedQueries.length,
                 headerBuilder: (context, contentBuilder) {
                   return contentBuilder(context, (context, columnIndex) {
-                    // Первый столбец - чекбокс "Выбрать все"
                     if (columnIndex == 0) {
                       return Checkbox(
                         side: WidgetStateBorderSide.resolveWith(
@@ -1986,7 +1986,7 @@ class _UnusedQueryTableWidgetState extends State<UnusedQueryTableWidget> {
                         },
                       );
                     }
-                    // Остальные столбцы - заголовки колонок + сортировка
+
                     return GestureDetector(
                       onTap: () => _sortData(columnIndex),
                       child: Row(
@@ -2015,7 +2015,6 @@ class _UnusedQueryTableWidgetState extends State<UnusedQueryTableWidget> {
 
                   return contentBuilder(context, (context, columnIndex) {
                     if (columnIndex == 0) {
-                      // Чекбокс
                       return Checkbox(
                         activeColor: Colors.transparent,
                         checkColor: theme.colorScheme.secondary,
@@ -2087,31 +2086,6 @@ class _UnusedQueryTableWidgetState extends State<UnusedQueryTableWidget> {
             }),
           ),
         ),
-
-        if (model.isFree)
-          Positioned.fill(
-            child: MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: GestureDetector(
-                onTap: () {
-                  model.onNavigateToSubscriptionScreen();
-                },
-                child: Container(
-                  color: Colors.black.withOpacity(0.2),
-                  alignment: Alignment.center,
-                  child: Text(
-                    "Доступно только для подписчиков",
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        // Кнопка копирования, если есть выбранные элементы
         if (selectedIndices.isNotEmpty)
           Positioned(
             bottom: 24,
@@ -2133,13 +2107,11 @@ class _UnusedQueryTableWidgetState extends State<UnusedQueryTableWidget> {
                   child: Icon(Icons.copy, color: theme.colorScheme.onSecondary),
                   label: "Копировать",
                   onTap: () {
-                    // Получение выбранных элементов
                     final selectedItems = selectedIndices
                         .map((index) => unusedQueries[index])
                         .toList();
 
                     if (selectedItems.isEmpty) {
-                      // Если ничего не выбрано, можно уведомить пользователя
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                             content: Text(
@@ -2148,17 +2120,15 @@ class _UnusedQueryTableWidgetState extends State<UnusedQueryTableWidget> {
                       return;
                     }
 
-                    // Формирование строки для копирования
                     final clipboardContent = selectedItems.map((product) {
                       return '${product.normquery}\t${product.freq}\t${product.total}';
-                    }).join('\n'); // Разделитель строк - перенос
+                    }).join('\n');
                     final clipboardContentWithColumnNames =
                         'Ключевой запрос\tЧастота\tВсего товаров\n$clipboardContent';
-                    // Копирование данных в буфер обмена
+
                     Clipboard.setData(
                         ClipboardData(text: clipboardContentWithColumnNames));
 
-                    // Уведомление пользователя о выполнении копирования
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                           content: Text('Данные скопированы в буфер обмена')),
@@ -2171,6 +2141,10 @@ class _UnusedQueryTableWidgetState extends State<UnusedQueryTableWidget> {
                       color: theme.colorScheme.onSecondary),
                   label: "Отслеживать",
                   onTap: () {
+                    if (isFree) {
+                      _showSubscribeAlert(context, model);
+                      return;
+                    }
                     final selectedItems = selectedIndices
                         .map((index) => unusedQueries[index])
                         .toList();
@@ -2183,34 +2157,22 @@ class _UnusedQueryTableWidgetState extends State<UnusedQueryTableWidget> {
               ],
             ),
           ),
-        if (model.isFree)
-          Positioned.fill(
-            child: MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: GestureDetector(
-                onTap: () {
-                  model.onNavigateToSubscriptionScreen();
-                },
-                child: ClipRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                    child: Container(
-                      color: Colors.black.withOpacity(0.2),
-                      alignment: Alignment.center,
-                      child: Text(
-                        "Доступно только для подписчиков",
-                        style: theme.textTheme.titleLarge?.copyWith(
-                            color: Colors.white, fontWeight: FontWeight.bold),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
       ],
     );
+  }
+
+  void _showSubscribeAlert(BuildContext context, ProductViewModel model) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+          'Чтобы добавлять запросы и получать по ним рассылку, вы должны быть подписчиком.'),
+      action: SnackBarAction(
+        label: 'Оформить подписку',
+        onPressed: () {
+          model.onNavigateToSubscriptionScreen();
+        },
+      ),
+      duration: Duration(seconds: 10),
+    ));
   }
 
   Widget _noDataPlaceholder() {

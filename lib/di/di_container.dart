@@ -1,17 +1,18 @@
 import 'package:dio/dio.dart';
 
 import 'package:flutter/material.dart';
-import 'package:mc_dashboard/api/auth.dart';
-import 'package:mc_dashboard/api/detailed_orders.dart';
-import 'package:mc_dashboard/api/kw_lemmas.dart';
-import 'package:mc_dashboard/api/lemmatize.dart';
-import 'package:mc_dashboard/api/normqueries.dart';
-import 'package:mc_dashboard/api/orders.dart';
-import 'package:mc_dashboard/api/stocks.dart';
-import 'package:mc_dashboard/api/subjects_summary.dart';
-import 'package:mc_dashboard/api/user_emails_api.dart';
-import 'package:mc_dashboard/api/user_settings_api.dart';
-import 'package:mc_dashboard/api/warehouses.dart';
+import 'package:mc_dashboard/infrastructure/api/auth.dart';
+import 'package:mc_dashboard/infrastructure/api/detailed_orders.dart';
+import 'package:mc_dashboard/infrastructure/api/kw_lemmas.dart';
+import 'package:mc_dashboard/infrastructure/api/lemmatize.dart';
+import 'package:mc_dashboard/infrastructure/api/normqueries.dart';
+import 'package:mc_dashboard/infrastructure/api/orders.dart';
+import 'package:mc_dashboard/infrastructure/api/stocks.dart';
+import 'package:mc_dashboard/infrastructure/api/subjects_summary.dart';
+import 'package:mc_dashboard/infrastructure/api/user_emails_api.dart';
+import 'package:mc_dashboard/infrastructure/api/user_search_queries_api.dart';
+import 'package:mc_dashboard/infrastructure/api/user_settings_api.dart';
+import 'package:mc_dashboard/infrastructure/api/warehouses.dart';
 import 'package:mc_dashboard/core/dio/setup.dart';
 import 'package:mc_dashboard/domain/services/auth_service.dart';
 import 'package:mc_dashboard/domain/services/detailed_orders_service.dart';
@@ -53,11 +54,11 @@ import 'package:mc_dashboard/presentation/subject_products_screen/subject_produc
 import 'package:mc_dashboard/presentation/subscription_screen/subscription_screen.dart';
 import 'package:mc_dashboard/presentation/subscription_screen/subscription_view_model.dart';
 
-import 'package:mc_dashboard/repositories/local_storage.dart';
-import 'package:mc_dashboard/repositories/mailing_settings_repo.dart';
-import 'package:mc_dashboard/repositories/saved_key_phrases_repo.dart';
-import 'package:mc_dashboard/repositories/saved_products_repo.dart';
-import 'package:mc_dashboard/repositories/user_email_repo.dart';
+import 'package:mc_dashboard/infrastructure/repositories/local_storage.dart';
+import 'package:mc_dashboard/infrastructure/repositories/mailing_settings_repo.dart';
+import 'package:mc_dashboard/infrastructure/repositories/saved_key_phrases_repo.dart';
+import 'package:mc_dashboard/infrastructure/repositories/saved_products_repo.dart';
+import 'package:mc_dashboard/infrastructure/repositories/user_email_repo.dart';
 import 'package:mc_dashboard/routes/main_navigation.dart';
 import 'package:provider/provider.dart';
 
@@ -98,6 +99,8 @@ class _DIContainer {
   // Api clients ///////////////////////////////////////////////////////////////
   AuthApiClient _makeAuthApiClient() => const AuthApiClient();
   UserEmailsApiClient _makeUserEmailsApiClient() => UserEmailsApiClient();
+  UserSearchQueriesApiClient _makeUserSearchQueriesApiClient() =>
+      UserSearchQueriesApiClient();
   // Services //////////////////////////////////////////////////////////////////
   SubjectsSummaryService _makeSubjectsSummaryService() =>
       SubjectsSummaryService(
@@ -141,6 +144,7 @@ class _DIContainer {
   SavedKeyPhrasesService _makeSavedKeyPhrasesService() =>
       SavedKeyPhrasesService(
         savedKeyPhrasesRepo: _makeSavedKeyPhrasesRepo(),
+        savedKeyPhrasesApiClient: _makeUserSearchQueriesApiClient(),
       );
 
   UserSubSettingsService _makeMailingSettingsService() =>
@@ -270,6 +274,7 @@ class _DIContainer {
       SavedKeyPhrasesViewModel(
         context: context,
         keyPhrasesService: _makeSavedKeyPhrasesService(),
+        authService: _makeAuthService(),
       );
 
   SubscriptionViewModel _makeSubscriptionViewModel(BuildContext context) =>

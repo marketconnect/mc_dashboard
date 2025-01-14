@@ -60,7 +60,7 @@ class SubscriptionScreen extends StatelessWidget {
                             _buildBenefitItem(
                               context,
                               'Анализ позиций',
-                              'Актуальные данные о месте ваших товаров в поисковой выдаче.',
+                              'Актуальные данные о месте товаров в поисковой выдаче (глубина 3 страницы).',
                             ),
                             _buildBenefitItem(
                               context,
@@ -88,18 +88,9 @@ class SubscriptionScreen extends StatelessWidget {
                               'Добавление новых товаров конкурентами или исчезновение существующих.',
                             ),
                             const SizedBox(height: 24),
-                            Text(
-                              'Полный доступ ко всем возможностям сервиса',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                            ),
-                            const SizedBox(height: 24),
                             const SizedBox(height: 24),
                             Text(
-                              '1000 рублей в месяц — всего 35 рублей в день за полную картину данных по вашим категориям и товарам.',
+                              'Всего 1000 рублей в месяц за полную картину данных по вашим категориям и товарам.',
                               textAlign: TextAlign.center,
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontSize: 18,

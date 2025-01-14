@@ -275,170 +275,136 @@ class _NormqueryTableWidgetState extends State<_NormqueryTableWidget> {
     if (normqueryProducts.isEmpty) {
       return _noDataPlaceholder();
     }
-    return Stack(
-      children: [
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final maxWidth = constraints.maxWidth;
-            final isMobile = maxWidth < 600;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxWidth = constraints.maxWidth;
+        final isMobile = maxWidth < 600;
 
-            final proportions =
-                isMobile ? mobColumnProportions : columnProportions;
-            final columns = proportions
-                .map(
-                  (widthFraction) => TableColumn(
-                    width: widthFraction * MediaQuery.of(context).size.width,
-                  ),
-                )
-                .toList();
+        final proportions = isMobile ? mobColumnProportions : columnProportions;
+        final columns = proportions
+            .map(
+              (widthFraction) => TableColumn(
+                width: widthFraction * MediaQuery.of(context).size.width,
+              ),
+            )
+            .toList();
 
-            return Column(
-              children: [
-                // Размещаем таблицу в Expanded, чтобы она заняла всё свободное место
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: const [
-                        BoxShadow(color: Colors.black12, blurRadius: 4),
-                      ],
-                    ),
-                    child: TableView.builder(
-                      controller: tableViewController,
-                      columns: columns,
-                      rowHeight: 40,
-                      rowCount: normqueryProducts.length,
-                      headerBuilder: (context, contentBuilder) {
-                        return contentBuilder(context, (context, columnIndex) {
-                          if (columnIndex == 0) {
-                            return Checkbox(
-                              activeColor: Colors.transparent,
-                              checkColor: theme.colorScheme.secondary,
-                              value: selectAll,
-                              onChanged: (value) {
-                                selectAllMethod();
-                              },
-                            );
-                          }
-                          return GestureDetector(
-                            onTap: () => _sortData(columnIndex),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(columnHeaders[columnIndex]),
-                                if (_sortColumnIndex == columnIndex)
-                                  Icon(
-                                    _sortAscending
-                                        ? Icons.arrow_upward
-                                        : Icons.arrow_downward,
-                                    size: 16,
-                                  ),
-                              ],
-                            ),
-                          );
-                        });
-                      },
-                      rowBuilder: (context, rowIndex, contentBuilder) {
-                        final product = normqueryProducts[rowIndex];
-                        final rowValues = [
-                          product.kw,
-                          product.normquery,
-                          product.freq.toString(),
-                          product.total.toString(),
-                        ];
-
-                        return contentBuilder(context, (context, columnIndex) {
-                          if (columnIndex == 0) {
-                            return Checkbox(
-                                activeColor: Colors.transparent,
-                                checkColor: theme.colorScheme.secondary,
-                                value: selectedIndices.contains(rowIndex),
-                                onChanged: (isSelected) {
-                                  selectRow(rowIndex);
-                                  if (isSelected == true) {
-                                    if (selectedIndices.length ==
-                                        normqueryProducts.length) {
-                                      setSelectAll(true);
-                                    } else {
-                                      setSelectAll(false);
-                                    }
-                                  }
-                                });
-                          }
-
-                          final value = rowValues[columnIndex - 1];
-                          return GestureDetector(
-                            onTap: () {
-                              // Клик по столбцу "Ключевой запрос"
-                              if (columnIndex == 1) {
-                                final wildberriesUrl =
-                                    "https://www.wildberries.ru/catalog/0/search.aspx?search=$value";
-                                launchUrl(Uri.parse(wildberriesUrl));
-                              }
-                            },
-                            child: Container(
-                              alignment: columnIndex == 1
-                                  ? Alignment.centerLeft
-                                  : Alignment.center,
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 8.0),
-                              child: MouseRegion(
-                                cursor: columnIndex == 1
-                                    ? SystemMouseCursors.click
-                                    : MouseCursor.defer,
-                                child: Text(
-                                  value,
-                                  textAlign: TextAlign.center,
-                                  style: columnIndex == 1
-                                      ? const TextStyle(
-                                          decoration: TextDecoration.underline,
-                                          decorationColor: Color(0xFF5166e3),
-                                          color: Color(0xFF5166e3),
-                                        )
-                                      : theme.textTheme.bodyMedium,
-                                ),
-                              ),
-                            ),
-                          );
-                        });
-                      },
-                    ),
-                  ),
+        return Column(
+          children: [
+            // Размещаем таблицу в Expanded, чтобы она заняла всё свободное место
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black12, blurRadius: 4),
+                  ],
                 ),
-              ],
-            );
-          },
-        ),
-        if (model.isFree)
-          Positioned.fill(
-            child: MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: GestureDetector(
-                onTap: () {
-                  model.onPaymentComplete();
-                },
-                child: ClipRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                    child: Container(
-                      color: Colors.black.withOpacity(0.2),
-                      alignment: Alignment.center,
-                      child: Text(
-                        "Доступно только для подписчиков",
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                child: TableView.builder(
+                  controller: tableViewController,
+                  columns: columns,
+                  rowHeight: 40,
+                  rowCount: normqueryProducts.length,
+                  headerBuilder: (context, contentBuilder) {
+                    return contentBuilder(context, (context, columnIndex) {
+                      if (columnIndex == 0) {
+                        return Checkbox(
+                          activeColor: Colors.transparent,
+                          checkColor: theme.colorScheme.secondary,
+                          value: selectAll,
+                          onChanged: (value) {
+                            selectAllMethod();
+                          },
+                        );
+                      }
+                      return GestureDetector(
+                        onTap: () => _sortData(columnIndex),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(columnHeaders[columnIndex]),
+                            if (_sortColumnIndex == columnIndex)
+                              Icon(
+                                _sortAscending
+                                    ? Icons.arrow_upward
+                                    : Icons.arrow_downward,
+                                size: 16,
+                              ),
+                          ],
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
+                      );
+                    });
+                  },
+                  rowBuilder: (context, rowIndex, contentBuilder) {
+                    final product = normqueryProducts[rowIndex];
+                    final rowValues = [
+                      product.kw,
+                      product.normquery,
+                      product.freq.toString(),
+                      product.total.toString(),
+                    ];
+
+                    return contentBuilder(context, (context, columnIndex) {
+                      if (columnIndex == 0) {
+                        return Checkbox(
+                            activeColor: Colors.transparent,
+                            checkColor: theme.colorScheme.secondary,
+                            value: selectedIndices.contains(rowIndex),
+                            onChanged: (isSelected) {
+                              selectRow(rowIndex);
+                              if (isSelected == true) {
+                                if (selectedIndices.length ==
+                                    normqueryProducts.length) {
+                                  setSelectAll(true);
+                                } else {
+                                  setSelectAll(false);
+                                }
+                              }
+                            });
+                      }
+
+                      final value = rowValues[columnIndex - 1];
+                      return GestureDetector(
+                        onTap: () {
+                          // Клик по столбцу "Ключевой запрос"
+                          if (columnIndex == 1) {
+                            final wildberriesUrl =
+                                "https://www.wildberries.ru/catalog/0/search.aspx?search=$value";
+                            launchUrl(Uri.parse(wildberriesUrl));
+                          }
+                        },
+                        child: Container(
+                          alignment: columnIndex == 1
+                              ? Alignment.centerLeft
+                              : Alignment.center,
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: MouseRegion(
+                            cursor: columnIndex == 1
+                                ? SystemMouseCursors.click
+                                : MouseCursor.defer,
+                            child: Text(
+                              value,
+                              textAlign: TextAlign.center,
+                              style: columnIndex == 1
+                                  ? const TextStyle(
+                                      decoration: TextDecoration.underline,
+                                      decorationColor: Color(0xFF5166e3),
+                                      color: Color(0xFF5166e3),
+                                    )
+                                  : theme.textTheme.bodyMedium,
+                            ),
+                          ),
+                        ),
+                      );
+                    });
+                  },
                 ),
               ),
             ),
-          ),
-      ],
+          ],
+        );
+      },
     );
   }
 

@@ -68,16 +68,11 @@ class SeoRequestsExtendViewModel extends ViewModelBase {
     _tokenInfo =
         tokenInfoOrEither.fold((l) => throw UnimplementedError(), (r) => r);
 
-    if (!isFree) {
-      // The user is not free
-      final normqueriesEither =
-          await normqueryService.getUniqueNormqueries(ids: productIds);
-      if (normqueriesEither.isRight()) {
-        _setNormqueries(normqueriesEither.fold((l) => [], (r) => r));
-      }
-    } else {
-      _paymentUrl = "authService.getPaymentUrl()";
-      _setNormqueries(generateRandomNormqueries(25));
+    // The user is not free
+    final normqueriesEither =
+        await normqueryService.getUniqueNormqueries(ids: productIds);
+    if (normqueriesEither.isRight()) {
+      _setNormqueries(normqueriesEither.fold((l) => [], (r) => r));
     }
   }
 

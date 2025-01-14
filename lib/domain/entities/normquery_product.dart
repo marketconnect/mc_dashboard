@@ -1,5 +1,3 @@
-import 'dart:math';
-
 class NormqueryProduct {
   final int normqueryId;
   final String normquery;
@@ -44,38 +42,38 @@ class NormqueryProduct {
   }
 }
 
-List<NormqueryProduct> generateRandomNormqueryProducts(int count) {
-  final random = Random();
-  final List<NormqueryProduct> products = [];
+// List<NormqueryProduct> generateRandomNormqueryProducts(int count) {
+//   final random = Random();
+//   final List<NormqueryProduct> products = [];
 
-  for (int i = 0; i < count; i++) {
-    final normqueryId = random.nextInt(10000);
-    final productId = random.nextInt(1000);
-    final pageNumber = random.nextInt(100) + 1;
-    final pagePos = random.nextInt(10) + 1;
-    final freq = random.nextInt(1000) + 1;
-    final total = random.nextInt(10000) + 1;
+//   for (int i = 0; i < count; i++) {
+//     final normqueryId = random.nextInt(10000);
+//     final productId = random.nextInt(1000);
+//     final pageNumber = random.nextInt(100) + 1;
+//     final pagePos = random.nextInt(10) + 1;
+//     final freq = random.nextInt(1000) + 1;
+//     final total = random.nextInt(10000) + 1;
 
-    final someRandomKeywords = [
-      "женская обувь",
-      "летние платья",
-      "мужские кроссовки",
-      "аксессуары для авто",
-      "косметика и парфюмерия",
-      "спортивный инвентарь",
-      "детские игрушки",
-    ];
-    products.add(NormqueryProduct(
-      normqueryId: normqueryId,
-      normquery:
-          '${someRandomKeywords[random.nextInt(someRandomKeywords.length)]} $normqueryId',
-      total: total,
-      freq: freq,
-      pagePos: pagePos,
-      pageNumber: pageNumber,
-      productId: productId,
-    ));
-  }
+//     final someRandomKeywords = [
+//       "женская обувь",
+//       "летние платья",
+//       "мужские кроссовки",
+//       "аксессуары для авто",
+//       "косметика и парфюмерия",
+//       "спортивный инвентарь",
+//       "детские игрушки",
+//     ];
+//     products.add(NormqueryProduct(
+//       normqueryId: normqueryId,
+//       normquery:
+//           '${someRandomKeywords[random.nextInt(someRandomKeywords.length)]} $normqueryId',
+//       total: total,
+//       freq: freq,
+//       pagePos: pagePos,
+//       pageNumber: pageNumber,
+//       productId: productId,
+//     ));
+//   }
 
-  return products;
-}
+//   return products;
+// }

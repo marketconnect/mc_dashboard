@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:fpdart/fpdart.dart';
-import 'package:mc_dashboard/api/kw_lemmas.dart';
+import 'package:mc_dashboard/infrastructure/api/kw_lemmas.dart';
 
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/domain/entities/kw_lemmas.dart';

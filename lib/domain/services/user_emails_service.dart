@@ -1,5 +1,5 @@
 import 'package:fpdart/fpdart.dart';
-import 'package:mc_dashboard/api/user_emails_api.dart';
+import 'package:mc_dashboard/infrastructure/api/user_emails_api.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/domain/entities/user_email.dart';
 

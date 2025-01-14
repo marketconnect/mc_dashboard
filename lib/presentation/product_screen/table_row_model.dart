@@ -1,7 +1,10 @@
 import 'dart:math';
 
+import 'package:mc_dashboard/.env.dart';
 import 'package:mc_dashboard/domain/entities/kw_lemmas.dart';
 import 'package:mc_dashboard/domain/entities/normquery_product.dart';
+
+enum GreatestSimilarityEnum { title, description, characteristics }
 
 class SEOTableRowModel {
   final String normquery;
@@ -10,6 +13,12 @@ class SEOTableRowModel {
   final double titleSimilarity;
   final double descriptionSimilarity;
   final double characteristicsSimilarity;
+  GreatestSimilarityEnum greatestSimilarity =
+      GreatestSimilarityEnum.description;
+
+  void setGreatestSimilarity(GreatestSimilarityEnum greatestSimilarity) {
+    this.greatestSimilarity = greatestSimilarity;
+  }
 
   SEOTableRowModel({
     required this.normquery,
@@ -55,7 +64,6 @@ Future<Map<String, List<SEOTableRowModel>>> generateSEOTableSections(
     "title": [],
     "characteristics": [],
     "description": [],
-    "nowhere": [],
   };
 
   for (var normqueryProduct in normqueryProducts) {
@@ -76,17 +84,27 @@ Future<Map<String, List<SEOTableRowModel>>> generateSEOTableSections(
       lemmatizedCharacteristics,
       calculateCosineSimilarity,
     );
-    if (lemmatizedCharacteristics.contains("палаццо") &&
-        lemma.contains("палаццо")) {}
+
+    final titleSimilarity = row.titleSimilarity;
+    final descriptionSimilarity = row.descriptionSimilarity;
+    final characteristicsSimilarity = row.characteristicsSimilarity;
+
+    if (titleSimilarity >= (descriptionSimilarity * 0.7) &&
+        titleSimilarity >= (characteristicsSimilarity * 0.8)) {
+      row.setGreatestSimilarity(GreatestSimilarityEnum.title);
+    } else if (characteristicsSimilarity > titleSimilarity &&
+        characteristicsSimilarity >= (descriptionSimilarity * 0.8)) {
+      row.setGreatestSimilarity(GreatestSimilarityEnum.characteristics);
+    }
 
     // Условие выбора секции
-    if (row.titleSimilarity > 0.10) {
+    if (titleSimilarity > NormquerySettings.minSimilarity) {
       sections["title"]!.add(row);
     }
-    if (row.characteristicsSimilarity > 0.10) {
+    if (characteristicsSimilarity > NormquerySettings.minSimilarity) {
       sections["characteristics"]!.add(row);
     }
-    if (row.descriptionSimilarity > 0.10) {
+    if (descriptionSimilarity > NormquerySettings.minSimilarity) {
       sections["description"]!.add(row);
     }
   }
@@ -94,51 +112,51 @@ Future<Map<String, List<SEOTableRowModel>>> generateSEOTableSections(
   return sections;
 }
 
-Map<String, List<SEOTableRowModel>> generateRandomSEOTableRows(
-  int n,
-) {
-  final random = Random();
+// Map<String, List<SEOTableRowModel>> generateRandomSEOTableRows(
+//   int n,
+// ) {
+//   final random = Random();
 
-  // Примерные данные для генерации
-  final exampleNormqueries = [
-    "женская обувь",
-    "летние платья",
-    "мужские кроссовки",
-    "аксессуары для авто",
-    "косметика и парфюмерия",
-    "спортивный инвентарь",
-    "детские игрушки",
-  ];
+//   // Примерные данные для генерации
+//   final exampleNormqueries = [
+//     "женская обувь",
+//     "летние платья",
+//     "мужские кроссовки",
+//     "аксессуары для авто",
+//     "косметика и парфюмерия",
+//     "спортивный инвентарь",
+//     "детские игрушки",
+//   ];
 
-  final lemmatizedTitle = "пример лемматизированного заголовка";
-  final lemmatizedDescription = "пример лемматизированного описания";
-  final lemmatizedCharacteristics = "пример лемматизированных характеристик";
+//   final lemmatizedTitle = "пример лемматизированного заголовка";
+//   final lemmatizedDescription = "пример лемматизированного описания";
+//   final lemmatizedCharacteristics = "пример лемматизированных характеристик";
 
-  final generated = List.generate(n, (_) {
-    final normquery =
-        exampleNormqueries[random.nextInt(exampleNormqueries.length)];
-    final freq = random.nextInt(1000) + 1; // Случайная частота от 1 до 1000
+//   final generated = List.generate(n, (_) {
+//     final normquery =
+//         exampleNormqueries[random.nextInt(exampleNormqueries.length)];
+//     final freq = random.nextInt(1000) + 1; // Случайная частота от 1 до 1000
 
-    final lemma = "${normquery.split(' ').join(' ')} лемма"; // Пример леммы
+//     final lemma = "${normquery.split(' ').join(' ')} лемма"; // Пример леммы
 
-    return SEOTableRowModel.fromNormqueryProduct(
-      normquery,
-      lemma,
-      freq,
-      random.nextInt(100) + 1,
-      lemmatizedTitle,
-      lemmatizedDescription,
-      lemmatizedCharacteristics,
-      mockCosineSimilarity,
-    );
-  });
-  final Map<String, List<SEOTableRowModel>> sections = {
-    "title": generated,
-    "characteristics": generated,
-    "description": generated
-  };
-  return sections;
-}
+//     return SEOTableRowModel.fromNormqueryProduct(
+//       normquery,
+//       lemma,
+//       freq,
+//       random.nextInt(100) + 1,
+//       lemmatizedTitle,
+//       lemmatizedDescription,
+//       lemmatizedCharacteristics,
+//       mockCosineSimilarity,
+//     );
+//   });
+//   final Map<String, List<SEOTableRowModel>> sections = {
+//     "title": generated,
+//     "characteristics": generated,
+//     "description": generated
+//   };
+//   return sections;
+// }
 
 // Пример реализации функции calculateCosineSimilarity
 // Используется для генерации случайных значений

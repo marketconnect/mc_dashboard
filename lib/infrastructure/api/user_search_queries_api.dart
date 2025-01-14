@@ -1,12 +1,16 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:mc_dashboard/.env.dart';
+import 'package:mc_dashboard/domain/entities/key_phrase.dart';
+import 'package:mc_dashboard/domain/services/saved_key_phrases_service.dart';
 
-class UserSearchQueriesApiClient {
-  final String baseUrl;
+class UserSearchQueriesApiClient implements SavedKeyPhrasesApiClient {
+  final String baseUrl = ApiSettings.subsUrl;
 
-  UserSearchQueriesApiClient({required this.baseUrl});
+  UserSearchQueriesApiClient();
 
-  Future<UserSearchQueriesResponse> findUserSearchQueries({
+  @override
+  Future<List<KeyPhrase>> findUserSearchQueries({
     required String token,
   }) async {
     final url = Uri.parse('$baseUrl/user_search_queries');
@@ -20,18 +24,38 @@ class UserSearchQueriesApiClient {
     );
 
     if (response.statusCode == 200) {
-      return UserSearchQueriesResponse.fromJson(
+      final data = UserSearchQueriesResponse.fromJson(
           json.decode(response.body) as Map<String, dynamic>);
+      List<KeyPhrase> keyPhrases = [];
+
+      for (var query in data.searchQueries) {
+        keyPhrases.add(KeyPhrase(
+          phraseText: query.query,
+          marketPlace: query.marketplaceType,
+        ));
+      }
+
+      return keyPhrases;
     } else {
       throw Exception('Failed to fetch search queries: ${response.body}');
     }
   }
 
+  @override
   Future<void> saveUserSearchQueries({
     required String token,
-    required SaveQueriesRequest request,
+    required List<KeyPhrase> phrases,
   }) async {
     final url = Uri.parse('$baseUrl/user_search_queries');
+
+    final request = SaveQueriesRequest(
+      searchQueries: phrases
+          .map((phrase) => SearchQuery(
+                query: phrase.phraseText,
+                marketplaceType: phrase.marketPlace,
+              ))
+          .toList(),
+    );
 
     final response = await http.post(
       url,
@@ -49,11 +73,21 @@ class UserSearchQueriesApiClient {
     }
   }
 
+  @override
   Future<void> deleteUserSearchQueries({
     required String token,
-    required DeleteQueriesRequest request,
+    required List<KeyPhrase> phrases,
   }) async {
     final url = Uri.parse('$baseUrl/user_search_queries');
+
+    final request = DeleteQueriesRequest(
+      searchQueries: phrases
+          .map((phrase) => SearchQuery(
+                query: phrase.phraseText,
+                marketplaceType: phrase.marketPlace,
+              ))
+          .toList(),
+    );
 
     final response = await http.delete(
       url,

@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mc_dashboard/core/config.dart';
 
-import 'package:mc_dashboard/repositories/local_storage.dart';
+import 'package:mc_dashboard/infrastructure/repositories/local_storage.dart';
 
 import 'package:mc_dashboard/routes/main_navigation.dart';
 import 'package:mc_dashboard/routes/main_navigation_route_names.dart';

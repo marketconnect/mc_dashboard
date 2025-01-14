@@ -1,5 +1,6 @@
 import 'package:fpdart/fpdart.dart';
-import 'package:mc_dashboard/api/user_settings_api.dart';
+import 'package:mc_dashboard/domain/entities/mailing_settings.dart';
+
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 
 import 'package:mc_dashboard/presentation/mailing_screen/mailing_view_model.dart';
@@ -11,16 +12,16 @@ abstract class UserSubSettingsRepoRepository {
 }
 
 abstract class UserSubSettingsApiClient {
-  Future<UserSettingsResponse> findUserSettings({
+  Future<List<Setting>> findUserSettings({
     required String token,
   });
   Future<void> saveUserSettings({
     required String token,
-    required SaveSettingsRequest request,
+    required List<Setting> settings,
   });
   Future<void> deleteUserSettings({
     required String token,
-    required DeleteSettingsRequest request,
+    required List<Setting> settings,
   });
 }
 
@@ -101,7 +102,7 @@ class UserSubSettingsService implements MailingSettingsMailingSettingsService {
       // Сохранение на сервере
       await userSettingsApiClient.saveUserSettings(
         token: token,
-        request: SaveSettingsRequest(settings: settingsJson),
+        settings: settingsJson,
       );
 
       // Сохранение локально
@@ -129,7 +130,7 @@ class UserSubSettingsService implements MailingSettingsMailingSettingsService {
       // Удаление на сервере
       await userSettingsApiClient.deleteUserSettings(
         token: token,
-        request: DeleteSettingsRequest(settings: settingsJson),
+        settings: settingsJson,
       );
 
       // Удаление локально
@@ -156,8 +157,7 @@ class UserSubSettingsService implements MailingSettingsMailingSettingsService {
       final serverSettingsResponse =
           await userSettingsApiClient.findUserSettings(token: token);
       final serverSettings = {
-        for (var setting in serverSettingsResponse.settings)
-          setting.key: setting.value,
+        for (var setting in serverSettingsResponse) setting.key: setting.value,
       };
 
       // Получение локальных настроек
@@ -198,19 +198,4 @@ class UserSubSettingsService implements MailingSettingsMailingSettingsService {
       ));
     }
   }
-
-  // Future<Either<AppErrorBase, void>> saveSettings({
-  //   required String token,
-  //   required Map<String, dynamic> settings,
-  // }) async {
-  //   return _saveSettings(token: token, settings: settings);
-  // }
-
-  // Future<Either<AppErrorBase, void>> deleteSetting(String key) async {
-  //   return left(AppErrorBase(
-  //     'deleteSetting requires a token. Use _deleteSettings instead.',
-  //     name: 'deleteSetting',
-  //     sendTo: false,
-  //   ));
-  // }
 }

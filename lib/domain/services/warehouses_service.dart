@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:fpdart/fpdart.dart';
 
-import 'package:mc_dashboard/api/warehouses.dart';
+import 'package:mc_dashboard/infrastructure/api/warehouses.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/domain/entities/warehouse.dart';
 import 'package:mc_dashboard/presentation/product_screen/product_view_model.dart';

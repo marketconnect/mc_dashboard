@@ -2,6 +2,7 @@ import 'dart:convert';
 // ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
 import 'package:mc_dashboard/.env.dart';
+import 'package:mc_dashboard/domain/entities/mailing_settings.dart';
 import 'package:mc_dashboard/domain/services/user_sub_settings_service.dart';
 
 class UserSettingsApiClient implements UserSubSettingsApiClient {
@@ -10,7 +11,7 @@ class UserSettingsApiClient implements UserSubSettingsApiClient {
   UserSettingsApiClient();
 
   @override
-  Future<UserSettingsResponse> findUserSettings({
+  Future<List<Setting>> findUserSettings({
     required String token,
   }) async {
     final response = await http.get(
@@ -22,7 +23,9 @@ class UserSettingsApiClient implements UserSubSettingsApiClient {
     );
 
     if (response.statusCode == 200) {
-      return UserSettingsResponse.fromJson(json.decode(response.body));
+      final resp = UserSettingsResponse.fromJson(json.decode(response.body));
+
+      return resp.settings;
     } else {
       throw Exception('Failed to fetch user settings: ${response.body}');
     }
@@ -31,8 +34,9 @@ class UserSettingsApiClient implements UserSubSettingsApiClient {
   @override
   Future<void> saveUserSettings({
     required String token,
-    required SaveSettingsRequest request,
+    required List<Setting> settings,
   }) async {
+    final request = SaveSettingsRequest(settings: settings);
     final response = await http.post(
       Uri.parse('$baseUrl/user_settings'),
       headers: {
@@ -52,8 +56,9 @@ class UserSettingsApiClient implements UserSubSettingsApiClient {
   @override
   Future<void> deleteUserSettings({
     required String token,
-    required DeleteSettingsRequest request,
+    required List<Setting> settings,
   }) async {
+    final request = DeleteSettingsRequest(settings: settings);
     final response = await http.delete(
       Uri.parse('$baseUrl/user_settings'),
       headers: {
@@ -112,24 +117,4 @@ class UserSettingsResponse {
           .toList(),
     );
   }
-}
-
-class Setting {
-  final String key;
-  final String value;
-
-  Setting({
-    required this.key,
-    required this.value,
-  });
-
-  factory Setting.fromJson(Map<String, dynamic> json) => Setting(
-        key: json['key'] as String,
-        value: json['value'] as String,
-      );
-
-  Map<String, dynamic> toJson() => {
-        'key': key,
-        'value': value,
-      };
 }
