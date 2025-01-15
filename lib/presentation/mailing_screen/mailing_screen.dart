@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mc_dashboard/presentation/mailing_screen/mailing_view_model.dart';
+import 'package:mc_dashboard/presentation/widgets/check_box.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:material_table_view/material_table_view.dart';
@@ -10,7 +11,7 @@ import 'package:mc_dashboard/presentation/mailing_screen/saved_products_view_mod
 import 'package:mc_dashboard/presentation/mailing_screen/saved_key_phrases_view_model.dart';
 
 class MailingScreen extends StatelessWidget {
-  const MailingScreen({Key? key}) : super(key: key);
+  const MailingScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -132,7 +133,7 @@ class _MailingSettingsTab extends StatelessWidget {
                 ),
                 _buildCheckboxOption(
                   context,
-                  label: "Уведомления о ценах",
+                  label: "Цены",
                   value: model.productPrice,
                   onChanged: (value) =>
                       model.togglePriceChanges(value ?? false),
@@ -202,18 +203,9 @@ class _MailingSettingsTab extends StatelessWidget {
     final theme = Theme.of(context);
     return Row(
       children: [
-        Checkbox(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(6),
-          ),
-          checkColor: theme.colorScheme.onSecondary,
-          activeColor: theme.colorScheme.secondary,
-          side: BorderSide(
-            color: theme.colorScheme.onSurface
-                .withOpacity(0.5), // Цвет границы, когда неактивен
-            width: 2, // Толщина границы
-          ),
+        McCheckBox(
           value: value,
+          theme: theme,
           onChanged: (newValue) {
             final model = context.read<MailingSettingsViewModel>();
             if (!model.isSubscribed) {
@@ -274,7 +266,7 @@ class _MailingSettingsTab extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 4),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: theme.colorScheme.errorContainer.withOpacity(0.1),
+        color: theme.colorScheme.errorContainer.withAlpha((0.1 * 255).toInt()),
         border: Border.all(color: theme.colorScheme.errorContainer),
         borderRadius: BorderRadius.circular(8),
       ),
@@ -320,7 +312,7 @@ class DisabledNoticeWidget extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: theme.colorScheme.errorContainer.withOpacity(0.1),
+        color: theme.colorScheme.errorContainer.withAlpha((0.1 * 255).toInt()),
         border: Border.all(color: theme.colorScheme.errorContainer),
         borderRadius: BorderRadius.circular(8),
       ),
@@ -343,7 +335,7 @@ class DisabledNoticeWidget extends StatelessWidget {
 }
 
 class _EmailsEditor extends StatefulWidget {
-  const _EmailsEditor({Key? key}) : super(key: key);
+  const _EmailsEditor();
 
   @override
   State<_EmailsEditor> createState() => _EmailsEditorState();
@@ -407,7 +399,7 @@ class _EmailsEditorState extends State<_EmailsEditor> {
               icon: CircleAvatar(
                 backgroundColor: theme.colorScheme.secondary,
                 child: Icon(
-                  Icons.delete,
+                  Icons.delete_outline,
                   size: MediaQuery.of(context).size.width * 0.01,
                   color: theme.colorScheme.onSecondary,
                 ),
@@ -603,7 +595,7 @@ class _SavedTableWidgetState extends State<_SavedTableWidget> {
                         rowBuilder: (context, rowIndex, contentBuilder) {
                           final item = savedList[rowIndex];
                           return KeyedSubtree(
-                            key: ValueKey<int>(item.productId),
+                            key: ValueKey<String>(item.productId),
                             child: _SavedTableRow(
                               model: model,
                               item: item,
@@ -707,11 +699,10 @@ class _SavedTableRow extends StatelessWidget {
   ) contentBuilder;
 
   const _SavedTableRow({
-    Key? key,
     required this.model,
     required this.item,
     required this.contentBuilder,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -737,8 +728,8 @@ class _SavedTableRow extends StatelessWidget {
 }
 
 class _CheckboxCell extends StatelessWidget {
-  final int productId;
-  const _CheckboxCell({Key? key, required this.productId}) : super(key: key);
+  final String productId;
+  const _CheckboxCell({required this.productId});
 
   @override
   Widget build(BuildContext context) {
@@ -748,14 +739,21 @@ class _CheckboxCell extends StatelessWidget {
       builder: (context, isSelected, child) {
         return Container(
           alignment: Alignment.center,
-          child: Checkbox(
-            checkColor: theme.colorScheme.secondary,
-            activeColor: Colors.transparent,
+          child: McCheckBox(
             value: isSelected,
+            theme: theme,
             onChanged: (bool? value) {
               context.read<SavedProductsViewModel>().selectRow(productId);
             },
           ),
+          // Checkbox(
+          //   checkColor: theme.colorScheme.secondary,
+          //   activeColor: Colors.transparent,
+          //   value: isSelected,
+          //   onChanged: (bool? value) {
+          //     context.read<SavedProductsViewModel>().selectRow(productId);
+          //   },
+          // ),
         );
       },
     );
@@ -764,7 +762,7 @@ class _CheckboxCell extends StatelessWidget {
 
 class _TextCell extends StatelessWidget {
   final String text;
-  const _TextCell({Key? key, required this.text}) : super(key: key);
+  const _TextCell({required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -777,7 +775,7 @@ class _TextCell extends StatelessWidget {
 
 class _ProductCell extends StatelessWidget {
   final SavedProduct item;
-  const _ProductCell({Key? key, required this.item}) : super(key: key);
+  const _ProductCell({required this.item});
 
   @override
   Widget build(BuildContext context) {
@@ -966,10 +964,9 @@ class _KeyPhrasesTableWidgetState extends State<_KeyPhrasesTableWidget> {
                   headerBuilder: (context, contentBuilder) {
                     return contentBuilder(context, (ctx, colIndex) {
                       if (colIndex == 0) {
-                        return Checkbox(
+                        return McCheckBox(
                           value: selectedIndices.length == phrases.length,
-                          checkColor: theme.colorScheme.secondary,
-                          activeColor: Colors.transparent,
+                          theme: theme,
                           onChanged: (bool? value) {
                             setState(() {
                               if (value == true) {
@@ -1071,7 +1068,18 @@ class _KeyPhrasesTableWidgetState extends State<_KeyPhrasesTableWidget> {
                           ));
                           return;
                         } else {
+                          if (phrases.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content:
+                                      Text('Нет доступных фраз для удаления.')),
+                            );
+                            return;
+                          }
+
                           final selectedPhrases = selectedIndices
+                              .where((index) =>
+                                  index >= 0 && index < phrases.length)
                               .map((index) => phrases[index].phraseText)
                               .toList();
 
@@ -1096,25 +1104,22 @@ class _KeyPhrasesCheckboxCell extends StatelessWidget {
   final ValueChanged<bool> onToggle;
 
   const _KeyPhrasesCheckboxCell({
-    Key? key,
     required this.index,
     required this.selectedIndices,
     required this.onToggle,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      alignment: Alignment.center,
-      child: Checkbox(
-        checkColor: theme.colorScheme.secondary,
-        activeColor: Colors.transparent,
-        value: selectedIndices.contains(index),
-        onChanged: (bool? value) {
-          onToggle(value ?? false);
-        },
-      ),
-    );
+        alignment: Alignment.center,
+        child: McCheckBox(
+          value: selectedIndices.contains(index),
+          theme: theme,
+          onChanged: (bool? value) {
+            onToggle(value ?? false);
+          },
+        ));
   }
 }

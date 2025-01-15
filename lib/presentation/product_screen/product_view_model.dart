@@ -474,11 +474,26 @@ class ProductViewModel extends ViewModelBase {
       return;
     }
     //
-    await savedKeyPhrasesService.syncKeyPhrases(
+    final result = await savedKeyPhrasesService.syncKeyPhrases(
         token: _tokenInfo!.token,
         newPhrases: keyPhrasesStr
             .map((e) => KeyPhrase(phraseText: e, marketPlace: 'wb'))
             .toList());
+
+    if (result.isLeft()) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Произошла ошибка'),
+        ));
+      }
+      return;
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Ключевые фразы сохранены'),
+        ));
+      }
+    }
 
     // Update mailing keyphrases screen
     onSaveKeyPhrasesToTrack(keyPhrasesStr);

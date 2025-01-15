@@ -4,6 +4,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:mc_dashboard/.env.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/domain/services/auth_service.dart';
+// ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
 
 class AuthApiClient implements AuthServiceAuthApiClient {

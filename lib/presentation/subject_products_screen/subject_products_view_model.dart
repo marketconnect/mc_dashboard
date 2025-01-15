@@ -22,13 +22,17 @@ abstract class SubjectProductsAuthService {
   Future<Either<AppErrorBase, TokenInfo>> getTokenInfo();
 }
 
+// Subject Summary Service
 abstract class SubjectProductsSubjectSummaryService {
   Future<Either<AppErrorBase, List<SubjectSummaryItem>>> fetchSubjectsSummary();
 }
 
 // Saved Products Service
 abstract class SubjectProductsSavedProductsService {
-  Future<Either<AppErrorBase, void>> saveProducts(List<SavedProduct> products);
+  Future<Either<AppErrorBase, void>> addProducts({
+    required String token,
+    required List<SavedProduct> products,
+  });
 }
 
 class SubjectProductsViewModel extends ViewModelBase {
@@ -49,7 +53,7 @@ class SubjectProductsViewModel extends ViewModelBase {
   final SubjectProductsViewModelDetailedOrdersService detailedOrdersService;
   final SubjectProductsSavedProductsService savedProductsService;
   final SubjectProductsSubjectSummaryService subjectSummaryService;
-  final void Function(List<int>) onSaveProductsToTrack;
+  final void Function(List<String>) onSaveProductsToTrack;
 
   // Navigation
   final void Function({
@@ -80,7 +84,7 @@ class SubjectProductsViewModel extends ViewModelBase {
   Map<String, Map<String, TextEditingController>> get filterControllers =>
       _filterControllers;
 
-  Map<int, (String, String)> _productImageProductName = {};
+  final Map<int, (String, String)> _productImageProductName = {};
 
   TokenInfo? _tokenInfo;
   bool get isFree => _tokenInfo == null || _tokenInfo!.type == "free";
@@ -92,6 +96,8 @@ class SubjectProductsViewModel extends ViewModelBase {
   void addProductImage(int productId, String imageUrl, String productName) {
     _productImageProductName[productId] = (imageUrl, productName);
   }
+
+  String? _token;
 
   // Methods ///////////////////////////////////////////////////////////////////
 
@@ -111,7 +117,15 @@ class SubjectProductsViewModel extends ViewModelBase {
     }
     _tokenInfo =
         tokenInfoOrEither.fold((l) => throw UnimplementedError(), (r) => r);
-
+    if (_tokenInfo == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Не удалось получить токен'),
+        ));
+      }
+      return;
+    }
+    _token = _tokenInfo!.token;
     // Detailed Orders
     final result = await detailedOrdersService.fetchDetailedOrders(
         subjectId: subjectId, isFbs: 0);
@@ -423,22 +437,30 @@ class SubjectProductsViewModel extends ViewModelBase {
       final imageUrlProductName = _productImageProductName[item.productId];
       if (imageUrlProductName != null) {
         productsToSave.add(SavedProduct(
-            productId: item.productId,
+            productId: item.productId.toString(),
             sellerId: item.supplierId,
             sellerName: item.supplier,
             brandId: item.brandId,
             brandName: item.brand,
+            marketplaceType: "wb",
             imageUrl: imageUrlProductName.$1,
             name: imageUrlProductName.$2));
       }
     }
 
     // save products
-    await savedProductsService.saveProducts(productsToSave);
+    await savedProductsService.addProducts(
+        token: _token!, products: productsToSave);
 
     // callback to update the SavedProductsScreen
     onSaveProductsToTrack(
         productsToSave.map((item) => item.productId).toList());
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Товары успешно добавлены'),
+        duration: Duration(seconds: 3),
+      ));
+    }
   }
 
   // Navigation

@@ -138,9 +138,11 @@ class MailingSettingsViewModel extends ViewModelBase {
 
       // Load mailing settings
       if (_tokenInfo == null) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('User is not logged in'),
-        ));
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('User is not logged in'),
+          ));
+        }
         return;
       }
       final settingsOrEither = await settingsService.getSettings(

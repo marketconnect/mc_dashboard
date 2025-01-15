@@ -5,6 +5,7 @@ import 'package:material_table_view/material_table_view.dart';
 
 import 'package:mc_dashboard/core/utils/basket_num.dart';
 import 'package:mc_dashboard/core/utils/strings_ext.dart';
+import 'package:mc_dashboard/presentation/widgets/check_box.dart';
 import 'package:mc_dashboard/theme/color_schemes.dart';
 import 'package:provider/provider.dart';
 import 'package:mc_dashboard/presentation/subject_products_screen/subject_products_view_model.dart';
@@ -48,7 +49,7 @@ class SubjectProductsScreen extends StatelessWidget {
                           gradient:
                               Theme.of(context).colorScheme.shimmerGradient,
                           child: Container(
-                            height: constraints.maxHeight * 0.3,
+                            height: constraints.maxHeight * 0.8,
                             width: double.infinity,
                             margin: const EdgeInsets.all(16.0),
                             decoration: BoxDecoration(
@@ -59,7 +60,7 @@ class SubjectProductsScreen extends StatelessWidget {
                         )
                       : Container(
                           height:
-                              constraints.maxHeight * 0.3, // Height for graph
+                              constraints.maxHeight * 0.8, // Height for graph
                           margin: const EdgeInsets.all(8.0),
                           padding: const EdgeInsets.all(16.0),
                           decoration: BoxDecoration(
@@ -79,7 +80,7 @@ class SubjectProductsScreen extends StatelessWidget {
                           gradient:
                               Theme.of(context).colorScheme.shimmerGradient,
                           child: Container(
-                            height: constraints.maxHeight * 0.3,
+                            height: constraints.maxHeight * 0.8,
                             width: double.infinity,
                             margin: const EdgeInsets.all(16.0),
                             decoration: BoxDecoration(
@@ -89,7 +90,7 @@ class SubjectProductsScreen extends StatelessWidget {
                           ),
                         )
                       : Container(
-                          height: constraints.maxHeight * 0.3, // Height for bar
+                          height: constraints.maxHeight * 0.8, // Height for bar
                           margin: const EdgeInsets.all(8.0),
                           padding: const EdgeInsets.all(16.0),
                           decoration: BoxDecoration(
@@ -110,8 +111,7 @@ class SubjectProductsScreen extends StatelessWidget {
                           gradient:
                               Theme.of(context).colorScheme.shimmerGradient,
                           child: Container(
-                            height:
-                                constraints.maxHeight * 0.6, // Height for table
+                            height: constraints.maxHeight, // Height for table
                             width: double.infinity,
                             margin: const EdgeInsets.all(16.0),
                             decoration: BoxDecoration(
@@ -121,8 +121,7 @@ class SubjectProductsScreen extends StatelessWidget {
                           ),
                         )
                       : Container(
-                          height:
-                              constraints.maxHeight * 0.6, // Height for table
+                          height: constraints.maxHeight, // Height for table
                           margin: const EdgeInsets.all(8.0),
                           padding: const EdgeInsets.all(16.0),
                           decoration: BoxDecoration(
@@ -452,101 +451,119 @@ class _PieChartWithList extends StatelessWidget {
 
     final colorList = _generateColorList(dataMap.length);
 
-    return Stack(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(8.0),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                flex: 1,
-                child: pie_chart.PieChart(
-                  dataMap: dataMap,
-                  animationDuration: const Duration(milliseconds: 800),
-                  chartValuesOptions: const pie_chart.ChartValuesOptions(
-                    showChartValuesInPercentage: true,
+    return LayoutBuilder(builder: (context, constraints) {
+      final maxHeight = constraints.maxHeight;
+      final maxWidth = constraints.maxWidth;
+      final isMobile = maxWidth < 600;
+      return Stack(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            child: isMobile
+                ? Column(children: [
+                    _buildChart(colorList),
+                    _buildList(theme, colorList)
+                  ])
+                : Row(
+                    children: [
+                      _buildChart(colorList),
+                      _buildList(theme, colorList),
+                    ],
                   ),
-                  colorList: colorList,
-                  legendOptions: const pie_chart.LegendOptions(
-                    showLegends: false,
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 1,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: theme.textTheme.bodyMedium!.fontSize,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: dataMap.keys.length,
-                        itemBuilder: (context, index) {
-                          final key = dataMap.keys.elementAt(index);
-                          final value = dataMap[key]!;
-                          final color = colorList[index];
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4.0),
-                            child: MouseRegion(
-                              cursor: SystemMouseCursors.click,
-                              child: GestureDetector(
-                                onTap: () => onTapValue(key),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 16,
-                                      height: 16,
-                                      margin: const EdgeInsets.only(right: 8.0),
-                                      decoration: BoxDecoration(
-                                        color: color,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Text(
-                                        '$key: ${value.toStringAsFixed(0).formatWithThousands()} ₽',
-                                        style: TextStyle(
-                                            fontSize: theme.textTheme
-                                                .bodyMedium!.fontSize),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
           ),
-        ),
-        if (isClearButtonVisible)
-          Positioned(
-            top: 0,
-            right: 0,
-            child: IconButton(
-              onPressed: () => clearFilter(),
-              icon: Icon(Icons.filter_alt_off_outlined,
-                  color: theme.colorScheme.primary, size: 18),
+          if (isClearButtonVisible)
+            Positioned(
+              top: 0,
+              right: 0,
+              child: IconButton(
+                onPressed: () => clearFilter(),
+                icon: Icon(Icons.filter_alt_off_outlined,
+                    color: theme.colorScheme.primary, size: 18),
+              ),
+            ),
+        ],
+      );
+    });
+  }
+
+  Expanded _buildList(ThemeData theme, List<Color> colorList) {
+    return Expanded(
+      flex: 1,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: theme.textTheme.bodyMedium!.fontSize,
+              fontWeight: FontWeight.bold,
             ),
           ),
-      ],
+          const SizedBox(height: 8),
+          Expanded(
+            child: ListView.builder(
+              itemCount: dataMap.keys.length,
+              itemBuilder: (context, index) {
+                final key = dataMap.keys.elementAt(index);
+                final value = dataMap[key]!;
+                final color = colorList[index];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: () => onTapValue(key),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 16,
+                            height: 16,
+                            margin: const EdgeInsets.only(right: 8.0),
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              '$key: ${value.toStringAsFixed(0).formatWithThousands()} ₽',
+                              style: TextStyle(
+                                  fontSize:
+                                      theme.textTheme.bodyMedium!.fontSize),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Expanded _buildChart(List<Color> colorList) {
+    return Expanded(
+      flex: 2,
+      child: pie_chart.PieChart(
+        dataMap: dataMap,
+        animationDuration: const Duration(milliseconds: 800),
+        chartValuesOptions: const pie_chart.ChartValuesOptions(
+          showChartValuesInPercentage: true,
+        ),
+        colorList: colorList,
+        legendOptions: const pie_chart.LegendOptions(
+          showLegends: false,
+        ),
+      ),
     );
   }
 
@@ -743,32 +760,16 @@ class _TableWidgetState extends State<_TableWidget> {
                             // 0-й столбец: чекбокс выбора
                             if (columnIndex == 0) {
                               return Container(
-                                alignment: Alignment.center,
-                                child: Checkbox(
-                                  checkColor: theme.colorScheme.secondary,
-                                  activeColor: Colors.transparent,
-                                  side: WidgetStateBorderSide.resolveWith(
-                                    (states) {
-                                      if (states
-                                          .contains(WidgetState.selected)) {
-                                        return BorderSide(
-                                          color: Colors.transparent,
+                                  alignment: Alignment.center,
+                                  child: McCheckBox(
+                                      value:
+                                          selectedRows.contains(item.productId),
+                                      theme: theme,
+                                      onChanged: (bool? value) {
+                                        selectRow(
+                                          item.productId,
                                         );
-                                      }
-                                      return BorderSide(
-                                          color: theme.colorScheme.onSurface
-                                              .withOpacity(.3),
-                                          width: 2.0);
-                                    },
-                                  ),
-                                  value: selectedRows.contains(item.productId),
-                                  onChanged: (bool? value) {
-                                    selectRow(
-                                      item.productId,
-                                    );
-                                  },
-                                ),
-                              );
+                                      }));
                             }
 
                             // Остальные данные (columnIndex - 1)
@@ -983,7 +984,7 @@ class _TableWidgetState extends State<_TableWidget> {
                                 border: Border(
                                   bottom: BorderSide(
                                     color: theme.colorScheme.onSurface
-                                        .withOpacity(0.2),
+                                        .withAlpha((0.2 * 255).toInt()),
                                     width: 1.0,
                                   ),
                                 ),

@@ -25,6 +25,7 @@ class LemmatizeRequest {
     };
   }
 
+  @override
   String toString() => toJson().toString();
 }
 

@@ -112,17 +112,19 @@ class SavedKeyPhrasesService
     }
   }
 
-  /// Удаление устаревших ключевых фраз
   @override
   Future<Either<AppErrorBase, void>> deleteKeyPhrases({
     required String token,
     required List<KeyPhrase> phrases,
   }) async {
     try {
+      // Server
       await savedKeyPhrasesApiClient.deleteUserSearchQueries(
         token: token,
         phrases: phrases,
       );
+
+      // Local
       for (final phrase in phrases) {
         await savedKeyPhrasesRepo.deleteKeyPhrase(phrase.phraseText);
       }
@@ -137,20 +139,22 @@ class SavedKeyPhrasesService
     }
   }
 
-  /// Получение актуальных ключевых фраз
   @override
   Future<Either<AppErrorBase, List<KeyPhrase>>> getKeyPhrases({
     required String token,
   }) async {
     try {
+      // Server
       final serverPhrases =
           await savedKeyPhrasesApiClient.findUserSearchQueries(
         token: token,
       );
-      final localPhrases = await savedKeyPhrasesRepo.getAllKeyPhrases();
 
+      // Local
+      final localPhrases = await savedKeyPhrasesRepo.getAllKeyPhrases();
       bool localStorageUpdated = false;
 
+      // Add or update
       for (final phrase in serverPhrases) {
         if (!localPhrases.any((p) => p.phraseText == phrase.phraseText)) {
           await savedKeyPhrasesRepo.saveKeyPhrase(phrase);
@@ -158,6 +162,7 @@ class SavedKeyPhrasesService
         }
       }
 
+      // Delete
       for (final phrase in localPhrases) {
         if (!serverPhrases.any((p) => p.phraseText == phrase.phraseText)) {
           await savedKeyPhrasesRepo.deleteKeyPhrase(phrase.phraseText);
@@ -165,6 +170,7 @@ class SavedKeyPhrasesService
         }
       }
 
+      // Update
       final updatedPhrases = localStorageUpdated
           ? await savedKeyPhrasesRepo.getAllKeyPhrases()
           : localPhrases;

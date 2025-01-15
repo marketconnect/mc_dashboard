@@ -4,7 +4,7 @@ import 'package:mc_dashboard/presentation/subscription_screen/subscription_view_
 import 'package:provider/provider.dart';
 
 class SubscriptionScreen extends StatelessWidget {
-  const SubscriptionScreen({Key? key}) : super(key: key);
+  const SubscriptionScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

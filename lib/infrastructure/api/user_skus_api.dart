@@ -1,13 +1,18 @@
 import 'dart:convert';
+// ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
 import 'package:mc_dashboard/.env.dart';
 
-class UserSkusApiClient {
-  final String baseUrl;
+import 'package:mc_dashboard/domain/entities/sku.dart';
+import 'package:mc_dashboard/domain/services/saved_products_service.dart';
 
-  UserSkusApiClient({this.baseUrl = McAuthService.baseUrl});
+class UserSkusApiClient implements SavedProductsApiClient {
+  final String baseUrl = ApiSettings.subsUrl;
 
-  Future<UserSkusResponse> findUserSkus({
+  UserSkusApiClient();
+
+  @override
+  Future<List<Sku>> findUserSkus({
     required String token,
   }) async {
     final url = Uri.parse('$baseUrl/user_skus');
@@ -21,16 +26,26 @@ class UserSkusApiClient {
     );
 
     if (response.statusCode == 200) {
-      return UserSkusResponse.fromJson(jsonDecode(response.body));
+      final resp = UserSkusResponse.fromJson(jsonDecode(response.body));
+      List<Sku> productSkus = [];
+
+      for (var product in resp.skus) {
+        productSkus
+            .add(Sku(id: product.id, marketplaceType: product.marketplaceType));
+      }
+
+      return productSkus;
     } else {
       throw Exception('Failed to fetch user SKUs: ${response.body}');
     }
   }
 
+  @override
   Future<void> saveUserSkus({
     required String token,
-    required SaveSkusRequest request,
+    required List<Sku> skus,
   }) async {
+    final request = SaveSkusRequest(skus: skus);
     final url = Uri.parse('$baseUrl/user_skus');
 
     final response = await http.post(
@@ -49,10 +64,12 @@ class UserSkusApiClient {
     }
   }
 
+  @override
   Future<void> deleteUserSkus({
     required String token,
-    required DeleteSkusRequest request,
+    required List<Sku> skus,
   }) async {
+    final request = DeleteSkusRequest(skus: skus);
     final url = Uri.parse('$baseUrl/user_skus');
 
     final response = await http.delete(
@@ -119,22 +136,3 @@ class UserSkusResponse {
 }
 
 // Entity representing a SKU
-class Sku {
-  final String id;
-  final String marketplaceType;
-
-  Sku({
-    required this.id,
-    required this.marketplaceType,
-  });
-
-  factory Sku.fromJson(Map<String, dynamic> json) => Sku(
-        id: json['id'] as String,
-        marketplaceType: json['marketplace_type'] as String,
-      );
-
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'marketplace_type': marketplaceType,
-      };
-}

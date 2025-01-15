@@ -131,7 +131,8 @@ class __ScaffoldState extends State<_Scaffold> {
 
   List<int>?
       _selectedProductIds; // List to store selected product IDs for SeoRequestsExtendScreen
-  List<int> _savedProductIds = []; // List to store saved to track product IDs
+  List<String> _savedProductIds =
+      []; // List to store saved to track product IDs
 
   List<String> _keyPhrases = [];
 
@@ -255,7 +256,9 @@ class __ScaffoldState extends State<_Scaffold> {
     return Scaffold(
       appBar: Responsive.isMobile(context)
           ? AppBar(
-              elevation: 0,
+              scrolledUnderElevation: 2,
+              shadowColor: Colors.black,
+              surfaceTintColor: Colors.transparent,
             )
           : null,
       drawer: Responsive.isMobile(context)
@@ -274,7 +277,8 @@ class __ScaffoldState extends State<_Scaffold> {
                 border: Border(
                   right: BorderSide(
                     width: 0.5,
-                    color: theme.colorScheme.onSurface.withOpacity(0.2),
+                    color: theme.colorScheme.onSurface
+                        .withAlpha((0.2 * 255).toInt()),
                   ),
                 ),
               ),
@@ -308,7 +312,7 @@ class __ScaffoldState extends State<_Scaffold> {
                           child: widget.screenFactory.makeSubjectProductsScreen(
                               subjectId: _currentSubjectId!,
                               subjectName: _currentSubjectName!,
-                              onSaveProductsToTrack: (List<int> productIds) {
+                              onSaveProductsToTrack: (List<String> productIds) {
                                 setState(() {
                                   _savedProductIds = List.from(_savedProductIds)
                                     ..addAll(productIds);
@@ -478,8 +482,6 @@ class __ScaffoldState extends State<_Scaffold> {
   }
 
   int _getCurrentIndex() {
-    print(
-        '$_selectedSectionIndex, $_selectedSubsectionIndex $_currentProductId');
     if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 1) {
       return 1;
     } else if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 2) {
@@ -502,6 +504,7 @@ class __ScaffoldState extends State<_Scaffold> {
       children: [
         Expanded(
           child: ListView(
+            physics: const BouncingScrollPhysics(),
             children: [
               MouseRegion(
                 cursor: SystemMouseCursors.click,
@@ -685,7 +688,7 @@ class _SideMenuDivider extends StatelessWidget {
       widthFactor: 0.8,
       child: Divider(
         thickness: 0.5,
-        color: theme.colorScheme.onSurface.withOpacity(0.2),
+        color: theme.colorScheme.onSurface.withAlpha((0.2 * 255).toInt()),
       ),
     );
   }

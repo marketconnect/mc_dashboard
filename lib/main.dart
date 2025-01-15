@@ -37,7 +37,8 @@ Future<void> main() async {
 }
 
 void setDefaultFirebaseLanguage() {
-  final locale = ui.window.locale;
+  // final locale = ui.window.locale;
+  final locale = ui.PlatformDispatcher.instance.locale;
 
   FirebaseAuth.instance.setLanguageCode(locale.languageCode);
 }

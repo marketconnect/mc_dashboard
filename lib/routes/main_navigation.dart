@@ -12,7 +12,7 @@ abstract class ScreenFactory {
       required String routeName,
       Map<String, dynamic>? params,
     }) onNavigateTo,
-    required void Function(List<int> productIds) onSaveProductsToTrack,
+    required void Function(List<String> productIds) onSaveProductsToTrack,
   });
   Widget makeEmptySubjectProductsScreen({
     required void Function({

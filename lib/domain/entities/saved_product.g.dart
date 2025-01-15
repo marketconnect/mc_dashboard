@@ -17,20 +17,21 @@ class SavedProductAdapter extends TypeAdapter<SavedProduct> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return SavedProduct(
-      productId: fields[0] as int,
+      productId: fields[0] as String,
       name: fields[1] as String,
       imageUrl: fields[2] as String,
       sellerId: fields[3] as int,
       sellerName: fields[4] as String,
       brandId: fields[5] as int,
       brandName: fields[6] as String,
+      marketplaceType: fields[7] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, SavedProduct obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.productId)
       ..writeByte(1)
@@ -44,7 +45,9 @@ class SavedProductAdapter extends TypeAdapter<SavedProduct> {
       ..writeByte(5)
       ..write(obj.brandId)
       ..writeByte(6)
-      ..write(obj.brandName);
+      ..write(obj.brandName)
+      ..writeByte(7)
+      ..write(obj.marketplaceType);
   }
 
   @override

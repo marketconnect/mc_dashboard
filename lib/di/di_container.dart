@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import 'package:flutter/material.dart';
+
 import 'package:mc_dashboard/infrastructure/api/auth.dart';
 import 'package:mc_dashboard/infrastructure/api/detailed_orders.dart';
 import 'package:mc_dashboard/infrastructure/api/kw_lemmas.dart';
@@ -9,9 +10,11 @@ import 'package:mc_dashboard/infrastructure/api/normqueries.dart';
 import 'package:mc_dashboard/infrastructure/api/orders.dart';
 import 'package:mc_dashboard/infrastructure/api/stocks.dart';
 import 'package:mc_dashboard/infrastructure/api/subjects_summary.dart';
+import 'package:mc_dashboard/infrastructure/api/suppliers_api_client.dart';
 import 'package:mc_dashboard/infrastructure/api/user_emails_api.dart';
 import 'package:mc_dashboard/infrastructure/api/user_search_queries_api.dart';
 import 'package:mc_dashboard/infrastructure/api/user_settings_api.dart';
+import 'package:mc_dashboard/infrastructure/api/user_skus_api.dart';
 import 'package:mc_dashboard/infrastructure/api/warehouses.dart';
 import 'package:mc_dashboard/core/dio/setup.dart';
 import 'package:mc_dashboard/domain/services/auth_service.dart';
@@ -96,6 +99,8 @@ class _DIContainer {
   UserEmailsRepo _makeUserEmailsRepo() => UserEmailsRepo();
 
   MailingSettingsRepo _makeMailingSettingsRepo() => MailingSettingsRepo();
+
+  UserSkusApiClient _makeUserSkusApiClient() => UserSkusApiClient();
   // Api clients ///////////////////////////////////////////////////////////////
   AuthApiClient _makeAuthApiClient() => const AuthApiClient();
   UserEmailsApiClient _makeUserEmailsApiClient() => UserEmailsApiClient();
@@ -139,6 +144,8 @@ class _DIContainer {
       );
   SavedProductsService _makeSavedProductsService() => SavedProductsService(
         savedProductsRepo: _makeSavedProductsRepo(),
+        savedProductsApiClient: _makeUserSkusApiClient(),
+        suppliersApiClient: SuppliersApiClient(dio),
       );
 
   SavedKeyPhrasesService _makeSavedKeyPhrasesService() =>
@@ -152,6 +159,10 @@ class _DIContainer {
         mailingSettingsRepo: _makeMailingSettingsRepo(),
         userSettingsApiClient: UserSettingsApiClient(),
       );
+
+  // SuppliersService _makeSuppliersService() => SuppliersService(
+  //       suppliersApiClient: SuppliersApiClient(dio),
+  //     );
 
   TinkoffPaymentService _makeTinkoffPaymentService() => TinkoffPaymentService();
   // ViewModels ////////////////////////////////////////////////////////////////
@@ -173,7 +184,7 @@ class _DIContainer {
       required String routeName,
       Map<String, dynamic>? params,
     }) onNavigateTo,
-    void Function(List<int> productIds) onSaveProductsToTrack,
+    void Function(List<String> productIds) onSaveProductsToTrack,
   ) =>
       SubjectProductsViewModel(
           subjectId: subjectId,
@@ -267,6 +278,7 @@ class _DIContainer {
       SavedProductsViewModel(
         context: context,
         savedProductsService: _makeSavedProductsService(),
+        authService: _makeAuthService(),
       );
 
   SavedKeyPhrasesViewModel _makeSavedKeyPhrasesViewModel(
@@ -315,7 +327,7 @@ class ScreenFactoryDefault implements ScreenFactory {
       required String routeName,
       Map<String, dynamic>? params,
     }) onNavigateTo,
-    required void Function(List<int> productIds) onSaveProductsToTrack,
+    required void Function(List<String> productIds) onSaveProductsToTrack,
   }) {
     return ChangeNotifierProvider(
       create: (context) => _diContainer._makeSubjectProductsViewModel(

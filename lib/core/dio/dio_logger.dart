@@ -5,9 +5,11 @@ class DioLoggingInterceptor extends Interceptor {
   void onResponse(Response response, ResponseInterceptorHandler handler) {
     final isFromCache = response.extra['@fromNetwork@'] == false;
     if (isFromCache) {
-      print("Cache Log: Данные из кеша.");
+      // ignore: avoid_print
+      print("Cache Log: data from cache.");
     } else {
-      print("Cache Log: Данные с API.");
+      // ignore: avoid_print
+      print("Cache Log: data from api.");
     }
     super.onResponse(response, handler);
   }

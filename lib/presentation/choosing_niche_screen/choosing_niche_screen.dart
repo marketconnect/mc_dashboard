@@ -43,31 +43,7 @@ class ChoosingNicheScreen extends StatelessWidget {
                           gradient:
                               Theme.of(context).colorScheme.shimmerGradient,
                           child: Container(
-                            height: constraints.maxHeight * 0.3,
-                            margin: const EdgeInsets.all(16.0),
-                            decoration: BoxDecoration(
-                              color: Colors.grey,
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                          ),
-                        )
-                      : Container(
-                          height:
-                              constraints.maxHeight * 0.3, // Height for graph
-                          margin: const EdgeInsets.all(8.0),
-                          padding: const EdgeInsets.all(16.0),
-                          decoration: BoxDecoration(
-                            color: surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          child: PieChartWidget(maxWidth: maxWidth),
-                        ),
-                  isLoading
-                      ? Shimmer(
-                          gradient:
-                              Theme.of(context).colorScheme.shimmerGradient,
-                          child: Container(
-                            height: constraints.maxHeight * 0.3,
+                            height: constraints.maxHeight * 0.4,
                             width: double.infinity,
                             margin: const EdgeInsets.all(16.0),
                             decoration: BoxDecoration(
@@ -77,8 +53,7 @@ class ChoosingNicheScreen extends StatelessWidget {
                           ),
                         )
                       : Container(
-                          height: constraints.maxHeight *
-                              0.3, // Общая высота графика
+                          height: constraints.maxHeight * 0.4,
                           margin: const EdgeInsets.all(8.0),
                           padding: const EdgeInsets.all(16.0),
                           decoration: BoxDecoration(
@@ -88,34 +63,12 @@ class ChoosingNicheScreen extends StatelessWidget {
                           child:
                               const HistoryChartWidget(), // <-- Добавили ваш новый виджет
                         ),
-                  // Container(
-                  //   height: constraints.maxHeight * 0.3, // Height for bar
-                  //   margin: const EdgeInsets.all(8.0),
-                  //   padding: const EdgeInsets.all(16.0),
-                  //   decoration: BoxDecoration(
-                  //     color: surfaceContainerHighest,
-                  //     borderRadius: BorderRadius.circular(8.0),
-                  //   ),
-                  //   child: const BarChartWidget(isMedianPrice: true),
-                  // ),
-                  // Container(
-                  //   height: constraints.maxHeight * 0.3, // Height for bar
-                  //   margin: const EdgeInsets.all(8.0),
-                  //   padding: const EdgeInsets.all(16.0),
-                  //   decoration: BoxDecoration(
-                  //     color: surfaceContainerHighest,
-                  //     borderRadius: BorderRadius.circular(8.0),
-                  //   ),
-                  //   child: const BarChartWidget(isMedianPrice: false),
-                  // ),
-                  if (isFilterVisible) _buildFiltersWidget(context),
                   isLoading
                       ? Shimmer(
                           gradient:
                               Theme.of(context).colorScheme.shimmerGradient,
                           child: Container(
-                            height: constraints.maxHeight * 0.6, //
-                            width: double.infinity,
+                            height: constraints.maxHeight * 0.8,
                             margin: const EdgeInsets.all(16.0),
                             decoration: BoxDecoration(
                               color: Colors.grey,
@@ -125,7 +78,32 @@ class ChoosingNicheScreen extends StatelessWidget {
                         )
                       : Container(
                           height:
-                              constraints.maxHeight * 0.6, // Height for table
+                              constraints.maxHeight * 0.8, // Height for graph
+                          margin: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(16.0),
+                          decoration: BoxDecoration(
+                            color: surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          child: PieChartWidget(maxWidth: maxWidth),
+                        ),
+                  if (isFilterVisible) _buildFiltersWidget(context),
+                  isLoading
+                      ? Shimmer(
+                          gradient:
+                              Theme.of(context).colorScheme.shimmerGradient,
+                          child: Container(
+                            height: constraints.maxHeight, //
+                            width: double.infinity,
+                            margin: const EdgeInsets.all(16.0),
+                            decoration: BoxDecoration(
+                              color: Colors.grey,
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                          ),
+                        )
+                      : Container(
+                          height: constraints.maxHeight, // Height for table
                           margin: const EdgeInsets.all(8.0),
                           padding: const EdgeInsets.all(16.0),
                           decoration: BoxDecoration(
@@ -414,133 +392,165 @@ class PieChartWidget extends StatelessWidget {
     final theme = Theme.of(context);
     final colorList = generateColorList(model.currentDataMap.keys.length);
     // final header = model.diagramHeader;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: error != null
-          ? [
-              Expanded(
-                child: Center(
-                  child: SizedBox(
-                    width: maxWidth * 0.5,
-                    child: Text(
-                      error.toString(),
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  ),
-                ),
-              )
-            ]
-          : loading || model.currentDataMap.isEmpty
-              ? const [Expanded(child: Center(child: Text('Загрузка...')))]
-              : [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Expanded(
-                          flex: 1,
-                          child: Column(
-                            children: [
-                              if (model.selectedParentName != null)
-                                Padding(
-                                  padding: const EdgeInsets.only(
-                                      bottom: 8.0, left: 8.0, right: 8.0),
-                                  child: _buildMetricSelector(theme, model),
-                                ),
-                              Expanded(
-                                child: pie_chart.PieChart(
-                                  dataMap: model.currentDataMap,
-                                  animationDuration:
-                                      const Duration(milliseconds: 800),
-                                  chartValuesOptions:
-                                      const pie_chart.ChartValuesOptions(
-                                    showChartValuesInPercentage: true,
-                                  ),
-                                  colorList: colorList,
-                                  legendOptions: const pie_chart.LegendOptions(
-                                    showLegends: false,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Expanded(
-                          flex: 1,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Заголовок
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8.0, vertical: 4.0),
-                                child: Text(
-                                  '$selectedParentName (ТОП-30)',
-                                  style: TextStyle(
-                                    fontSize:
-                                        theme.textTheme.bodyMedium!.fontSize,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              // Список
-                              Expanded(
-                                child: ListView.builder(
-                                  itemCount: model.currentDataMap.keys.length,
-                                  itemBuilder: (context, index) {
-                                    final key = model.currentDataMap.keys
-                                        .elementAt(index);
-                                    final value = model.currentDataMap[key]!;
-                                    final color = colorList[index];
+    return LayoutBuilder(builder: (context, constraints) {
+      final maxWidth = constraints.maxWidth;
+      final maxHeight = constraints.maxHeight;
+      final isMobileOrLaptop = maxWidth < 900 || maxHeight < 690;
 
-                                    return Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 4.0),
-                                      child: MouseRegion(
-                                        cursor: model.selectedParentName == null
-                                            ? SystemMouseCursors.basic
-                                            : SystemMouseCursors.click,
-                                        child: GestureDetector(
-                                          onTap: () =>
-                                              model.scrollToSubjectName(key),
-                                          child: Row(
-                                            children: [
-                                              Container(
-                                                width: 16,
-                                                height: 16,
-                                                margin: const EdgeInsets.only(
-                                                    right: 8.0),
-                                                decoration: BoxDecoration(
-                                                  color: color,
-                                                  shape: BoxShape.circle,
-                                                ),
-                                              ),
-                                              Expanded(
-                                                child: Text(
-                                                  '$key: ${value.toStringAsFixed(0).formatWithThousands()} ${selectedMetric.$2}',
-                                                  style: TextStyle(
-                                                      fontSize: theme
-                                                          .textTheme
-                                                          .bodyMedium!
-                                                          .fontSize),
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: error != null
+            ? [_buildError(maxWidth, error)]
+            : loading || model.currentDataMap.isEmpty
+                ? const [Expanded(child: Center(child: Text('Загрузка...')))]
+                : [
+                    Expanded(
+                      child: isMobileOrLaptop
+                          ? Column(children: [
+                              _buildChart(model, theme, colorList),
+                              _buildList(
+                                selectedParentName,
+                                theme,
+                                model,
+                                colorList,
+                                isMobileOrLaptop,
+                                selectedMetric,
                               ),
-                            ],
+                            ])
+                          : Row(
+                              children: [
+                                _buildChart(model, theme, colorList),
+                                _buildList(
+                                    selectedParentName,
+                                    theme,
+                                    model,
+                                    colorList,
+                                    isMobileOrLaptop,
+                                    selectedMetric),
+                              ],
+                            ),
+                    ),
+                  ],
+      );
+    });
+  }
+
+  Expanded _buildList(
+      String selectedParentName,
+      ThemeData theme,
+      ChoosingNicheViewModel model,
+      List<Color> colorList,
+      bool isMobileOrLaptop,
+      (String, String) selectedMetric) {
+    return Expanded(
+      flex: 1,
+      child: Column(
+        crossAxisAlignment: isMobileOrLaptop
+            ? CrossAxisAlignment.center
+            : CrossAxisAlignment.start,
+        children: [
+          // Заголовок
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+            child: Text(
+              '$selectedParentName (ТОП-30)',
+              style: TextStyle(
+                fontSize: theme.textTheme.bodyMedium!.fontSize,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          // Список
+          Expanded(
+            child: ListView.builder(
+              itemCount: model.currentDataMap.keys.length,
+              itemBuilder: (context, index) {
+                final key = model.currentDataMap.keys.elementAt(index);
+                final value = model.currentDataMap[key]!;
+                final color = colorList[index];
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                  child: MouseRegion(
+                    cursor: model.selectedParentName == null
+                        ? SystemMouseCursors.basic
+                        : SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: () => model.scrollToSubjectName(key),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 16,
+                            height: 16,
+                            margin: const EdgeInsets.only(right: 8.0),
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                        ),
-                      ],
+                          Expanded(
+                            child: Text(
+                              '$key: ${value.toStringAsFixed(0).formatWithThousands()} ${selectedMetric.$2}',
+                              style: TextStyle(
+                                  fontSize:
+                                      theme.textTheme.bodyMedium!.fontSize),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ],
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Expanded _buildChart(
+      ChoosingNicheViewModel model, ThemeData theme, List<Color> colorList) {
+    return Expanded(
+      flex: 1,
+      child: Column(
+        children: [
+          if (model.selectedParentName != null)
+            Padding(
+              padding:
+                  const EdgeInsets.only(bottom: 8.0, left: 8.0, right: 8.0),
+              child: _buildMetricSelector(theme, model),
+            ),
+          Expanded(
+            child: pie_chart.PieChart(
+              dataMap: model.currentDataMap,
+              animationDuration: const Duration(milliseconds: 800),
+              chartValuesOptions: const pie_chart.ChartValuesOptions(
+                showChartValuesInPercentage: true,
+              ),
+              colorList: colorList,
+              legendOptions: const pie_chart.LegendOptions(
+                showLegends: false,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Expanded _buildError(double maxWidth, String error) {
+    return Expanded(
+      child: Center(
+        child: SizedBox(
+          width: maxWidth * 0.5,
+          child: Text(
+            error.toString(),
+            style: const TextStyle(color: Colors.red),
+          ),
+        ),
+      ),
     );
   }
 
@@ -885,7 +895,7 @@ class _TableWidgetState extends State<TableWidget> {
                                 border: Border(
                               bottom: BorderSide(
                                 color: theme.colorScheme.onSurface
-                                    .withOpacity(0.2),
+                                    .withAlpha((0.2 * 255).toInt()),
                                 width: 1.0,
                               ),
                             )),
@@ -945,7 +955,6 @@ class _TableWidgetState extends State<TableWidget> {
   }
 }
 
-// TODO add mouse hover cursor
 class BarChartWidget extends StatelessWidget {
   const BarChartWidget({super.key, required this.isMedianPrice});
 
@@ -1090,7 +1099,7 @@ class BarChartWidget extends StatelessWidget {
 }
 
 class TotalOrdersHistoryChartWidget extends StatelessWidget {
-  const TotalOrdersHistoryChartWidget({Key? key}) : super(key: key);
+  const TotalOrdersHistoryChartWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -1177,7 +1186,7 @@ class TotalOrdersHistoryChartWidget extends StatelessWidget {
 }
 
 class HistoryChartWidget extends StatefulWidget {
-  const HistoryChartWidget({Key? key}) : super(key: key);
+  const HistoryChartWidget({super.key});
 
   @override
   State<HistoryChartWidget> createState() => _HistoryChartWidgetState();

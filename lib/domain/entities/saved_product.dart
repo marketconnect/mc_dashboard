@@ -5,7 +5,7 @@ part 'saved_product.g.dart';
 @HiveType(typeId: 0)
 class SavedProduct {
   @HiveField(0)
-  final int productId;
+  final String productId;
 
   @HiveField(1)
   final String name;
@@ -25,6 +25,9 @@ class SavedProduct {
   @HiveField(6)
   final String brandName;
 
+  @HiveField(7)
+  final String marketplaceType;
+
   SavedProduct({
     required this.productId,
     required this.name,
@@ -33,5 +36,6 @@ class SavedProduct {
     required this.sellerName,
     required this.brandId,
     required this.brandName,
+    required this.marketplaceType,
   });
 }

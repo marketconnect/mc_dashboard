@@ -16,7 +16,7 @@ class SavedProductsRepo implements SavedProductsRepository {
   }
 
   @override
-  Future<void> deleteProduct(int productId) async {
+  Future<void> deleteProduct(String productId) async {
     final box = await Hive.openBox<SavedProduct>('savedProducts');
 
     if (box.containsKey(productId)) {

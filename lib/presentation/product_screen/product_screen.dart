@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
@@ -7,6 +6,7 @@ import 'package:material_table_view/material_table_view.dart';
 import 'package:mc_dashboard/core/utils/dates.dart';
 import 'package:mc_dashboard/presentation/product_screen/product_view_model.dart';
 import 'package:mc_dashboard/presentation/product_screen/table_row_model.dart';
+import 'package:mc_dashboard/presentation/widgets/check_box.dart';
 import 'package:mc_dashboard/theme/color_schemes.dart';
 import 'package:pie_chart/pie_chart.dart' as pie_chart;
 import 'package:flutter/material.dart';
@@ -15,12 +15,6 @@ import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-// TODO Search btn color in dark theme
-// TODO Add link on payments page and also tokenReset method
-// TODO Add competitors analisis by https://identical-products.wildberries.ru/api/v1/identical?nmID=217712605
-// TODO add subject name next to name
-// TODO style AppBar
-// TODO in the wb_api add token type checking for some methods
 class ProductScreen extends StatefulWidget {
   const ProductScreen({super.key});
 
@@ -41,7 +35,7 @@ class _ProductScreenState extends State<ProductScreen> {
     super.initState();
 
     _scrollController.addListener(() {
-      if (_scrollController.offset > 500) {
+      if (_scrollController.offset > 800) {
         if (!_showFab) {
           setState(() => _showFab = true);
         }
@@ -89,256 +83,271 @@ class _ProductScreenState extends State<ProductScreen> {
     }).toList();
 
     final wildberriesUrl =
-        "https://wildberries.ru/catalog/${id}/detail.aspx?targetUrl=EX";
+        "https://wildberries.ru/catalog/$id/detail.aspx?targetUrl=EX";
 
-    return Scaffold(
-      body: SingleChildScrollView(
-        controller: _scrollController,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1200),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Flexible(
-                        child: Row(
-                          children: [
-                            IconButton(
-                              onPressed: onNavigateBack,
-                              icon: Icon(
-                                Icons.arrow_back_ios,
-                                color: theme.colorScheme.primary,
+    return LayoutBuilder(builder: (context, constraints) {
+      final maxWidth = constraints.maxWidth;
+      final isMobile = maxWidth < 600;
+
+      return Scaffold(
+        body: SingleChildScrollView(
+          controller: _scrollController,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1200),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Flexible(
+                          child: Row(
+                            children: [
+                              IconButton(
+                                onPressed: onNavigateBack,
+                                icon: Icon(
+                                  Icons.arrow_back_ios,
+                                  color: theme.colorScheme.primary,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                name,
-                                maxLines: 3,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headlineMedium
-                                    ?.copyWith(fontWeight: FontWeight.bold),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  name,
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: isMobile
+                                      ? Theme.of(context)
+                                          .textTheme
+                                          .headlineSmall
+                                      : Theme.of(context)
+                                          .textTheme
+                                          .headlineMedium
+                                          ?.copyWith(
+                                              fontWeight: FontWeight.bold),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      IconButton(
-                        onPressed: onNavigateToEmptyProductScreen,
-                        icon: const Icon(Icons.search_sharp, size: 24),
-                        color: theme.colorScheme.primary,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: GestureDetector(
-                      onTap: () => launchUrl(Uri.parse(wildberriesUrl)),
-                      child: Text(
-                        'Артикул: $id',
-                        style: const TextStyle(
-                          decoration: TextDecoration.underline,
-                          decorationColor: Color(0xFF5166e3),
-                          color: Color(0xFF5166e3),
+                        IconButton(
+                          onPressed: onNavigateToEmptyProductScreen,
+                          icon: const Icon(Icons.search_sharp, size: 24),
+                          color: theme.colorScheme.primary,
                         ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(height: 400, child: ImageCarousel()),
-                  const SizedBox(height: 24),
-                  const SizedBox(height: 24),
-                  Wrap(
-                    spacing: 16,
-                    runSpacing: 16,
-                    children: [
-                      if (price != 0)
-                        _buildStatCard('Цена', '${_formatPrice(price)} ₽'),
-                      _buildStatCard('Продажи за 30 дней', '$orders30d шт.'),
-                      _buildStatCard('Рейтинг', '$rating ★'),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Графики',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleLarge
-                        ?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 16,
-                    runSpacing: 16,
-                    children: [
-                      _buildChartContainer(
-                        title: 'Динамика продаж',
-                        child: _buildLineChart(
-                          ordersDates,
-                          salesValues,
-                          isSales: true,
-                          valueSuffix: 'шт.',
-                        ),
-                      ),
-                      _buildChartContainer(
-                        title: 'Доля продаж по складам',
-                        child: _buildPieChart(pieDataMap),
-                      ),
-                      _buildChartContainer(
-                        title: 'История изменения цены',
-                        child: _buildLineChart(
-                          priceDates,
-                          priceValues,
-                          isSales: false,
-                          valueSuffix: '₽',
-                        ),
-                      ),
-                      _buildChartContainer(
-                        title: "История остатков",
-                        child: BarChartWidget(dailyStockSums: dailyStockSums),
-                      )
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  if (!model.loading)
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1016),
-                      child: StocksSectionWidget(),
-                    ),
-                  const SizedBox(height: 24),
-                  if (!model.loading)
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1016),
-                      child: _Feedback(),
-                    ),
-                  const SizedBox(height: 24),
-                  if (model.normqueriesLoaded)
-                    Text(
-                      "Поисковые запросы",
-                      style: theme.textTheme.titleLarge
-                          ?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                  const SizedBox(height: 8),
-                  if (model.normqueriesLoaded)
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1016),
-                      child: NormqueryTableWidget(),
-                    ),
-                  const SizedBox(height: 24),
-                  if (model.seoLoaded) ...[
-                    const SizedBox(height: 16),
-                    Text(
-                      "Анализ релевантности",
-                      style: theme.textTheme.titleLarge
-                          ?.copyWith(fontWeight: FontWeight.bold),
+                      ],
                     ),
                     const SizedBox(height: 8),
-                    if (model.seoTableSections.isNotEmpty)
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 1016),
-                        child: SeoSectionWidget(
-                          sectionTitle: "Заголовок",
-                          sectionText: name,
-                          querySimilarities:
-                              model.seoTableSections["title"] ?? [],
+                    MouseRegion(
+                      // Артикул
+                      cursor: SystemMouseCursors.click,
+                      child: GestureDetector(
+                        onTap: () => launchUrl(Uri.parse(wildberriesUrl)),
+                        child: Text(
+                          'Артикул: $id',
+                          style: TextStyle(
+                            fontSize: isMobile ? 12 : null,
+                            decoration: TextDecoration.underline,
+                            decorationColor: Color(0xFF5166e3),
+                            color: Color(0xFF5166e3),
+                          ),
                         ),
                       ),
+                    ),
                     const SizedBox(height: 16),
-                    if (model.seoTableSections.isNotEmpty)
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 1016),
-                        child: SeoSectionWidget(
-                          sectionTitle: "Характеристики",
-                          sectionText: model.characteristics,
-                          querySimilarities:
-                              model.seoTableSections["characteristics"] ?? [],
-                        ),
-                      ),
-                    const SizedBox(height: 16),
-                    if (model.seoTableSections.isNotEmpty)
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 1016),
-                        child: SeoSectionWidget(
-                          sectionTitle: "Описание",
-                          sectionText: model.description,
-                          querySimilarities:
-                              model.seoTableSections["description"] ?? [],
-                        ),
-                      ),
-                  ],
-                  const SizedBox(height: 24),
-                  if (!model.loading && model.unusedQueriesLoaded) ...[
+                    SizedBox(height: 400, child: ImageCarousel()),
+                    if (!isMobile) const SizedBox(height: 24),
+                    if (!isMobile) const SizedBox(height: 24),
+                    Wrap(
+                      spacing: 16,
+                      runSpacing: 16,
+                      children: [
+                        if (price != 0)
+                          _buildStatCard('Цена', '${_formatPrice(price)} ₽'),
+                        _buildStatCard('Продажи за 30 дней', '$orders30d шт.'),
+                        _buildStatCard('Рейтинг', '$rating ★'),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
                     Text(
-                      "Упущенные запросы",
-                      style: theme.textTheme.titleLarge
+                      'Графики',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleLarge
                           ?.copyWith(fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 8),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1016),
-                      child: UnusedQueryTableWidget(),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 16,
+                      runSpacing: 16,
+                      children: [
+                        _buildChartContainer(
+                          title: 'Динамика продаж',
+                          child: _buildLineChart(
+                            ordersDates,
+                            salesValues,
+                            isSales: true,
+                            valueSuffix: 'шт.',
+                          ),
+                        ),
+                        _buildChartContainer(
+                          title: 'Доля продаж по складам',
+                          child: _buildPieChart(pieDataMap),
+                        ),
+                        _buildChartContainer(
+                          title: 'История изменения цены',
+                          child: _buildLineChart(
+                            priceDates,
+                            priceValues,
+                            isSales: false,
+                            valueSuffix: '₽',
+                          ),
+                        ),
+                        _buildChartContainer(
+                          title: "История остатков",
+                          child: BarChartWidget(dailyStockSums: dailyStockSums),
+                        )
+                      ],
                     ),
+                    const SizedBox(height: 24),
+                    if (!model.loading)
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1016),
+                        child: StocksSectionWidget(),
+                      ),
+                    const SizedBox(height: 24),
+                    if (!model.loading)
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1016),
+                        child: _Feedback(),
+                      ),
+                    const SizedBox(height: 24),
+                    if (model.normqueriesLoaded)
+                      Text(
+                        "Поисковые запросы",
+                        style: theme.textTheme.titleLarge
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                    const SizedBox(height: 8),
+                    if (model.normqueriesLoaded)
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1016),
+                        child: NormqueryTableWidget(),
+                      ),
+                    const SizedBox(height: 24),
+                    if (model.seoLoaded) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        "Анализ релевантности",
+                        style: theme.textTheme.titleLarge
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      if (model.seoTableSections.isNotEmpty)
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1016),
+                          child: SeoSectionWidget(
+                            sectionTitle: "Заголовок",
+                            sectionText: name,
+                            querySimilarities:
+                                model.seoTableSections["title"] ?? [],
+                          ),
+                        ),
+                      const SizedBox(height: 16),
+                      if (model.seoTableSections.isNotEmpty)
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1016),
+                          child: SeoSectionWidget(
+                            sectionTitle: "Характеристики",
+                            sectionText: model.characteristics,
+                            querySimilarities:
+                                model.seoTableSections["characteristics"] ?? [],
+                          ),
+                        ),
+                      const SizedBox(height: 16),
+                      if (model.seoTableSections.isNotEmpty)
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1016),
+                          child: SeoSectionWidget(
+                            sectionTitle: "Описание",
+                            sectionText: model.description,
+                            querySimilarities:
+                                model.seoTableSections["description"] ?? [],
+                          ),
+                        ),
+                    ],
+                    const SizedBox(height: 24),
+                    if (!model.loading && model.unusedQueriesLoaded) ...[
+                      Text(
+                        "Упущенные запросы",
+                        style: theme.textTheme.titleLarge
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1016),
+                        child: UnusedQueryTableWidget(),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),
         ),
-      ),
-      floatingActionButton: _showFab
-          ? Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                if (!model.normqueriesLoaded)
-                  FloatingActionButton.extended(
-                    heroTag: 'queriesFab',
-                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                    label: const Text("Поисковые запросы"),
-                    // icon: const Icon(Icons.search),
-                    onPressed: () async {
-                      await model.loadNormqueries();
-                    },
-                  ),
-                const SizedBox(width: 8),
-
-                // Анализ релевантности
-                if (model.normqueriesLoaded && !model.seoLoaded)
-                  FloatingActionButton.extended(
-                    heroTag: 'seoFab',
-                    label: const Text("Анализ релевантности"),
-                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                    onPressed: () async {
-                      if (!model.normqueriesLoaded) {
+        floatingActionButton: _showFab
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (!model.normqueriesLoaded)
+                    FloatingActionButton.extended(
+                      heroTag: 'queriesFab',
+                      backgroundColor:
+                          theme.colorScheme.surfaceContainerHighest,
+                      label: const Text("Поисковые запросы"),
+                      // icon: const Icon(Icons.search),
+                      onPressed: () async {
                         await model.loadNormqueries();
-                      }
-                      await model.loadSeo();
-                    },
-                  ),
-                const SizedBox(width: 8),
+                      },
+                    ),
+                  const SizedBox(width: 8),
 
-                // Упущенные запросы
-                if (model.normqueriesLoaded && !model.unusedQueriesLoaded)
-                  FloatingActionButton.extended(
-                    heroTag: 'unusedFab',
-                    label: const Text("Упущенные запросы"),
-                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                    onPressed: () async {
-                      await model.loadUnusedQueries();
-                    },
-                  ),
-                const SizedBox(width: 28),
-              ],
-            )
-          : null,
-    );
+                  // Анализ релевантности
+                  if (model.normqueriesLoaded && !model.seoLoaded)
+                    FloatingActionButton.extended(
+                      heroTag: 'seoFab',
+                      label: const Text("Анализ релевантности"),
+                      backgroundColor:
+                          theme.colorScheme.surfaceContainerHighest,
+                      onPressed: () async {
+                        if (!model.normqueriesLoaded) {
+                          await model.loadNormqueries();
+                        }
+                        await model.loadSeo();
+                      },
+                    ),
+                  const SizedBox(width: 8),
+
+                  // Упущенные запросы
+                  if (model.normqueriesLoaded && !model.unusedQueriesLoaded)
+                    FloatingActionButton.extended(
+                      heroTag: 'unusedFab',
+                      label: const Text("Упущенные запросы"),
+                      backgroundColor:
+                          theme.colorScheme.surfaceContainerHighest,
+                      onPressed: () async {
+                        await model.loadUnusedQueries();
+                      },
+                    ),
+                  const SizedBox(width: 28),
+                ],
+              )
+            : null,
+      );
+    });
   }
 
   String _formatPrice(num value) {
@@ -526,11 +535,11 @@ class _ProductScreenState extends State<ProductScreen> {
               : 1,
           verticalInterval: 1,
           getDrawingHorizontalLine: (value) => FlLine(
-            color: Colors.grey.withOpacity(0.3),
+            color: Colors.grey.withAlpha((0.3 * 255).toInt()),
             strokeWidth: 0.5,
           ),
           getDrawingVerticalLine: (value) => FlLine(
-            color: Colors.grey.withOpacity(0.3),
+            color: Colors.grey.withAlpha((0.3 * 255).toInt()),
             strokeWidth: 0.5,
           ),
         ),
@@ -854,7 +863,7 @@ class _Feedback extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withAlpha((0.05 * 255).toInt()),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -895,7 +904,7 @@ class _Feedback extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withAlpha((0.05 * 255).toInt()),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -946,7 +955,7 @@ class _Feedback extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withAlpha((0.05 * 255).toInt()),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -966,7 +975,7 @@ class _Feedback extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(8)),
-              color: theme.colorScheme.primary.withOpacity(0.1),
+              color: theme.colorScheme.primary.withAlpha((0.1 * 255).toInt()),
             ),
             children: columns
                 .map((column) => Padding(
@@ -996,7 +1005,7 @@ class _Feedback extends StatelessWidget {
 
 class ImageCarousel extends StatelessWidget {
   const ImageCarousel({super.key});
-
+  final bool isMobile = false;
   @override
   Widget build(BuildContext context) {
     final model = context.watch<ProductViewModel>();
@@ -1120,11 +1129,11 @@ class BarChartWidget extends StatelessWidget {
               : 1,
           verticalInterval: 1,
           getDrawingHorizontalLine: (value) => FlLine(
-            color: Colors.grey.withOpacity(0.3),
+            color: Colors.grey.withAlpha((0.3 * 255).toInt()),
             strokeWidth: 0.5,
           ),
           getDrawingVerticalLine: (value) => FlLine(
-            color: Colors.grey.withOpacity(0.3),
+            color: Colors.grey.withAlpha((0.3 * 255).toInt()),
             strokeWidth: 0.5,
           ),
         ),
@@ -1272,7 +1281,7 @@ class StocksSectionWidget extends StatelessWidget {
         children: [
           TableRow(
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.1),
+              color: theme.colorScheme.primary.withAlpha((0.1 * 255).toInt()),
             ),
             children: columns
                 .map((column) => Padding(
@@ -1445,23 +1454,9 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
                 headerBuilder: (context, contentBuilder) {
                   return contentBuilder(context, (context, columnIndex) {
                     if (columnIndex == 0) {
-                      return Checkbox(
-                        checkColor: theme.colorScheme.secondary,
-                        activeColor: Colors.transparent,
+                      return McCheckBox(
                         value: selectAll,
-                        side: WidgetStateBorderSide.resolveWith(
-                          (states) {
-                            if (states.contains(WidgetState.selected)) {
-                              return BorderSide(
-                                color: Colors.transparent,
-                              );
-                            }
-                            return BorderSide(
-                                color:
-                                    theme.colorScheme.onSurface.withOpacity(.3),
-                                width: 2.0);
-                          },
-                        ),
+                        theme: theme,
                         onChanged: (value) {
                           setState(() {
                             selectAll = value ?? false;
@@ -1507,23 +1502,9 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
 
                   return contentBuilder(context, (context, columnIndex) {
                     if (columnIndex == 0) {
-                      return Checkbox(
-                        activeColor: Colors.transparent,
-                        checkColor: theme.colorScheme.secondary,
+                      return McCheckBox(
                         value: selectedIndices.contains(rowIndex),
-                        side: WidgetStateBorderSide.resolveWith(
-                          (states) {
-                            if (states.contains(WidgetState.selected)) {
-                              return BorderSide(
-                                color: Colors.transparent,
-                              );
-                            }
-                            return BorderSide(
-                                color:
-                                    theme.colorScheme.onSurface.withOpacity(.3),
-                                width: 2.0);
-                          },
-                        ),
+                        theme: theme,
                         onChanged: (isSelected) {
                           setState(() {
                             if (isSelected == true) {
@@ -1697,6 +1678,7 @@ class SeoSectionWidget extends StatefulWidget {
   });
 
   @override
+  // ignore: library_private_types_in_public_api
   _SeoSectionWidgetState createState() => _SeoSectionWidgetState();
 }
 
@@ -1749,7 +1731,8 @@ class _SeoSectionWidgetState extends State<SeoSectionWidget> {
                   children: [
                     TableRow(
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withOpacity(0.1),
+                        color: theme.colorScheme.primary
+                            .withAlpha((0.1 * 255).toInt()),
                       ),
                       children: [
                         Padding(
@@ -1952,39 +1935,24 @@ class _UnusedQueryTableWidgetState extends State<UnusedQueryTableWidget> {
                 headerBuilder: (context, contentBuilder) {
                   return contentBuilder(context, (context, columnIndex) {
                     if (columnIndex == 0) {
-                      return Checkbox(
-                        side: WidgetStateBorderSide.resolveWith(
-                          (states) {
-                            if (states.contains(WidgetState.selected)) {
-                              return BorderSide(
-                                color: Colors.transparent,
-                              );
-                            }
-                            return BorderSide(
-                                color:
-                                    theme.colorScheme.onSurface.withOpacity(.3),
-                                width: 2.0);
-                          },
-                        ),
-                        checkColor: theme.colorScheme.secondary,
-                        activeColor: Colors.transparent,
-                        value: selectAll,
-                        onChanged: (value) {
-                          setState(() {
-                            selectAll = value ?? false;
-                            if (selectAll) {
-                              selectedIndices.addAll(
-                                List.generate(
-                                  unusedQueries.length,
-                                  (index) => index,
-                                ),
-                              );
-                            } else {
-                              selectedIndices.clear();
-                            }
+                      return McCheckBox(
+                          value: selectAll,
+                          theme: theme,
+                          onChanged: (value) {
+                            setState(() {
+                              selectAll = value ?? false;
+                              if (selectAll) {
+                                selectedIndices.addAll(
+                                  List.generate(
+                                    unusedQueries.length,
+                                    (index) => index,
+                                  ),
+                                );
+                              } else {
+                                selectedIndices.clear();
+                              }
+                            });
                           });
-                        },
-                      );
                     }
 
                     return GestureDetector(
@@ -2015,23 +1983,9 @@ class _UnusedQueryTableWidgetState extends State<UnusedQueryTableWidget> {
 
                   return contentBuilder(context, (context, columnIndex) {
                     if (columnIndex == 0) {
-                      return Checkbox(
-                        activeColor: Colors.transparent,
-                        checkColor: theme.colorScheme.secondary,
+                      return McCheckBox(
                         value: selectedIndices.contains(rowIndex),
-                        side: WidgetStateBorderSide.resolveWith(
-                          (states) {
-                            if (states.contains(WidgetState.selected)) {
-                              return BorderSide(
-                                color: Colors.transparent,
-                              );
-                            }
-                            return BorderSide(
-                                color:
-                                    theme.colorScheme.onSurface.withOpacity(.3),
-                                width: 2.0);
-                          },
-                        ),
+                        theme: theme,
                         onChanged: (isSelected) {
                           setState(() {
                             if (isSelected == true) {

@@ -1,6 +1,7 @@
 class CardInfo {
   final String imtName;
   final int imtId;
+  final int supplierId;
   final int photoCount;
   final int subjId;
   final String subjName;
@@ -11,6 +12,7 @@ class CardInfo {
   CardInfo({
     required this.imtName,
     required this.imtId,
+    required this.supplierId,
     required this.photoCount,
     required this.subjId,
     required this.subjName,
@@ -71,6 +73,7 @@ class CardInfo {
     return CardInfo(
       imtName: json['imt_name'],
       imtId: json['imt_id'],
+      supplierId: json['selling']['supplier_id'],
       subjName: json['subj_name'],
       subjId: json['data']['subject_id'],
       description: json['description'],
