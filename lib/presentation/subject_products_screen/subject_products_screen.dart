@@ -51,7 +51,7 @@ class SubjectProductsScreen extends StatelessWidget {
                           child: Container(
                             height: constraints.maxHeight * 0.8,
                             width: double.infinity,
-                            margin: const EdgeInsets.all(16.0),
+                            margin: const EdgeInsets.all(8.0),
                             decoration: BoxDecoration(
                               color: Colors.grey,
                               borderRadius: BorderRadius.circular(8.0),
@@ -59,10 +59,9 @@ class SubjectProductsScreen extends StatelessWidget {
                           ),
                         )
                       : Container(
-                          height:
-                              constraints.maxHeight * 0.8, // Height for graph
+                          height: constraints.maxHeight, // Height for graph
                           margin: const EdgeInsets.all(8.0),
-                          padding: const EdgeInsets.all(16.0),
+                          padding: const EdgeInsets.all(2.0),
                           decoration: BoxDecoration(
                             color: surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(8.0),
@@ -73,6 +72,8 @@ class SubjectProductsScreen extends StatelessWidget {
                             title: "Продавцы (ТОП-30)",
                             onTapValue: model.filterBySeller,
                             clearFilter: clearSellerBrandFilter,
+                            isMobile: isMobileOrLaptop,
+                            maxWidth: maxWidth,
                           ),
                         ),
                   model.loading
@@ -82,7 +83,7 @@ class SubjectProductsScreen extends StatelessWidget {
                           child: Container(
                             height: constraints.maxHeight * 0.8,
                             width: double.infinity,
-                            margin: const EdgeInsets.all(16.0),
+                            margin: const EdgeInsets.all(8.0),
                             decoration: BoxDecoration(
                               color: Colors.grey,
                               borderRadius: BorderRadius.circular(8.0),
@@ -90,9 +91,9 @@ class SubjectProductsScreen extends StatelessWidget {
                           ),
                         )
                       : Container(
-                          height: constraints.maxHeight * 0.8, // Height for bar
+                          height: constraints.maxHeight, // Height for bar
                           margin: const EdgeInsets.all(8.0),
-                          padding: const EdgeInsets.all(16.0),
+                          padding: const EdgeInsets.all(2.0),
                           decoration: BoxDecoration(
                             color: surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(8.0),
@@ -103,6 +104,8 @@ class SubjectProductsScreen extends StatelessWidget {
                             onTapValue: model.filterByBrand,
                             dataMap: model.brandsDataMap,
                             clearFilter: clearSellerBrandFilter,
+                            isMobile: isMobileOrLaptop,
+                            maxWidth: maxWidth,
                           ),
                         ),
                   if (isFilterVisible) _buildFiltersWidget(context),
@@ -113,7 +116,7 @@ class SubjectProductsScreen extends StatelessWidget {
                           child: Container(
                             height: constraints.maxHeight, // Height for table
                             width: double.infinity,
-                            margin: const EdgeInsets.all(16.0),
+                            margin: const EdgeInsets.all(8.0),
                             decoration: BoxDecoration(
                               color: Colors.grey,
                               borderRadius: BorderRadius.circular(8.0),
@@ -123,7 +126,7 @@ class SubjectProductsScreen extends StatelessWidget {
                       : Container(
                           height: constraints.maxHeight, // Height for table
                           margin: const EdgeInsets.all(8.0),
-                          padding: const EdgeInsets.all(16.0),
+                          padding: const EdgeInsets.all(2.0),
                           decoration: BoxDecoration(
                             color: surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(8.0),
@@ -173,6 +176,8 @@ class SubjectProductsScreen extends StatelessWidget {
                                   title: "Продавцы (ТОП-30)",
                                   onTapValue: model.filterBySeller,
                                   clearFilter: clearSellerBrandFilter,
+                                  isMobile: isMobileOrLaptop,
+                                  maxWidth: maxWidth,
                                 ),
                               ),
                       ),
@@ -209,6 +214,8 @@ class SubjectProductsScreen extends StatelessWidget {
                                         onTapValue: model.filterByBrand,
                                         dataMap: model.brandsDataMap,
                                         clearFilter: clearSellerBrandFilter,
+                                        isMobile: isMobileOrLaptop,
+                                        maxWidth: maxWidth,
                                       ),
                                     ),
                                   ],
@@ -432,13 +439,16 @@ class _PieChartWithList extends StatelessWidget {
   final bool isClearButtonVisible;
   final void Function() clearFilter;
   final void Function(String) onTapValue;
-
+  final double maxWidth;
+  final bool isMobile;
   const _PieChartWithList({
     required this.title,
     required this.dataMap,
     this.isClearButtonVisible = false,
     required this.clearFilter,
     required this.onTapValue,
+    required this.maxWidth,
+    required this.isMobile,
   });
 
   @override
@@ -452,9 +462,8 @@ class _PieChartWithList extends StatelessWidget {
     final colorList = _generateColorList(dataMap.length);
 
     return LayoutBuilder(builder: (context, constraints) {
-      final maxHeight = constraints.maxHeight;
-      final maxWidth = constraints.maxWidth;
-      final isMobile = maxWidth < 600;
+      // final maxHeight = constraints.maxHeight;
+
       return Stack(
         children: [
           Container(
@@ -465,8 +474,10 @@ class _PieChartWithList extends StatelessWidget {
             ),
             child: isMobile
                 ? Column(children: [
-                    _buildChart(colorList),
-                    _buildList(theme, colorList)
+                    _buildChart(
+                      colorList,
+                    ),
+                    _buildList(theme, colorList, isMobile: true),
                   ])
                 : Row(
                     children: [
@@ -490,7 +501,8 @@ class _PieChartWithList extends StatelessWidget {
     });
   }
 
-  Expanded _buildList(ThemeData theme, List<Color> colorList) {
+  Expanded _buildList(ThemeData theme, List<Color> colorList,
+      {bool isMobile = false}) {
     return Expanded(
       flex: 1,
       child: Column(
@@ -499,7 +511,9 @@ class _PieChartWithList extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              fontSize: theme.textTheme.bodyMedium!.fontSize,
+              fontSize: isMobile
+                  ? theme.textTheme.bodyLarge!.fontSize
+                  : theme.textTheme.bodyMedium!.fontSize,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -532,8 +546,9 @@ class _PieChartWithList extends StatelessWidget {
                             child: Text(
                               '$key: ${value.toStringAsFixed(0).formatWithThousands()} ₽',
                               style: TextStyle(
-                                  fontSize:
-                                      theme.textTheme.bodyMedium!.fontSize),
+                                  fontSize: isMobile
+                                      ? theme.textTheme.bodyLarge!.fontSize
+                                      : theme.textTheme.bodyMedium!.fontSize),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -663,7 +678,9 @@ class _TableWidgetState extends State<_TableWidget> {
                   // Само тело таблицы
                   Positioned.fill(
                     child: Container(
-                      margin: const EdgeInsets.all(8.0),
+                      margin: isMobileOrLaptop
+                          ? EdgeInsets.zero
+                          : EdgeInsets.all(8.0),
                       padding:
                           const EdgeInsets.fromLTRB(16.0, 50.0, 16.0, 16.0),
                       decoration: BoxDecoration(

@@ -28,24 +28,24 @@ class _ProductScreenState extends State<ProductScreen> {
 
   //
   final ScrollController _scrollController = ScrollController();
-  bool _showFab = false;
-
+  // bool _showFab = false;
+  // double heightOfScreen = 0;
   @override
-  void initState() {
-    super.initState();
+  // void initState() {
+  //   super.initState();
 
-    _scrollController.addListener(() {
-      if (_scrollController.offset > 800) {
-        if (!_showFab) {
-          setState(() => _showFab = true);
-        }
-      } else {
-        if (_showFab) {
-          setState(() => _showFab = false);
-        }
-      }
-    });
-  }
+  //   _scrollController.addListener(() {
+  //     if ((_scrollController.offset == heightOfScreen) && heightOfScreen > 0) {
+  //       if (!_showFab) {
+  //         setState(() => _showFab = true);
+  //       }
+  //     } else {
+  //       if (_showFab) {
+  //         setState(() => _showFab = false);
+  //       }
+  //     }
+  //   });
+  // }
 
   @override
   void dispose() {
@@ -87,6 +87,8 @@ class _ProductScreenState extends State<ProductScreen> {
 
     return LayoutBuilder(builder: (context, constraints) {
       final maxWidth = constraints.maxWidth;
+      final maxHeight = constraints.maxHeight;
+
       final isMobile = maxWidth < 600;
 
       return Scaffold(
@@ -292,60 +294,59 @@ class _ProductScreenState extends State<ProductScreen> {
                         child: UnusedQueryTableWidget(),
                       ),
                     ],
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        if (!model.normqueriesLoaded)
+                          FloatingActionButton.extended(
+                            heroTag: 'queriesFab',
+                            backgroundColor:
+                                theme.colorScheme.surfaceContainerHighest,
+                            label: const Text("Поисковые запросы"),
+                            // icon: const Icon(Icons.search),
+                            onPressed: () async {
+                              await model.loadNormqueries();
+                            },
+                          ),
+                        const SizedBox(width: 8),
+
+                        // Анализ релевантности
+                        if (model.normqueriesLoaded && !model.seoLoaded)
+                          FloatingActionButton.extended(
+                            heroTag: 'seoFab',
+                            label: const Text("Анализ релевантности"),
+                            backgroundColor:
+                                theme.colorScheme.surfaceContainerHighest,
+                            onPressed: () async {
+                              if (!model.normqueriesLoaded) {
+                                await model.loadNormqueries();
+                              }
+                              await model.loadSeo();
+                            },
+                          ),
+                        const SizedBox(width: 8),
+
+                        // Упущенные запросы
+                        if (model.normqueriesLoaded &&
+                            !model.unusedQueriesLoaded)
+                          FloatingActionButton.extended(
+                            heroTag: 'unusedFab',
+                            label: const Text("Упущенные запросы"),
+                            backgroundColor:
+                                theme.colorScheme.surfaceContainerHighest,
+                            onPressed: () async {
+                              await model.loadUnusedQueries();
+                            },
+                          ),
+                        const SizedBox(width: 28),
+                      ],
+                    )
                   ],
                 ),
               ),
             ),
           ),
         ),
-        floatingActionButton: _showFab
-            ? Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  if (!model.normqueriesLoaded)
-                    FloatingActionButton.extended(
-                      heroTag: 'queriesFab',
-                      backgroundColor:
-                          theme.colorScheme.surfaceContainerHighest,
-                      label: const Text("Поисковые запросы"),
-                      // icon: const Icon(Icons.search),
-                      onPressed: () async {
-                        await model.loadNormqueries();
-                      },
-                    ),
-                  const SizedBox(width: 8),
-
-                  // Анализ релевантности
-                  if (model.normqueriesLoaded && !model.seoLoaded)
-                    FloatingActionButton.extended(
-                      heroTag: 'seoFab',
-                      label: const Text("Анализ релевантности"),
-                      backgroundColor:
-                          theme.colorScheme.surfaceContainerHighest,
-                      onPressed: () async {
-                        if (!model.normqueriesLoaded) {
-                          await model.loadNormqueries();
-                        }
-                        await model.loadSeo();
-                      },
-                    ),
-                  const SizedBox(width: 8),
-
-                  // Упущенные запросы
-                  if (model.normqueriesLoaded && !model.unusedQueriesLoaded)
-                    FloatingActionButton.extended(
-                      heroTag: 'unusedFab',
-                      label: const Text("Упущенные запросы"),
-                      backgroundColor:
-                          theme.colorScheme.surfaceContainerHighest,
-                      onPressed: () async {
-                        await model.loadUnusedQueries();
-                      },
-                    ),
-                  const SizedBox(width: 28),
-                ],
-              )
-            : null,
       );
     });
   }

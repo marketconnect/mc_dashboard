@@ -286,194 +286,190 @@ class __ScaffoldState extends State<_Scaffold> {
             ),
           Expanded(
             // Body =====================================================
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              child: IndexedStack(
-                index: _getCurrentIndex(),
-                children: [
-                  widget.screenFactory.makeChoosingNicheScreen(
-                    // 0 ChoosingNicheScreen /////////////////////////// ChoosingNicheScreen
-                    // 0 ChoosingNicheScreen
-                    onNavigateToSubjectProducts:
-                        (int subjectId, String subjectName) {
-                      setState(() {
-                        _selectedSectionIndex = 0;
-                        _selectedSubsectionIndex = 1;
-                        _currentSubjectId = subjectId;
-                        _currentSubjectName = subjectName;
-                      });
-                    },
-                  ),
-                  (_currentSubjectId != null &&
-                          _currentSubjectName !=
-                              null) // 1 SubjectProducts //////////////////////////////////////// SubjectProductsScreen 0
-                      ? KeyedSubtree(
-                          key: ValueKey(_currentSubjectId),
-                          child: widget.screenFactory.makeSubjectProductsScreen(
-                              subjectId: _currentSubjectId!,
-                              subjectName: _currentSubjectName!,
-                              onSaveProductsToTrack: (List<String> productIds) {
-                                setState(() {
-                                  _savedProductIds = List.from(_savedProductIds)
-                                    ..addAll(productIds);
-                                });
-                              },
-                              onNavigateTo: ({
-                                required String routeName,
-                                Map<String, dynamic>? params,
-                              }) {
-                                if (params != null) {
-                                  if (params.containsKey('subjectId')) {
-                                    _currentSubjectId = params['subjectId'];
-                                  }
-                                  if (params.containsKey('subjectName')) {
-                                    _currentSubjectName = params['subjectName'];
-                                  }
-                                  if (params.containsKey('productId')) {
-                                    _currentProductId = params['productId'];
-                                  }
-                                  if (params.containsKey('productPrice')) {
-                                    _currentProductPrice =
-                                        params['productPrice'];
-                                  }
-                                  if (params.containsKey('productIds')) {
-                                    _selectedProductIds = params['productIds'];
-                                  }
-                                }
-                                _onNavigate(routeName);
-                                // if (routeName ==
-                                //     MainNavigationRouteNames
-                                //         .seoRequestsExtend) {
-                                //   _onNavigateToSeoRequestsExtendScreen();
-                                // } else if (routeName ==
-                                //     MainNavigationRouteNames.productScreen) {
-                                //   _onNavigateToProductScreen();
-                                // } else if (routeName ==
-                                //     MainNavigationRouteNames
-                                //         .choosingNicheScreen) {
-                                //   _onNavigateToChoosingNicheScreen();
-                                // } else if (routeName ==
-                                //     MainNavigationRouteNames
-                                //         .emptySubjectsScreen) {
-                                //   _currentSubjectId = null;
-                                //   _currentSubjectName = null;
-                                //   _onNavigateToEmptySubjectScreen();
-                                // } else if (routeName ==
-                                //     MainNavigationRouteNames
-                                //         .subscriptionScreen) {
-                                //   _onNavigateToSubscriptionScreen();
-                                // }
-                              }),
-                        )
-                      : widget.screenFactory.makeEmptySubjectProductsScreen(
-                          // 1 SubjectProducts //////////////////////////////////////// EmptySubjectProducts 1
-
-                          onNavigateTo: ({
-                            required String routeName,
-                            Map<String, dynamic>? params,
-                          }) {
-                            if (params != null) {
-                              if (params.containsKey('subjectId')) {
-                                _currentSubjectId = params['subjectId'];
-                              }
-                              if (params.containsKey('subjectName')) {
-                                _currentSubjectName = params['subjectName'];
-                              }
-                            }
-                            _onNavigate(routeName);
-                            //   if (routeName ==
-                            //       MainNavigationRouteNames
-                            //           .subjectProductsScreen) {
-                            //     _onNavigateToSubjectProductsScreen();
-
-                            //     _controllers[1].expand();
-                            //   } else if (routeName ==
-                            //       MainNavigationRouteNames.choosingNicheScreen) {
-                            //     _onNavigateToChoosingNicheScreen();
-                            //   }
-                          },
-                        ),
-
-                  (_currentProductId != null &&
-                          _currentProductPrice !=
-                              null) // 2 Product //////////////////////////////////////// ProductScreen 0
-                      ? KeyedSubtree(
-                          key: ValueKey(_currentProductId),
-                          child: widget.screenFactory.makeProductScreen(
-                            productId: _currentProductId!,
-                            productPrice: _currentProductPrice!,
+            child: IndexedStack(
+              index: _getCurrentIndex(),
+              children: [
+                widget.screenFactory.makeChoosingNicheScreen(
+                  // 0 ChoosingNicheScreen /////////////////////////// ChoosingNicheScreen
+                  // 0 ChoosingNicheScreen
+                  onNavigateToSubjectProducts:
+                      (int subjectId, String subjectName) {
+                    setState(() {
+                      _selectedSectionIndex = 0;
+                      _selectedSubsectionIndex = 1;
+                      _currentSubjectId = subjectId;
+                      _currentSubjectName = subjectName;
+                    });
+                  },
+                ),
+                (_currentSubjectId != null &&
+                        _currentSubjectName !=
+                            null) // 1 SubjectProducts //////////////////////////////////////// SubjectProductsScreen 0
+                    ? KeyedSubtree(
+                        key: ValueKey(_currentSubjectId),
+                        child: widget.screenFactory.makeSubjectProductsScreen(
+                            subjectId: _currentSubjectId!,
+                            subjectName: _currentSubjectName!,
+                            onSaveProductsToTrack: (List<String> productIds) {
+                              setState(() {
+                                _savedProductIds = List.from(_savedProductIds)
+                                  ..addAll(productIds);
+                              });
+                            },
                             onNavigateTo: ({
                               required String routeName,
                               Map<String, dynamic>? params,
                             }) {
                               if (params != null) {
+                                if (params.containsKey('subjectId')) {
+                                  _currentSubjectId = params['subjectId'];
+                                }
+                                if (params.containsKey('subjectName')) {
+                                  _currentSubjectName = params['subjectName'];
+                                }
                                 if (params.containsKey('productId')) {
                                   _currentProductId = params['productId'];
                                 }
                                 if (params.containsKey('productPrice')) {
                                   _currentProductPrice = params['productPrice'];
                                 }
+                                if (params.containsKey('productIds')) {
+                                  _selectedProductIds = params['productIds'];
+                                }
                               }
                               _onNavigate(routeName);
-                            },
-                            onSaveKeyPhrasesToTrack: (List<String> keyPhrases) {
-                              setState(() {
-                                _keyPhrases = List.from(_keyPhrases)
-                                  ..addAll(keyPhrases);
-                              });
-                            },
-                          ),
-                        )
-                      : widget.screenFactory.makeEmptyProductScreen(
-                          // 2 Product ////////////////////////// EmptyProductScreen
-                          onNavigateTo: ({
+                              // if (routeName ==
+                              //     MainNavigationRouteNames
+                              //         .seoRequestsExtend) {
+                              //   _onNavigateToSeoRequestsExtendScreen();
+                              // } else if (routeName ==
+                              //     MainNavigationRouteNames.productScreen) {
+                              //   _onNavigateToProductScreen();
+                              // } else if (routeName ==
+                              //     MainNavigationRouteNames
+                              //         .choosingNicheScreen) {
+                              //   _onNavigateToChoosingNicheScreen();
+                              // } else if (routeName ==
+                              //     MainNavigationRouteNames
+                              //         .emptySubjectsScreen) {
+                              //   _currentSubjectId = null;
+                              //   _currentSubjectName = null;
+                              //   _onNavigateToEmptySubjectScreen();
+                              // } else if (routeName ==
+                              //     MainNavigationRouteNames
+                              //         .subscriptionScreen) {
+                              //   _onNavigateToSubscriptionScreen();
+                              // }
+                            }),
+                      )
+                    : widget.screenFactory.makeEmptySubjectProductsScreen(
+                        // 1 SubjectProducts //////////////////////////////////////// EmptySubjectProducts 1
+
+                        onNavigateTo: ({
                           required String routeName,
                           Map<String, dynamic>? params,
                         }) {
                           if (params != null) {
-                            if (params.containsKey('productId')) {
-                              _currentProductId = params['productId'];
+                            if (params.containsKey('subjectId')) {
+                              _currentSubjectId = params['subjectId'];
                             }
-                            if (params.containsKey('productPrice')) {
-                              _currentProductPrice = params['productPrice'];
+                            if (params.containsKey('subjectName')) {
+                              _currentSubjectName = params['subjectName'];
                             }
                           }
                           _onNavigate(routeName);
-                        }),
-                  (_selectedProductIds != null)
-                      ? KeyedSubtree(
-                          key: ValueKey(_selectedProductIds.hashCode),
-                          child: widget.screenFactory.makeSeoRequestsExtendScreen(
-                              // 3 SeoRequestsExtendScreen //////////////////////////
-                              productIds: _selectedProductIds!,
-                              onNavigateTo: ({
-                                required String routeName,
-                                Map<String, dynamic>? params,
-                              }) {
-                                _onNavigate(routeName);
-                              }),
-                        )
-                      : Center(
-                          child: Text(
-                            'Вы не выбрали товары',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                  KeyedSubtree(
-                      key: ValueKey(
-                          _savedProductIds.hashCode + _keyPhrases.hashCode),
-                      child: widget.screenFactory.makeMailingScreen(
+                          //   if (routeName ==
+                          //       MainNavigationRouteNames
+                          //           .subjectProductsScreen) {
+                          //     _onNavigateToSubjectProductsScreen();
+
+                          //     _controllers[1].expand();
+                          //   } else if (routeName ==
+                          //       MainNavigationRouteNames.choosingNicheScreen) {
+                          //     _onNavigateToChoosingNicheScreen();
+                          //   }
+                        },
+                      ),
+
+                (_currentProductId != null &&
+                        _currentProductPrice !=
+                            null) // 2 Product //////////////////////////////////////// ProductScreen 0
+                    ? KeyedSubtree(
+                        key: ValueKey(_currentProductId),
+                        child: widget.screenFactory.makeProductScreen(
+                          productId: _currentProductId!,
+                          productPrice: _currentProductPrice!,
                           onNavigateTo: ({
+                            required String routeName,
+                            Map<String, dynamic>? params,
+                          }) {
+                            if (params != null) {
+                              if (params.containsKey('productId')) {
+                                _currentProductId = params['productId'];
+                              }
+                              if (params.containsKey('productPrice')) {
+                                _currentProductPrice = params['productPrice'];
+                              }
+                            }
+                            _onNavigate(routeName);
+                          },
+                          onSaveKeyPhrasesToTrack: (List<String> keyPhrases) {
+                            setState(() {
+                              _keyPhrases = List.from(_keyPhrases)
+                                ..addAll(keyPhrases);
+                            });
+                          },
+                        ),
+                      )
+                    : widget.screenFactory.makeEmptyProductScreen(
+                        // 2 Product ////////////////////////// EmptyProductScreen
+                        onNavigateTo: ({
                         required String routeName,
                         Map<String, dynamic>? params,
                       }) {
+                        if (params != null) {
+                          if (params.containsKey('productId')) {
+                            _currentProductId = params['productId'];
+                          }
+                          if (params.containsKey('productPrice')) {
+                            _currentProductPrice = params['productPrice'];
+                          }
+                        }
                         _onNavigate(routeName);
-                      })), // MailingSettings
-                  widget.screenFactory.makeSubscriptionScreen(), // Subscription
-                ],
-              ),
+                      }),
+                (_selectedProductIds != null)
+                    ? KeyedSubtree(
+                        key: ValueKey(_selectedProductIds.hashCode),
+                        child: widget.screenFactory.makeSeoRequestsExtendScreen(
+                            // 3 SeoRequestsExtendScreen //////////////////////////
+                            productIds: _selectedProductIds!,
+                            onNavigateTo: ({
+                              required String routeName,
+                              Map<String, dynamic>? params,
+                            }) {
+                              _onNavigate(routeName);
+                            }),
+                      )
+                    : Center(
+                        child: Text(
+                          'Вы не выбрали товары',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                KeyedSubtree(
+                    key: ValueKey(
+                        _savedProductIds.hashCode + _keyPhrases.hashCode),
+                    child:
+                        widget.screenFactory.makeMailingScreen(onNavigateTo: ({
+                      required String routeName,
+                      Map<String, dynamic>? params,
+                    }) {
+                      _onNavigate(routeName);
+                    })), // MailingSettings
+                widget.screenFactory.makeSubscriptionScreen(), // Subscription
+              ],
             ),
           ),
         ],
@@ -696,7 +692,7 @@ class _SideMenuDivider extends StatelessWidget {
 
 class Responsive {
   static bool isMobile(BuildContext context) =>
-      MediaQuery.sizeOf(context).width < 600;
+      MediaQuery.sizeOf(context).width < 900;
 }
 
 class _Section {

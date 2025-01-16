@@ -10,6 +10,7 @@ class LoginScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final viewModel = context.watch<LoginViewModel>();
     final showBtn = viewModel.showBtn;
+    final forgotPassword = viewModel.forgotPassword;
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       color: Colors.white,
@@ -158,6 +159,20 @@ class LoginScreen extends StatelessWidget {
                           style: const TextStyle(color: Colors.blue),
                         ),
                       ),
+                    const SizedBox(height: 8),
+                    if (forgotPassword)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () {
+                            _showForgotPasswordDialog(context);
+                          },
+                          child: const Text(
+                            'Забыли пароль?',
+                            style: TextStyle(color: Colors.blue),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -165,6 +180,40 @@ class LoginScreen extends StatelessWidget {
           },
         ),
       ),
+    );
+  }
+
+  void _showForgotPasswordDialog(BuildContext context) {
+    final viewModel = Provider.of<LoginViewModel>(context, listen: false);
+    final TextEditingController emailController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Восстановление пароля'),
+          content: TextField(
+            controller: emailController,
+            decoration: const InputDecoration(
+              labelText: 'Введите ваш Email',
+              prefixIcon: Icon(Icons.email),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Отмена'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                await viewModel.resetPassword(emailController.text.trim());
+                Navigator.of(context).pop();
+              },
+              child: const Text('Отправить'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

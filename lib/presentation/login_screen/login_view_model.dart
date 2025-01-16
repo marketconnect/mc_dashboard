@@ -31,6 +31,8 @@ class LoginViewModel extends ViewModelBase {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  bool forgotPassword = false;
+
   // Methods
   bool _showBtn = true;
   bool get showBtn => _showBtn;
@@ -101,10 +103,57 @@ class LoginViewModel extends ViewModelBase {
         password: password,
       );
     } on FirebaseAuthException catch (e) {
-      errorMessage = e.message;
+      switch (e.code) {
+        case 'user-not-found':
+          setErrorMessage('Пользователь не найден');
+          break;
+        case 'wrong-password':
+          forgotPassword = true;
+          setErrorMessage('Неверный пароль');
+          break;
+        case 'email-already-in-use':
+          setErrorMessage('Этот Email уже используется');
+          break;
+        case 'invalid-email':
+          setErrorMessage('Некорректный Email');
+          break;
+        case "invalid-credential":
+          forgotPassword = true;
+          setErrorMessage('Неверный Email или пароль');
+          break;
+        case 'weak-password':
+          setErrorMessage('Пароль слишком слабый');
+          break;
+        default:
+          setErrorMessage('Ошибка: ${e.message}');
+      }
+      // errorMessage = e.message;
     }
     setShowBtn(true);
     notifyListeners();
+  }
+
+  Future<void> resetPassword(String email) async {
+    if (email.isEmpty) {
+      setErrorMessage('Введите Email для восстановления пароля');
+      return;
+    }
+
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+      setErrorMessage('Письмо для восстановления отправлено на $email');
+    } on FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case 'user-not-found':
+          setErrorMessage('Пользователь с таким Email не найден');
+          break;
+        case 'invalid-email':
+          setErrorMessage('Некорректный Email');
+          break;
+        default:
+          setErrorMessage('Ошибка: ${e.message}');
+      }
+    }
   }
 
   @override

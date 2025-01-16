@@ -24,6 +24,7 @@ class ChoosingNicheScreen extends StatelessWidget {
     final expandedContainer = model.expandedContainer;
     final isFilterVisible = model.isFilterVisible;
     final selectedParentName = model.selectedParentName;
+    final selectedSubjectName = model.selectedSubjectName;
     return Scaffold(
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -38,38 +39,38 @@ class ChoosingNicheScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  isLoading
-                      ? Shimmer(
-                          gradient:
-                              Theme.of(context).colorScheme.shimmerGradient,
-                          child: Container(
+                  if (selectedSubjectName != null)
+                    isLoading
+                        ? Shimmer(
+                            gradient:
+                                Theme.of(context).colorScheme.shimmerGradient,
+                            child: Container(
+                              height: constraints.maxHeight * 0.4,
+                              width: double.infinity,
+                              margin: const EdgeInsets.all(8.0),
+                              decoration: BoxDecoration(
+                                color: Colors.grey,
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                            ),
+                          )
+                        : Container(
                             height: constraints.maxHeight * 0.4,
-                            width: double.infinity,
-                            margin: const EdgeInsets.all(16.0),
+                            margin: const EdgeInsets.all(8.0),
+                            padding: const EdgeInsets.all(8.0),
                             decoration: BoxDecoration(
-                              color: Colors.grey,
+                              color: surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(8.0),
                             ),
+                            child: const HistoryChartWidget(),
                           ),
-                        )
-                      : Container(
-                          height: constraints.maxHeight * 0.4,
-                          margin: const EdgeInsets.all(8.0),
-                          padding: const EdgeInsets.all(16.0),
-                          decoration: BoxDecoration(
-                            color: surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          child:
-                              const HistoryChartWidget(), // <-- Добавили ваш новый виджет
-                        ),
                   isLoading
                       ? Shimmer(
                           gradient:
                               Theme.of(context).colorScheme.shimmerGradient,
                           child: Container(
                             height: constraints.maxHeight * 0.8,
-                            margin: const EdgeInsets.all(16.0),
+                            margin: const EdgeInsets.all(8.0),
                             decoration: BoxDecoration(
                               color: Colors.grey,
                               borderRadius: BorderRadius.circular(8.0),
@@ -77,17 +78,19 @@ class ChoosingNicheScreen extends StatelessWidget {
                           ),
                         )
                       : Container(
-                          height:
-                              constraints.maxHeight * 0.8, // Height for graph
+                          height: constraints.maxHeight, // Height for graph
                           margin: const EdgeInsets.all(8.0),
-                          padding: const EdgeInsets.all(16.0),
+                          padding: const EdgeInsets.all(8.0),
                           decoration: BoxDecoration(
                             color: surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(8.0),
                           ),
-                          child: PieChartWidget(maxWidth: maxWidth),
+                          child: PieChartWidget(
+                              isMobileOrLaptop: isMobileOrLaptop,
+                              maxWidth: maxWidth),
                         ),
-                  if (isFilterVisible) _buildFiltersWidget(context),
+                  if (isFilterVisible)
+                    _buildFiltersWidget(context, isMobileOrLaptop),
                   isLoading
                       ? Shimmer(
                           gradient:
@@ -95,7 +98,7 @@ class ChoosingNicheScreen extends StatelessWidget {
                           child: Container(
                             height: constraints.maxHeight, //
                             width: double.infinity,
-                            margin: const EdgeInsets.all(16.0),
+                            margin: const EdgeInsets.all(8.0),
                             decoration: BoxDecoration(
                               color: Colors.grey,
                               borderRadius: BorderRadius.circular(8.0),
@@ -105,7 +108,7 @@ class ChoosingNicheScreen extends StatelessWidget {
                       : Container(
                           height: constraints.maxHeight, // Height for table
                           margin: const EdgeInsets.all(8.0),
-                          padding: const EdgeInsets.all(16.0),
+                          padding: const EdgeInsets.all(2.0),
                           decoration: BoxDecoration(
                             color: surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(8.0),
@@ -148,7 +151,9 @@ class ChoosingNicheScreen extends StatelessWidget {
                                     color: surfaceContainerHighest,
                                     borderRadius: BorderRadius.circular(8.0),
                                   ),
-                                  child: PieChartWidget(maxWidth: maxWidth),
+                                  child: PieChartWidget(
+                                      isMobileOrLaptop: isMobileOrLaptop,
+                                      maxWidth: maxWidth),
                                 ),
                         ),
                       Flexible(
@@ -214,7 +219,7 @@ class ChoosingNicheScreen extends StatelessWidget {
                   ),
                 ),
               if (isFilterVisible && !expandedContainer)
-                _buildFiltersWidget(context),
+                _buildFiltersWidget(context, isMobileOrLaptop),
               if (!expandedContainer)
                 Flexible(
                   flex: 2,
@@ -247,11 +252,13 @@ class ChoosingNicheScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFiltersWidget(BuildContext context) {
+  Widget _buildFiltersWidget(BuildContext context, bool isMobileOrLaptop) {
     final model = context.watch<ChoosingNicheViewModel>();
     final theme = Theme.of(context);
     final textStyle = TextStyle(
-      fontSize: theme.textTheme.bodyMedium!.fontSize,
+      fontSize: isMobileOrLaptop
+          ? theme.textTheme.bodyLarge!.fontSize
+          : theme.textTheme.bodyMedium!.fontSize,
       color: theme.colorScheme.onSurface,
     );
     final labelStyle = TextStyle(
@@ -378,9 +385,10 @@ class ChoosingNicheScreen extends StatelessWidget {
 // Filter widget ///////////////////////////////////////////////////////////////
 
 class PieChartWidget extends StatelessWidget {
-  const PieChartWidget({super.key, required this.maxWidth});
+  const PieChartWidget(
+      {super.key, required this.isMobileOrLaptop, required this.maxWidth});
+  final bool isMobileOrLaptop;
   final double maxWidth;
-
   @override
   Widget build(BuildContext context) {
     final model = context.watch<ChoosingNicheViewModel>();
@@ -392,47 +400,36 @@ class PieChartWidget extends StatelessWidget {
     final theme = Theme.of(context);
     final colorList = generateColorList(model.currentDataMap.keys.length);
     // final header = model.diagramHeader;
-    return LayoutBuilder(builder: (context, constraints) {
-      final maxWidth = constraints.maxWidth;
-      final maxHeight = constraints.maxHeight;
-      final isMobileOrLaptop = maxWidth < 900 || maxHeight < 690;
-
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: error != null
-            ? [_buildError(maxWidth, error)]
-            : loading || model.currentDataMap.isEmpty
-                ? const [Expanded(child: Center(child: Text('Загрузка...')))]
-                : [
-                    Expanded(
-                      child: isMobileOrLaptop
-                          ? Column(children: [
-                              _buildChart(model, theme, colorList),
-                              _buildList(
-                                selectedParentName,
-                                theme,
-                                model,
-                                colorList,
-                                isMobileOrLaptop,
-                                selectedMetric,
-                              ),
-                            ])
-                          : Row(
-                              children: [
-                                _buildChart(model, theme, colorList),
-                                _buildList(
-                                    selectedParentName,
-                                    theme,
-                                    model,
-                                    colorList,
-                                    isMobileOrLaptop,
-                                    selectedMetric),
-                              ],
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: error != null
+          ? [_buildError(maxWidth, error)]
+          : loading || model.currentDataMap.isEmpty
+              ? const [Expanded(child: Center(child: Text('Загрузка...')))]
+              : [
+                  Expanded(
+                    child: isMobileOrLaptop
+                        ? Column(children: [
+                            _buildChart(model, theme, colorList),
+                            _buildList(
+                              selectedParentName,
+                              theme,
+                              model,
+                              colorList,
+                              isMobileOrLaptop,
+                              selectedMetric,
                             ),
-                    ),
-                  ],
-      );
-    });
+                          ])
+                        : Row(
+                            children: [
+                              _buildChart(model, theme, colorList),
+                              _buildList(selectedParentName, theme, model,
+                                  colorList, isMobileOrLaptop, selectedMetric),
+                            ],
+                          ),
+                  ),
+                ],
+    );
   }
 
   Expanded _buildList(
@@ -455,7 +452,9 @@ class PieChartWidget extends StatelessWidget {
             child: Text(
               '$selectedParentName (ТОП-30)',
               style: TextStyle(
-                fontSize: theme.textTheme.bodyMedium!.fontSize,
+                fontSize: isMobileOrLaptop
+                    ? theme.textTheme.bodyLarge!.fontSize
+                    : theme.textTheme.bodyMedium!.fontSize,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -492,8 +491,9 @@ class PieChartWidget extends StatelessWidget {
                             child: Text(
                               '$key: ${value.toStringAsFixed(0).formatWithThousands()} ${selectedMetric.$2}',
                               style: TextStyle(
-                                  fontSize:
-                                      theme.textTheme.bodyMedium!.fontSize),
+                                  fontSize: isMobileOrLaptop
+                                      ? theme.textTheme.bodyLarge!.fontSize
+                                      : theme.textTheme.bodyMedium!.fontSize),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -706,8 +706,7 @@ class _TableWidgetState extends State<TableWidget> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(
-                          maxWidth: 400), // Ограничение ширины
+                      constraints: const BoxConstraints(maxWidth: 400),
                       child: TextField(
                         decoration: InputDecoration(
                           labelText: 'Поиск по предметам',
@@ -730,7 +729,6 @@ class _TableWidgetState extends State<TableWidget> {
               ),
             Expanded(
               child: Container(
-                // margin: const EdgeInsets.all(8.0),
                 padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surfaceContainerHighest,
@@ -909,8 +907,10 @@ class _TableWidgetState extends State<TableWidget> {
                                     text,
                                     textAlign: textAlign,
                                     style: TextStyle(
-                                        fontSize: theme
-                                            .textTheme.bodyMedium!.fontSize,
+                                        fontSize: isMobileOrLaptop
+                                            ? columns[6].width * 0.12
+                                            : theme
+                                                .textTheme.bodyMedium!.fontSize,
                                         fontWeight: FontWeight.bold),
                                     overflow: TextOverflow.visible,
                                     softWrap: true,
@@ -1203,20 +1203,11 @@ class _HistoryChartWidgetState extends State<HistoryChartWidget> {
     String secondKey = "sku_with_orders";
 
     final selectedMetric = model.historyMetric;
-    // switch (selectedMetric) {
-    //   case "Заказы":
-    //     firstKey = "total_orders";
-    //     break;
-
-    //   case "Кол-во sku/sku с заказами":
-    //   default:
-    // }
 
     if (selectedSubjectName == null) {
       return const Center(child: Text("Не выбрано"));
     }
 
-    // Ищем элементы, где subjectName совпадает с нужным
     final items = model.subjectsSummary
         .where((element) => element.subjectName == selectedSubjectName)
         .toList();
@@ -1242,8 +1233,9 @@ class _HistoryChartWidgetState extends State<HistoryChartWidget> {
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Text(
             selectedSubjectName,
-            style: const TextStyle(fontSize: 20),
+            style: TextStyle(fontSize: theme.textTheme.titleMedium!.fontSize),
           ),
+          SizedBox(width: 10),
           _buildMetricSelector(theme, model),
           SizedBox(width: 16),
         ]),
@@ -1434,7 +1426,7 @@ class _HistoryChartWidgetState extends State<HistoryChartWidget> {
 
     return LayoutBuilder(builder: (context, constraints) {
       return SizedBox(
-        width: 200, // Ограничиваем ширину DropdownButton
+        width: 200,
         child: DropdownButton<String>(
           value: selectedMetric,
           isExpanded: true, // Растягивает кнопку до ширины контейнера

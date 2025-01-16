@@ -249,9 +249,11 @@ class ProductViewModel extends ViewModelBase {
     cons = set.toList();
   }
 
+  double heightOfScreen = 0;
   // Methods ///////////////////////////////////////////////////////////////////
   @override
   Future<void> asyncInit() async {
+    // heightOfScreen = MediaQuery.of(context).size.height;
     _basketNum = getBasketNum(productId);
 
     final vals = await Future.wait([
