@@ -87,7 +87,7 @@ class _ProductScreenState extends State<ProductScreen> {
 
     return LayoutBuilder(builder: (context, constraints) {
       final maxWidth = constraints.maxWidth;
-      final maxHeight = constraints.maxHeight;
+      // final maxHeight = constraints.maxHeight;
 
       final isMobile = maxWidth < 600;
 
