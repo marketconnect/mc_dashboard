@@ -49,7 +49,7 @@ class SubscriptionScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'Рассылка с актуальной аналитикой и уведомлениями:',
+                              'Email рассылка с актуальной аналитикой и уведомлениями:',
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,

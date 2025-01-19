@@ -20,9 +20,9 @@ class SavedProductAdapter extends TypeAdapter<SavedProduct> {
       productId: fields[0] as String,
       name: fields[1] as String,
       imageUrl: fields[2] as String,
-      sellerId: fields[3] as int,
+      sellerId: fields[3] as String,
       sellerName: fields[4] as String,
-      brandId: fields[5] as int,
+      brandId: fields[5] as String,
       brandName: fields[6] as String,
       marketplaceType: fields[7] as String,
     );

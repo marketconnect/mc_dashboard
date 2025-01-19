@@ -238,7 +238,7 @@ class __ScaffoldState extends State<_Scaffold> {
     setState(() {
       _selectedSectionIndex = 1;
       _selectedSubsectionIndex = 0;
-      _controllers[1].expand();
+      // _controllers[1].expand();
     });
   }
 
@@ -397,29 +397,34 @@ class __ScaffoldState extends State<_Scaffold> {
                     ? KeyedSubtree(
                         key: ValueKey(_currentProductId),
                         child: widget.screenFactory.makeProductScreen(
-                          productId: _currentProductId!,
-                          productPrice: _currentProductPrice!,
-                          onNavigateTo: ({
-                            required String routeName,
-                            Map<String, dynamic>? params,
-                          }) {
-                            if (params != null) {
-                              if (params.containsKey('productId')) {
-                                _currentProductId = params['productId'];
+                            productId: _currentProductId!,
+                            productPrice: _currentProductPrice!,
+                            onNavigateTo: ({
+                              required String routeName,
+                              Map<String, dynamic>? params,
+                            }) {
+                              if (params != null) {
+                                if (params.containsKey('productId')) {
+                                  _currentProductId = params['productId'];
+                                }
+                                if (params.containsKey('productPrice')) {
+                                  _currentProductPrice = params['productPrice'];
+                                }
+                                if (params.containsKey('subjectId')) {
+                                  _currentSubjectId = params['subjectId'];
+                                }
+                                if (params.containsKey('subjectName')) {
+                                  _currentSubjectName = params['subjectName'];
+                                }
                               }
-                              if (params.containsKey('productPrice')) {
-                                _currentProductPrice = params['productPrice'];
-                              }
-                            }
-                            _onNavigate(routeName);
-                          },
-                          onSaveKeyPhrasesToTrack: (List<String> keyPhrases) {
-                            setState(() {
-                              _keyPhrases = List.from(_keyPhrases)
-                                ..addAll(keyPhrases);
-                            });
-                          },
-                        ),
+                              _onNavigate(routeName);
+                            },
+                            onSaveKeyPhrasesToTrack: (List<String> keyPhrases) {
+                              setState(() {
+                                _keyPhrases = List.from(_keyPhrases)
+                                  ..addAll(keyPhrases);
+                              });
+                            }),
                       )
                     : widget.screenFactory.makeEmptyProductScreen(
                         // 2 Product ////////////////////////// EmptyProductScreen

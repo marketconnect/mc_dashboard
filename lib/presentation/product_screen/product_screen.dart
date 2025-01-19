@@ -1,19 +1,22 @@
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
+
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:material_table_view/material_table_view.dart';
+import 'package:pie_chart/pie_chart.dart' as pie_chart;
+import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:mc_dashboard/core/utils/dates.dart';
 import 'package:mc_dashboard/presentation/product_screen/product_view_model.dart';
 import 'package:mc_dashboard/presentation/product_screen/table_row_model.dart';
 import 'package:mc_dashboard/presentation/widgets/check_box.dart';
 import 'package:mc_dashboard/theme/color_schemes.dart';
-import 'package:pie_chart/pie_chart.dart' as pie_chart;
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import 'package:shimmer/shimmer.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class ProductScreen extends StatefulWidget {
   const ProductScreen({super.key});
@@ -60,7 +63,7 @@ class _ProductScreenState extends State<ProductScreen> {
     final id = model.productId;
     final onNavigateToEmptyProductScreen = model.onNavigateToEmptyProductScreen;
     final name = model.name;
-
+    final subjectName = model.subjectName;
     final price = model.productPrice;
     final rating = model.rating;
 
@@ -97,252 +100,321 @@ class _ProductScreenState extends State<ProductScreen> {
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 1200),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Flexible(
-                          child: Row(
-                            children: [
-                              IconButton(
-                                onPressed: onNavigateBack,
-                                icon: Icon(
-                                  Icons.arrow_back_ios,
-                                  color: theme.colorScheme.primary,
-                                ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Flexible(
+                              child: Row(
+                                children: [
+                                  IconButton(
+                                    onPressed: onNavigateBack,
+                                    icon: Icon(
+                                      Icons.arrow_back_ios,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: Text(
+                                      name,
+                                      maxLines: 3,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: isMobile
+                                          ? Theme.of(context)
+                                              .textTheme
+                                              .headlineSmall
+                                          : Theme.of(context)
+                                              .textTheme
+                                              .headlineMedium
+                                              ?.copyWith(
+                                                  fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 8),
-                              Flexible(
-                                child: Text(
-                                  name,
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: isMobile
-                                      ? Theme.of(context)
+                            ),
+                            IconButton(
+                              onPressed: onNavigateToEmptyProductScreen,
+                              icon: const Icon(Icons.search_sharp, size: 24),
+                              color: theme.colorScheme.primary,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        MouseRegion(
+                          // Артикул
+                          cursor: SystemMouseCursors.click,
+                          child: GestureDetector(
+                            onTap: () => launchUrl(Uri.parse(wildberriesUrl)),
+                            child: Text(
+                              'Артикул: $id',
+                              style: TextStyle(
+                                fontSize: isMobile ? 12 : null,
+                                decoration: TextDecoration.underline,
+                                decorationColor: Color(0xFF5166e3),
+                                color: Color(0xFF5166e3),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Text(
+                              'Категория:',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w300),
+                            ),
+                            MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: GestureDetector(
+                                onTap: () =>
+                                    model.onNavigateToSubjectProductsScreen(),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      ' $subjectName',
+                                      style: Theme.of(context)
                                           .textTheme
-                                          .headlineSmall
-                                      : Theme.of(context)
-                                          .textTheme
-                                          .headlineMedium
+                                          .titleMedium
                                           ?.copyWith(
                                               fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Icon(Icons.arrow_forward_ios, size: 12),
+                                  ],
                                 ),
                               ),
-                            ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                            height: 400,
+                            child: ImageCarousel(
+                              isMobile: isMobile,
+                            )),
+                        const SizedBox(height: 24),
+                        if (!isMobile) const SizedBox(height: 24),
+                        Wrap(
+                          spacing: 16,
+                          runSpacing: 16,
+                          children: [
+                            if (price != 0)
+                              _buildStatCard(
+                                  'Цена', '${_formatPrice(price)} ₽'),
+                            _buildStatCard(
+                                'Продажи за 30 дней', '$orders30d шт.'),
+                            _buildStatCard('Рейтинг', '$rating ★'),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'Графики',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 16),
+                        Wrap(
+                          spacing: 16,
+                          runSpacing: 16,
+                          children: [
+                            _buildChartContainer(
+                              title: 'Динамика продаж',
+                              child: _buildLineChart(
+                                ordersDates,
+                                salesValues,
+                                isSales: true,
+                                valueSuffix: 'шт.',
+                              ),
+                            ),
+                            _buildChartContainer(
+                              title: 'Доля продаж по складам',
+                              child: _buildPieChart(pieDataMap),
+                            ),
+                            _buildChartContainer(
+                              title: 'История изменения цены',
+                              child: _buildLineChart(
+                                priceDates,
+                                priceValues,
+                                isSales: false,
+                                valueSuffix: '₽',
+                              ),
+                            ),
+                            _buildChartContainer(
+                              title: "История остатков",
+                              child: BarChartWidget(
+                                  dailyStockSums: dailyStockSums),
+                            )
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        if (!model.loading)
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 1016),
+                            child: StocksSectionWidget(),
                           ),
-                        ),
-                        IconButton(
-                          onPressed: onNavigateToEmptyProductScreen,
-                          icon: const Icon(Icons.search_sharp, size: 24),
-                          color: theme.colorScheme.primary,
-                        ),
+                        const SizedBox(height: 24),
+                        if (!model.loading)
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 1016),
+                            child: _Feedback(),
+                          ),
+                        const SizedBox(height: 24),
+                        if (model.normqueriesLoaded)
+                          Text(
+                            "Поисковые запросы",
+                            style: theme.textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                        const SizedBox(height: 8),
+                        if (model.normqueriesLoaded)
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 1016),
+                            child: NormqueryTableWidget(),
+                          ),
+                        const SizedBox(height: 24),
+                        if (model.seoLoaded) ...[
+                          const SizedBox(height: 16),
+                          Text(
+                            "Анализ релевантности",
+                            style: theme.textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          if (model.seoTableSections.isNotEmpty)
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 1016),
+                              child: SeoSectionWidget(
+                                sectionTitle: "Заголовок",
+                                sectionText: name,
+                                querySimilarities:
+                                    model.seoTableSections["title"] ?? [],
+                              ),
+                            ),
+                          const SizedBox(height: 16),
+                          if (model.seoTableSections.isNotEmpty)
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 1016),
+                              child: SeoSectionWidget(
+                                sectionTitle: "Характеристики",
+                                sectionText: model.characteristics,
+                                querySimilarities:
+                                    model.seoTableSections["characteristics"] ??
+                                        [],
+                              ),
+                            ),
+                          const SizedBox(height: 16),
+                          if (model.seoTableSections.isNotEmpty)
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 1016),
+                              child: SeoSectionWidget(
+                                sectionTitle: "Описание",
+                                sectionText: model.description,
+                                querySimilarities:
+                                    model.seoTableSections["description"] ?? [],
+                              ),
+                            ),
+                        ],
+                        const SizedBox(height: 24),
+                        if (!model.loading && model.unusedQueriesLoaded) ...[
+                          Text(
+                            "Упущенные запросы",
+                            style: theme.textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 1016),
+                            child: UnusedQueryTableWidget(),
+                          ),
+                        ],
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    MouseRegion(
-                      // Артикул
-                      cursor: SystemMouseCursors.click,
-                      child: GestureDetector(
-                        onTap: () => launchUrl(Uri.parse(wildberriesUrl)),
-                        child: Text(
-                          'Артикул: $id',
-                          style: TextStyle(
-                            fontSize: isMobile ? 12 : null,
-                            decoration: TextDecoration.underline,
-                            decorationColor: Color(0xFF5166e3),
-                            color: Color(0xFF5166e3),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(height: 400, child: ImageCarousel()),
-                    if (!isMobile) const SizedBox(height: 24),
-                    if (!isMobile) const SizedBox(height: 24),
-                    Wrap(
-                      spacing: 16,
-                      runSpacing: 16,
-                      children: [
-                        if (price != 0)
-                          _buildStatCard('Цена', '${_formatPrice(price)} ₽'),
-                        _buildStatCard('Продажи за 30 дней', '$orders30d шт.'),
-                        _buildStatCard('Рейтинг', '$rating ★'),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Графики',
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleLarge
-                          ?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 16),
-                    Wrap(
-                      spacing: 16,
-                      runSpacing: 16,
-                      children: [
-                        _buildChartContainer(
-                          title: 'Динамика продаж',
-                          child: _buildLineChart(
-                            ordersDates,
-                            salesValues,
-                            isSales: true,
-                            valueSuffix: 'шт.',
-                          ),
-                        ),
-                        _buildChartContainer(
-                          title: 'Доля продаж по складам',
-                          child: _buildPieChart(pieDataMap),
-                        ),
-                        _buildChartContainer(
-                          title: 'История изменения цены',
-                          child: _buildLineChart(
-                            priceDates,
-                            priceValues,
-                            isSales: false,
-                            valueSuffix: '₽',
-                          ),
-                        ),
-                        _buildChartContainer(
-                          title: "История остатков",
-                          child: BarChartWidget(dailyStockSums: dailyStockSums),
-                        )
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    if (!model.loading)
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 1016),
-                        child: StocksSectionWidget(),
-                      ),
-                    const SizedBox(height: 24),
-                    if (!model.loading)
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 1016),
-                        child: _Feedback(),
-                      ),
-                    const SizedBox(height: 24),
-                    if (model.normqueriesLoaded)
-                      Text(
-                        "Поисковые запросы",
-                        style: theme.textTheme.titleLarge
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                    const SizedBox(height: 8),
-                    if (model.normqueriesLoaded)
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 1016),
-                        child: NormqueryTableWidget(),
-                      ),
-                    const SizedBox(height: 24),
-                    if (model.seoLoaded) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        "Анализ релевантности",
-                        style: theme.textTheme.titleLarge
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      if (model.seoTableSections.isNotEmpty)
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 1016),
-                          child: SeoSectionWidget(
-                            sectionTitle: "Заголовок",
-                            sectionText: name,
-                            querySimilarities:
-                                model.seoTableSections["title"] ?? [],
-                          ),
-                        ),
-                      const SizedBox(height: 16),
-                      if (model.seoTableSections.isNotEmpty)
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 1016),
-                          child: SeoSectionWidget(
-                            sectionTitle: "Характеристики",
-                            sectionText: model.characteristics,
-                            querySimilarities:
-                                model.seoTableSections["characteristics"] ?? [],
-                          ),
-                        ),
-                      const SizedBox(height: 16),
-                      if (model.seoTableSections.isNotEmpty)
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 1016),
-                          child: SeoSectionWidget(
-                            sectionTitle: "Описание",
-                            sectionText: model.description,
-                            querySimilarities:
-                                model.seoTableSections["description"] ?? [],
-                          ),
-                        ),
-                    ],
-                    const SizedBox(height: 24),
-                    if (!model.loading && model.unusedQueriesLoaded) ...[
-                      Text(
-                        "Упущенные запросы",
-                        style: theme.textTheme.titleLarge
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 1016),
-                        child: UnusedQueryTableWidget(),
-                      ),
-                    ],
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        if (!model.normqueriesLoaded)
-                          FloatingActionButton.extended(
-                            heroTag: 'queriesFab',
-                            backgroundColor:
-                                theme.colorScheme.surfaceContainerHighest,
-                            label: const Text("Поисковые запросы"),
-                            // icon: const Icon(Icons.search),
-                            onPressed: () async {
-                              await model.loadNormqueries();
-                            },
-                          ),
-                        const SizedBox(width: 8),
-
-                        // Анализ релевантности
-                        if (model.normqueriesLoaded && !model.seoLoaded)
-                          FloatingActionButton.extended(
-                            heroTag: 'seoFab',
-                            label: const Text("Анализ релевантности"),
-                            backgroundColor:
-                                theme.colorScheme.surfaceContainerHighest,
-                            onPressed: () async {
-                              if (!model.normqueriesLoaded) {
+                  ),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Container(
+                      // decoration: BoxDecoration(
+                      //   border: Border.all(color: theme.colorScheme.outline),
+                      // ),
+                      width: isMobile
+                          ? constraints.maxWidth * 1.5
+                          : constraints.maxWidth * 0.6,
+                      margin: const EdgeInsets.only(bottom: 24),
+                      child: Row(
+                        mainAxisAlignment: !model.normqueriesLoaded
+                            ? MainAxisAlignment.center
+                            : isMobile
+                                ? MainAxisAlignment.center
+                                : MainAxisAlignment.end,
+                        children: [
+                          if (!model.normqueriesLoaded)
+                            FloatingActionButton.extended(
+                              heroTag: 'queriesFab',
+                              backgroundColor:
+                                  theme.colorScheme.surfaceContainerHighest,
+                              label: const Text("Поисковые запросы",
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
+                              // icon: const Icon(Icons.search),
+                              onPressed: () async {
                                 await model.loadNormqueries();
-                              }
-                              await model.loadSeo();
-                            },
-                          ),
-                        const SizedBox(width: 8),
+                              },
+                            ),
+                          const SizedBox(width: 8),
 
-                        // Упущенные запросы
-                        if (model.normqueriesLoaded &&
-                            !model.unusedQueriesLoaded)
-                          FloatingActionButton.extended(
-                            heroTag: 'unusedFab',
-                            label: const Text("Упущенные запросы"),
-                            backgroundColor:
-                                theme.colorScheme.surfaceContainerHighest,
-                            onPressed: () async {
-                              await model.loadUnusedQueries();
-                            },
-                          ),
-                        const SizedBox(width: 28),
-                      ],
-                    )
-                  ],
-                ),
+                          // Анализ релевантности
+                          if (model.normqueriesLoaded &&
+                              !model.seoLoaded &&
+                              model.normqueries.isNotEmpty)
+                            FloatingActionButton.extended(
+                              heroTag: 'seoFab',
+                              label: const Text("Анализ релевантности",
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
+                              backgroundColor:
+                                  theme.colorScheme.surfaceContainerHighest,
+                              onPressed: () async {
+                                if (!model.normqueriesLoaded) {
+                                  await model.loadNormqueries();
+                                }
+                                await model.loadSeo();
+                              },
+                            ),
+                          const SizedBox(width: 8),
+
+                          // Упущенные запросы
+                          if (model.normqueriesLoaded &&
+                              !model.unusedQueriesLoaded)
+                            FloatingActionButton.extended(
+                              heroTag: 'unusedFab',
+                              label: const Text("Упущенные запросы",
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
+                              backgroundColor:
+                                  theme.colorScheme.surfaceContainerHighest,
+                              onPressed: () async {
+                                await model.loadUnusedQueries();
+                              },
+                            ),
+                          const SizedBox(width: 28),
+                        ],
+                      ),
+                    ),
+                  )
+                ],
               ),
             ),
           ),
@@ -1005,8 +1077,9 @@ class _Feedback extends StatelessWidget {
 }
 
 class ImageCarousel extends StatelessWidget {
-  const ImageCarousel({super.key});
-  final bool isMobile = false;
+  const ImageCarousel({super.key, required this.isMobile});
+  final bool isMobile;
+
   @override
   Widget build(BuildContext context) {
     final model = context.watch<ProductViewModel>();
@@ -1027,33 +1100,43 @@ class ImageCarousel extends StatelessWidget {
       );
     }
 
-    return CarouselSlider(
+    return CarouselSlider.builder(
+      itemCount: images.length,
       options: CarouselOptions(
-        height: 800,
+        height: isMobile ? 400 : 800,
         enlargeCenterPage: true,
         autoPlay: true,
         autoPlayCurve: Curves.easeInOut,
         enableInfiniteScroll: true,
         autoPlayAnimationDuration: Duration(milliseconds: 800),
-        viewportFraction: 0.4,
+        viewportFraction: isMobile ? 0.8 : 0.4,
       ),
-      items: images.map((imgUrl) {
-        return Builder(
-          builder: (BuildContext context) {
-            return Container(
-              margin: EdgeInsets.symmetric(horizontal: 5.0),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8.0),
-                image: DecorationImage(
-                  image: NetworkImage(imgUrl),
-                  fit: BoxFit.contain,
-                ),
+      itemBuilder: (context, index, realIndex) {
+        final imgUrl = images[index];
+        return GestureDetector(
+          onTap: () => _downloadImage(imgUrl),
+          child: Container(
+            margin: EdgeInsets.symmetric(horizontal: 5.0),
+            decoration: BoxDecoration(
+              // border: isMobile
+              //     ? Border.all(
+              //         color: Colors.grey,
+              //       )
+              //     : null,
+              borderRadius: BorderRadius.circular(8.0),
+              image: DecorationImage(
+                image: NetworkImage(imgUrl),
+                fit: isMobile ? BoxFit.scaleDown : BoxFit.contain,
               ),
-            );
-          },
+            ),
+          ),
         );
-      }).toList(),
+      },
     );
+  }
+
+  void _downloadImage(String imageUrl) {
+    html.window.open(imageUrl, '_blank');
   }
 }
 
@@ -1580,6 +1663,8 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
                     child:
                         Icon(Icons.copy, color: theme.colorScheme.onSecondary),
                     label: "Копировать",
+                    labelStyle: TextStyle(
+                        fontSize: theme.textTheme.bodyLarge!.fontSize),
                     onTap: () {
                       // Получение выбранных элементов
                       final selectedItems = selectedIndices
@@ -1618,6 +1703,8 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
                     child: Icon(Icons.visibility,
                         color: theme.colorScheme.onSecondary),
                     label: "Отслеживать",
+                    labelStyle: TextStyle(
+                        fontSize: theme.textTheme.bodyLarge!.fontSize),
                     onTap: () {
                       if (isFree) {
                         _showSubscribeAlert(context, model);
@@ -1642,8 +1729,9 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
 
   void _showSubscribeAlert(BuildContext context, ProductViewModel model) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(
-          'Чтобы добавлять запросы и получать по ним рассылку, вы должны быть подписчиком.'),
+      content: Text('Чтобы получать рассылку, вы должны быть подписчиком.',
+          style: TextStyle(
+              fontSize: Theme.of(context).textTheme.bodyLarge!.fontSize)),
       action: SnackBarAction(
         label: 'Оформить подписку',
         onPressed: () {
@@ -2061,6 +2149,8 @@ class _UnusedQueryTableWidgetState extends State<UnusedQueryTableWidget> {
                   backgroundColor: theme.colorScheme.secondary,
                   child: Icon(Icons.copy, color: theme.colorScheme.onSecondary),
                   label: "Копировать",
+                  labelStyle:
+                      TextStyle(fontSize: theme.textTheme.bodyLarge!.fontSize),
                   onTap: () {
                     final selectedItems = selectedIndices
                         .map((index) => unusedQueries[index])
@@ -2095,6 +2185,8 @@ class _UnusedQueryTableWidgetState extends State<UnusedQueryTableWidget> {
                   child: Icon(Icons.visibility,
                       color: theme.colorScheme.onSecondary),
                   label: "Отслеживать",
+                  labelStyle:
+                      TextStyle(fontSize: theme.textTheme.bodyLarge!.fontSize),
                   onTap: () {
                     if (isFree) {
                       _showSubscribeAlert(context, model);
@@ -2118,8 +2210,9 @@ class _UnusedQueryTableWidgetState extends State<UnusedQueryTableWidget> {
 
   void _showSubscribeAlert(BuildContext context, ProductViewModel model) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(
-          'Чтобы добавлять запросы и получать по ним рассылку, вы должны быть подписчиком.'),
+      content: Text('Чтобы получать рассылку, вы должны быть подписчиком.',
+          style: TextStyle(
+              fontSize: Theme.of(context).textTheme.bodyLarge!.fontSize)),
       action: SnackBarAction(
         label: 'Оформить подписку',
         onPressed: () {

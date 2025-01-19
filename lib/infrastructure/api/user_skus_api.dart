@@ -30,8 +30,14 @@ class UserSkusApiClient implements SavedProductsApiClient {
       List<Sku> productSkus = [];
 
       for (var product in resp.skus) {
-        productSkus
-            .add(Sku(id: product.id, marketplaceType: product.marketplaceType));
+        productSkus.add(Sku(
+          id: product.id,
+          marketplaceType: product.marketplaceType,
+          sellerId: product.sellerId,
+          sellerName: product.sellerName,
+          brandId: product.brandId,
+          brandName: product.brandName,
+        ));
       }
 
       return productSkus;

@@ -23,11 +23,9 @@ class MailingScreen extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: theme.scaffoldBackgroundColor,
           elevation: 0,
-          title: Text(
-            'Выбранные',
-            style: theme.textTheme.titleLarge!
-                .copyWith(fontWeight: FontWeight.bold),
-          ),
+          toolbarHeight: 0.0,
+          // title: Text(
+
           bottom: TabBar(
             labelColor: theme.colorScheme.primary,
             unselectedLabelColor: theme.colorScheme.onSurface,
@@ -59,6 +57,9 @@ class _MailingSettingsTab extends StatelessWidget {
     final theme = Theme.of(context);
     final surfaceContainerHighest = theme.colorScheme.surfaceContainerHighest;
 
+    // ADAPTIVE: определяем, мобильный ли экран
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(
@@ -77,7 +78,7 @@ class _MailingSettingsTab extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildSubscriptionNotice(context),
+                _buildSubscriptionNotice(context, isMobile),
                 const SizedBox(height: 16),
                 if (_shouldShowDisabledMailNotice(model)) ...[
                   DisabledNoticeWidget(
@@ -95,7 +96,11 @@ class _MailingSettingsTab extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     "Периодичность",
-                    style: theme.textTheme.titleSmall?.copyWith(
+                    // ADAPTIVE: увеличиваем шрифт при isMobile
+                    style: (isMobile
+                            ? theme.textTheme.titleMedium
+                            : theme.textTheme.titleSmall)
+                        ?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -106,19 +111,24 @@ class _MailingSettingsTab extends StatelessWidget {
                   label: "Ежедневно",
                   value: model.daily,
                   onChanged: (value) => model.toggleDaily(value ?? false),
+                  isMobile: isMobile, // <-- передадим флаг
                 ),
                 _buildCheckboxOption(
                   context,
                   label: "Еженедельно",
                   value: model.weekly,
                   onChanged: (value) => model.toggleWeekly(value ?? false),
+                  isMobile: isMobile,
                 ),
                 const SizedBox(height: 36),
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     "Опции",
-                    style: theme.textTheme.titleSmall?.copyWith(
+                    style: (isMobile
+                            ? theme.textTheme.titleMedium
+                            : theme.textTheme.titleSmall)
+                        ?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -130,6 +140,7 @@ class _MailingSettingsTab extends StatelessWidget {
                   value: model.productPosition,
                   onChanged: (value) =>
                       model.toggleProductPosition(value ?? false),
+                  isMobile: isMobile,
                 ),
                 _buildCheckboxOption(
                   context,
@@ -137,6 +148,7 @@ class _MailingSettingsTab extends StatelessWidget {
                   value: model.productPrice,
                   onChanged: (value) =>
                       model.togglePriceChanges(value ?? false),
+                  isMobile: isMobile,
                 ),
                 _buildCheckboxOption(
                   context,
@@ -144,6 +156,7 @@ class _MailingSettingsTab extends StatelessWidget {
                   value: model.newSearchQueries,
                   onChanged: (value) =>
                       model.toggleNewSearchQueries(value ?? false),
+                  isMobile: isMobile,
                 ),
                 _buildCheckboxOption(
                   context,
@@ -151,6 +164,7 @@ class _MailingSettingsTab extends StatelessWidget {
                   value: model.productPromotions,
                   onChanged: (value) =>
                       model.toggleProductPromotions(value ?? false),
+                  isMobile: isMobile,
                 ),
                 _buildCheckboxOption(
                   context,
@@ -158,6 +172,7 @@ class _MailingSettingsTab extends StatelessWidget {
                   value: model.productCardChanges,
                   onChanged: (value) =>
                       model.toggleProductCardChanges(value ?? false),
+                  isMobile: isMobile,
                 ),
                 _buildCheckboxOption(
                   context,
@@ -165,18 +180,23 @@ class _MailingSettingsTab extends StatelessWidget {
                   value: model.assortmentChanges,
                   onChanged: (value) =>
                       model.toggleAssortmentChanges(value ?? false),
+                  isMobile: isMobile,
                 ),
                 const SizedBox(height: 36),
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     "Список email-адресов",
-                    style: theme.textTheme.titleSmall?.copyWith(
+                    style: (isMobile
+                            ? theme.textTheme.titleMedium
+                            : theme.textTheme.titleSmall)
+                        ?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
                 const SizedBox(height: 8),
+                // ADAPTIVE: теперь здесь _EmailsEditor сам адаптируется
                 const _EmailsEditor(),
                 const SizedBox(height: 24),
                 Align(
@@ -196,10 +216,13 @@ class _MailingSettingsTab extends StatelessWidget {
     );
   }
 
-  Widget _buildCheckboxOption(BuildContext context,
-      {required String label,
-      required bool value,
-      required ValueChanged<bool?> onChanged}) {
+  Widget _buildCheckboxOption(
+    BuildContext context, {
+    required String label,
+    required bool value,
+    required ValueChanged<bool?> onChanged,
+    required bool isMobile, // <-- добавили флаг
+  }) {
     final theme = Theme.of(context);
     return Row(
       children: [
@@ -216,7 +239,11 @@ class _MailingSettingsTab extends StatelessWidget {
           },
         ),
         const SizedBox(width: 8),
-        Text(label),
+        // ADAPTIVE: увеличиваем шрифт, если это мобильный экран
+        Text(
+          label,
+          style: TextStyle(fontSize: isMobile ? 16 : 14),
+        ),
       ],
     );
   }
@@ -241,19 +268,20 @@ class _MailingSettingsTab extends StatelessWidget {
   void _showSubscribeAlert(
       BuildContext context, MailingSettingsViewModel model) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(
-          'Чтобы добавлять товары и получать по ним рассылку, вы должны быть подписчиком.'),
+      content: Text('Чтобы получать рассылку, вы должны быть подписчиком.',
+          style: TextStyle(
+              fontSize: Theme.of(context).textTheme.bodyLarge!.fontSize)),
       action: SnackBarAction(
         label: 'Оформить подписку',
         onPressed: () {
           model.onNavigateToSubscriptionScreen();
         },
       ),
-      duration: Duration(seconds: 10),
+      duration: const Duration(seconds: 10),
     ));
   }
 
-  Widget _buildSubscriptionNotice(BuildContext context) {
+  Widget _buildSubscriptionNotice(BuildContext context, bool isMobile) {
     final model = context.watch<MailingSettingsViewModel>();
     final theme = Theme.of(context);
 
@@ -276,8 +304,7 @@ class _MailingSettingsTab extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              "Рассылки доступны только подписчикам.\n\n"
-              "Оформите подписку, чтобы получать отчёты с данными о позициях товаров, ценах и действиях конкурентов.",
+              "Оформите подписку, чтобы получать отчёты на email с данными о позициях товаров, ценах и всех изменениях.",
               style: TextStyle(
                 color: theme.colorScheme.error,
               ),
@@ -356,41 +383,75 @@ class _EmailsEditorState extends State<_EmailsEditor> {
     final emails = model.emails;
     final errorMessage = model.errorMessage;
 
+    // ADAPTIVE: проверяем ширину экрана
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
     final theme = Theme.of(context);
     return Column(
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  labelText: "Добавить email",
-                  hintText: "example@domain.com",
-                  errorText: errorMessage,
+        // ADAPTIVE: Если мобильный, показываем TextField и кнопку "Добавить" вертикально
+        if (isMobile) ...[
+          TextField(
+            controller: _emailController,
+            keyboardType: TextInputType.emailAddress,
+            decoration: InputDecoration(
+              labelText: "Добавить email",
+              hintText: "example@domain.com",
+              errorText: errorMessage,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton(
+            onPressed: () {
+              if (!model.isSubscribed) {
+                _showSubscribeAlert(context, model);
+                return;
+              }
+              final email = _emailController.text.trim();
+              if (email.isNotEmpty) {
+                model.addEmail(email);
+                if (model.errorMessage == null) {
+                  _emailController.clear();
+                }
+              }
+            },
+            child: const Text("Добавить"),
+          ),
+        ] else ...[
+          // Если не мобильный, делаем в одну строку
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    labelText: "Добавить email",
+                    hintText: "example@domain.com",
+                    errorText: errorMessage,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 8),
-            ElevatedButton(
-              onPressed: () {
-                if (!model.isSubscribed) {
-                  _showSubscribeAlert(context, model);
-                  return;
-                }
-                final email = _emailController.text.trim();
-                if (email.isNotEmpty) {
-                  model.addEmail(email);
-                  if (model.errorMessage == null) {
-                    _emailController.clear();
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: () {
+                  if (!model.isSubscribed) {
+                    _showSubscribeAlert(context, model);
+                    return;
                   }
-                }
-              },
-              child: const Text("Добавить"),
-            ),
-          ],
-        ),
+                  final email = _emailController.text.trim();
+                  if (email.isNotEmpty) {
+                    model.addEmail(email);
+                    if (model.errorMessage == null) {
+                      _emailController.clear();
+                    }
+                  }
+                },
+                child: const Text("Добавить"),
+              ),
+            ],
+          ),
+        ],
         const SizedBox(height: 16),
         ...emails.map(
           (email) => ListTile(
@@ -400,7 +461,7 @@ class _EmailsEditorState extends State<_EmailsEditor> {
                 backgroundColor: theme.colorScheme.secondary,
                 child: Icon(
                   Icons.delete_outline,
-                  size: MediaQuery.of(context).size.width * 0.01,
+                  // ADAPTIVE: лучше зафиксировать размер иконки
                   color: theme.colorScheme.onSecondary,
                 ),
               ),
@@ -421,15 +482,16 @@ class _EmailsEditorState extends State<_EmailsEditor> {
   void _showSubscribeAlert(
       BuildContext context, MailingSettingsViewModel model) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(
-          'Чтобы добавлять товары и получать по ним рассылку, вы должны быть подписчиком.'),
+      content: Text('Чтобы получать рассылку, вы должны быть подписчиком.',
+          style: TextStyle(
+              fontSize: Theme.of(context).textTheme.bodyLarge!.fontSize)),
       action: SnackBarAction(
         label: 'Оформить подписку',
         onPressed: () {
           model.onNavigateToSubscriptionScreen();
         },
       ),
-      duration: Duration(seconds: 10),
+      duration: const Duration(seconds: 10),
     ));
   }
 }
@@ -448,6 +510,7 @@ class _SavedProductsTab extends StatelessWidget {
         return SingleChildScrollView(
           child: Column(
             children: [
+              // const _AddSkuWidget(),
               const _Header(),
               Container(
                 margin: const EdgeInsets.all(8.0),
@@ -468,6 +531,112 @@ class _SavedProductsTab extends StatelessWidget {
     );
   }
 }
+
+// class _AddSkuWidget extends StatefulWidget {
+//   const _AddSkuWidget({Key? key}) : super(key: key);
+
+//   @override
+//   State<_AddSkuWidget> createState() => _AddSkuWidgetState();
+// }
+
+// class _AddSkuWidgetState extends State<_AddSkuWidget> {
+//   final _skuController = TextEditingController();
+
+//   @override
+//   void dispose() {
+//     _skuController.dispose();
+//     super.dispose();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final isSubscribed = context.select<MailingSettingsViewModel, bool>(
+//       (m) => m.isSubscribed,
+//     );
+//     final savedProductsVM = context.read<SavedProductsViewModel>();
+
+//     final isMobile = MediaQuery.of(context).size.width < 600;
+
+//     return Padding(
+//       padding: const EdgeInsets.all(16.0),
+//       child: isMobile
+//           ? Column(
+//               crossAxisAlignment: CrossAxisAlignment.start,
+//               children: [
+//                 TextField(
+//                   controller: _skuController,
+//                   decoration: const InputDecoration(
+//                     labelText: "Добавитьтовар",
+//                     hintText: "Введите артикул товара",
+//                   ),
+//                 ),
+//                 const SizedBox(height: 8),
+//                 ElevatedButton(
+//                   onPressed: () {
+//                     if (!isSubscribed) {
+//                       _showSubscribeAlert(context);
+//                       return;
+//                     }
+//                     final sku = _skuController.text.trim();
+//                     if (sku.isNotEmpty) {
+//                       // Добавляем SKU
+//                       savedProductsVM.addSkuToSaved(sku);
+//                       _skuController.clear();
+//                     }
+//                   },
+//                   child: const Text("Добавить"),
+//                 ),
+//               ],
+//             )
+//           : Row(
+//               children: [
+//                 Expanded(
+//                   child: TextField(
+//                     controller: _skuController,
+//                     decoration: const InputDecoration(
+//                       labelText: "Добавить SKU",
+//                       hintText: "Введите SKU товара",
+//                     ),
+//                   ),
+//                 ),
+//                 const SizedBox(width: 8),
+//                 ElevatedButton(
+//                   onPressed: () {
+//                     if (!isSubscribed) {
+//                       _showSubscribeAlert(context);
+//                       return;
+//                     }
+//                     final sku = _skuController.text.trim();
+//                     if (sku.isNotEmpty) {
+//                       savedProductsVM.addSkuToSaved(sku);
+//                       _skuController.clear();
+//                     }
+//                   },
+//                   child: const Text("Добавить"),
+//                 ),
+//               ],
+//             ),
+//     );
+//   }
+
+//   void _showSubscribeAlert(BuildContext context) {
+//     ScaffoldMessenger.of(context).showSnackBar(
+//       SnackBar(
+//         content: const Text(
+//             'Чтобы сохранять товары и получать по ним рассылку, вы должны быть подписчиком.'),
+//         action: SnackBarAction(
+//           label: 'Оформить подписку',
+//           onPressed: () {
+//             context
+//                 .read<MailingSettingsViewModel>()
+//                 .onNavigateToSubscriptionScreen();
+//           },
+//         ),
+//         duration: const Duration(seconds: 10),
+//       ),
+//     );
+//   }
+// }
 
 class _Header extends StatelessWidget {
   const _Header();
@@ -637,13 +806,20 @@ class _SavedTableWidgetState extends State<_SavedTableWidget> {
                             child: Icon(Icons.delete,
                                 color: theme.colorScheme.onSecondary),
                             label: "Убрать из сохранённых",
+                            labelStyle: TextStyle(
+                                fontSize: theme.textTheme.bodyLarge!.fontSize),
                             onTap: () {
                               if (!widget.isSubscribed) {
                                 // if the user is not subscribed
                                 ScaffoldMessenger.of(context)
                                     .showSnackBar(SnackBar(
                                   content: Text(
-                                      'Чтобы добавлять товары и получать по ним рассылку, вы должны быть подписчиком.'),
+                                      'Чтобы получать рассылку, вы должны быть подписчиком.',
+                                      style: TextStyle(
+                                          fontSize: Theme.of(context)
+                                              .textTheme
+                                              .bodyLarge!
+                                              .fontSize)),
                                   action: SnackBarAction(
                                     label: 'Оформить подписку',
                                     onPressed: () {
@@ -1053,11 +1229,18 @@ class _KeyPhrasesTableWidgetState extends State<_KeyPhrasesTableWidget> {
                       child: Icon(Icons.delete,
                           color: theme.colorScheme.onSecondary),
                       label: "Удалить выбранное",
+                      labelStyle: TextStyle(
+                          fontSize: theme.textTheme.bodyLarge!.fontSize),
                       onTap: () async {
                         if (!widget.isSubscribed) {
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                             content: Text(
-                                'Чтобы добавлять товары и получать по ним рассылку, вы должны быть подписчиком.'),
+                                'Чтобы получать рассылку, вы должны быть подписчиком.',
+                                style: TextStyle(
+                                    fontSize: Theme.of(context)
+                                        .textTheme
+                                        .bodyLarge!
+                                        .fontSize)),
                             action: SnackBarAction(
                               label: 'Оформить подписку',
                               onPressed: () {

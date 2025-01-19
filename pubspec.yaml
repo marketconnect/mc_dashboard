@@ -59,6 +59,7 @@ dependencies:
   intl: ^0.20.1
   web: ^1.1.0
   js: ^0.7.1
+  overlay_loader_with_app_icon: ^0.0.4
 
 
 

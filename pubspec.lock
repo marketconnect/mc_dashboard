@@ -589,6 +589,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.0"
+  overlay_loader_with_app_icon:
+    dependency: "direct main"
+    description:
+      name: overlay_loader_with_app_icon
+      sha256: "503c49198154c231b29dde91ed265f6cf2549ddcb968d30a36a34afb5436f9b9"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.4"
   package_config:
     dependency: transitive
     description:

@@ -14,13 +14,13 @@ class SavedProduct {
   final String imageUrl;
 
   @HiveField(3)
-  final int sellerId;
+  final String sellerId;
 
   @HiveField(4)
   final String sellerName;
 
   @HiveField(5)
-  final int brandId;
+  final String brandId;
 
   @HiveField(6)
   final String brandName;

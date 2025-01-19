@@ -5,6 +5,7 @@ import 'package:excel/excel.dart' as exc;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_table_view/material_table_view.dart';
+import 'package:mc_dashboard/presentation/widgets/check_box.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -309,9 +310,8 @@ class _NormqueryTableWidgetState extends State<_NormqueryTableWidget> {
                   headerBuilder: (context, contentBuilder) {
                     return contentBuilder(context, (context, columnIndex) {
                       if (columnIndex == 0) {
-                        return Checkbox(
-                          activeColor: Colors.transparent,
-                          checkColor: theme.colorScheme.secondary,
+                        return McCheckBox(
+                          theme: theme,
                           value: selectAll,
                           onChanged: (value) {
                             selectAllMethod();
@@ -347,9 +347,8 @@ class _NormqueryTableWidgetState extends State<_NormqueryTableWidget> {
 
                     return contentBuilder(context, (context, columnIndex) {
                       if (columnIndex == 0) {
-                        return Checkbox(
-                            activeColor: Colors.transparent,
-                            checkColor: theme.colorScheme.secondary,
+                        return McCheckBox(
+                            theme: theme,
                             value: selectedIndices.contains(rowIndex),
                             onChanged: (isSelected) {
                               selectRow(rowIndex);

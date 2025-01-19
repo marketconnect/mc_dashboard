@@ -38,142 +38,144 @@ class LoginScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Stack(
-                      clipBehavior: Clip.none,
-                      alignment: Alignment.center,
-                      children: [
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'M',
-                              style: TextStyle(
-                                fontSize: 36,
-                                fontFamily:
-                                    GoogleFonts.alikeAngular().fontFamily,
-                                color: Color(0xFF07cf79),
-                                fontWeight: FontWeight.bold,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Stack(
+                        clipBehavior: Clip.none,
+                        alignment: Alignment.center,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'M',
+                                style: TextStyle(
+                                  fontSize: 36,
+                                  fontFamily:
+                                      GoogleFonts.alikeAngular().fontFamily,
+                                  color: Color(0xFF07cf79),
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                            Text(
-                              'ARKET',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontFamily: GoogleFonts.waitingForTheSunrise()
-                                    .fontFamily,
-                                color: Color(0xFF1c1c1c),
-                                fontWeight: FontWeight.bold,
+                              Text(
+                                'ARKET',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontFamily: GoogleFonts.waitingForTheSunrise()
+                                      .fontFamily,
+                                  color: Color(0xFF1c1c1c),
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        Positioned(
-                          top: 30,
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 30),
-                            child: Text(
-                              'CONNECT',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontFamily: GoogleFonts.waitingForTheSunrise()
-                                    .fontFamily,
-                                color: Color(0xFF1c1c1c),
-                                fontWeight: FontWeight.bold,
+                            ],
+                          ),
+                          Positioned(
+                            top: 30,
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 30),
+                              child: Text(
+                                'CONNECT',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontFamily: GoogleFonts.waitingForTheSunrise()
+                                      .fontFamily,
+                                  color: Color(0xFF1c1c1c),
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(
-                      height: isLargeScreen ? 24 : 16,
-                    ),
-                    TextField(
-                      controller: viewModel.emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(
-                        labelText: 'Email',
-                        prefixIcon: const Icon(Icons.email),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: viewModel.passwordController,
-                      obscureText: true,
-                      decoration: InputDecoration(
-                        labelText: 'Пароль',
-                        prefixIcon: const Icon(Icons.lock),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                      SizedBox(
+                        height: isLargeScreen ? 24 : 16,
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                    if (showBtn)
-                      ElevatedButton(
-                        onPressed: () async {
-                          await viewModel.signInOrRegister();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xFF07cf79),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
+                      TextField(
+                        controller: viewModel.emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: InputDecoration(
+                          labelText: 'Email',
+                          prefixIcon: const Icon(Icons.email),
+                          border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: Text(
-                          viewModel.isRegisterMode
-                              ? 'Зарегистрироваться'
-                              : 'Войти',
-                          style: const TextStyle(
-                              fontSize: 18, color: Colors.white),
-                        ),
                       ),
-                    if (viewModel.errorMessage != null) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        viewModel.errorMessage!,
-                        style: const TextStyle(color: Colors.red),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                    const SizedBox(height: 16),
-                    if (showBtn)
-                      TextButton(
-                        onPressed: () {
-                          viewModel
-                              .setIsRegisterMode(!viewModel.isRegisterMode);
-                        },
-                        child: Text(
-                          viewModel.isRegisterMode
-                              ? 'Уже есть аккаунт? Войти'
-                              : 'Нет аккаунта? Зарегистрируйтесь',
-                          style: const TextStyle(color: Colors.blue),
-                        ),
-                      ),
-                    const SizedBox(height: 8),
-                    if (forgotPassword)
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () {
-                            _showForgotPasswordDialog(context);
-                          },
-                          child: const Text(
-                            'Забыли пароль?',
-                            style: TextStyle(color: Colors.blue),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: viewModel.passwordController,
+                        obscureText: true,
+                        decoration: InputDecoration(
+                          labelText: 'Пароль',
+                          prefixIcon: const Icon(Icons.lock),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                       ),
-                  ],
+                      const SizedBox(height: 24),
+                      if (showBtn)
+                        ElevatedButton(
+                          onPressed: () async {
+                            await viewModel.signInOrRegister();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFF07cf79),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            viewModel.isRegisterMode
+                                ? 'Зарегистрироваться'
+                                : 'Войти',
+                            style: const TextStyle(
+                                fontSize: 18, color: Colors.white),
+                          ),
+                        ),
+                      if (viewModel.errorMessage != null) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          viewModel.errorMessage!,
+                          style: const TextStyle(color: Colors.red),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      if (showBtn)
+                        TextButton(
+                          onPressed: () {
+                            viewModel
+                                .setIsRegisterMode(!viewModel.isRegisterMode);
+                          },
+                          child: Text(
+                            viewModel.isRegisterMode
+                                ? 'Уже есть аккаунт? Войти'
+                                : 'Нет аккаунта? Зарегистрируйтесь',
+                            style: const TextStyle(color: Colors.blue),
+                          ),
+                        ),
+                      const SizedBox(height: 8),
+                      if (forgotPassword)
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () {
+                              _showForgotPasswordDialog(context);
+                            },
+                            child: const Text(
+                              'Забыли пароль?',
+                              style: TextStyle(color: Colors.blue),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             );

@@ -24,7 +24,7 @@ class _SubjectsSummaryApiClient implements SubjectsSummaryApiClient {
   final ParseErrorLogger? errorLogger;
 
   @override
-  Future<List<SubjectSummaryItem>> getSubjectsSummary({
+  Future<List<RawJsonMap>> getSubjectsSummaryAsDynamic({
     int? subjectId,
     String? subjectName,
     String? subjectParentName,
@@ -38,7 +38,7 @@ class _SubjectsSummaryApiClient implements SubjectsSummaryApiClient {
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<List<SubjectSummaryItem>>(Options(
+    final _options = _setStreamType<List<RawJsonMap>>(Options(
       method: 'GET',
       headers: _headers,
       extra: _extra,
@@ -55,11 +55,10 @@ class _SubjectsSummaryApiClient implements SubjectsSummaryApiClient {
           baseUrl,
         )));
     final _result = await _dio.fetch<List<dynamic>>(_options);
-    late List<SubjectSummaryItem> _value;
+    late List<RawJsonMap> _value;
     try {
       _value = _result.data!
-          .map((dynamic i) =>
-              SubjectSummaryItem.fromJson(i as Map<String, dynamic>))
+          .map((dynamic i) => RawJsonMap.fromJson(i as Map<String, dynamic>))
           .toList();
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);

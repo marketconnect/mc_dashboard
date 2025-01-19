@@ -24,7 +24,8 @@ abstract class SubjectProductsAuthService {
 
 // Subject Summary Service
 abstract class SubjectProductsSubjectSummaryService {
-  Future<Either<AppErrorBase, List<SubjectSummaryItem>>> fetchSubjectsSummary();
+  Future<Either<AppErrorBase, List<SubjectSummaryItem>>> fetchSubjectsSummary(
+      int subjectId);
 }
 
 // Saved Products Service
@@ -125,6 +126,7 @@ class SubjectProductsViewModel extends ViewModelBase {
       }
       return;
     }
+
     _token = _tokenInfo!.token;
     // Detailed Orders
     final result = await detailedOrdersService.fetchDetailedOrders(
@@ -133,14 +135,14 @@ class SubjectProductsViewModel extends ViewModelBase {
     if (result.isRight()) {
       final fetchedOrders =
           result.fold((l) => throw UnimplementedError(), (r) => r);
-
       setDetailedOrders(fetchedOrders);
 
       final subjectSummaryOrEither =
-          await subjectSummaryService.fetchSubjectsSummary();
+          await subjectSummaryService.fetchSubjectsSummary(subjectId);
       if (subjectSummaryOrEither.isRight()) {
         final fetchedSummary = subjectSummaryOrEither.fold(
             (l) => throw UnimplementedError(), (r) => r);
+
         final subjSum =
             fetchedSummary.where((item) => item.subjectId == subjectId);
 
@@ -150,6 +152,7 @@ class SubjectProductsViewModel extends ViewModelBase {
       }
 
       _updateSellerBrandDataMaps();
+
       _initializeFilterControllers();
     } else {
       setError("Сервер временно недоступен");
@@ -415,8 +418,9 @@ class SubjectProductsViewModel extends ViewModelBase {
   Future<void> saveProducts() async {
     if (isFree) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(
-            'Чтобы добавлять товары и получать по ним рассылку, вы должны быть подписчиком.'),
+        content: Text('Чтобы получать рассылку, вы должны быть подписчиком.',
+            style: TextStyle(
+                fontSize: Theme.of(context).textTheme.bodyLarge!.fontSize)),
         action: SnackBarAction(
           label: 'Оформить подписку',
           onPressed: () {
@@ -438,9 +442,9 @@ class SubjectProductsViewModel extends ViewModelBase {
       if (imageUrlProductName != null) {
         productsToSave.add(SavedProduct(
             productId: item.productId.toString(),
-            sellerId: item.supplierId,
+            sellerId: item.supplierId.toString(),
             sellerName: item.supplier,
-            brandId: item.brandId,
+            brandId: item.brandId.toString(),
             brandName: item.brand,
             marketplaceType: "wb",
             imageUrl: imageUrlProductName.$1,

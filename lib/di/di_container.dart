@@ -10,7 +10,7 @@ import 'package:mc_dashboard/infrastructure/api/normqueries.dart';
 import 'package:mc_dashboard/infrastructure/api/orders.dart';
 import 'package:mc_dashboard/infrastructure/api/stocks.dart';
 import 'package:mc_dashboard/infrastructure/api/subjects_summary.dart';
-import 'package:mc_dashboard/infrastructure/api/suppliers_api_client.dart';
+
 import 'package:mc_dashboard/infrastructure/api/user_emails_api.dart';
 import 'package:mc_dashboard/infrastructure/api/user_search_queries_api.dart';
 import 'package:mc_dashboard/infrastructure/api/user_settings_api.dart';
@@ -145,7 +145,7 @@ class _DIContainer {
   SavedProductsService _makeSavedProductsService() => SavedProductsService(
         savedProductsRepo: _makeSavedProductsRepo(),
         savedProductsApiClient: _makeUserSkusApiClient(),
-        suppliersApiClient: SuppliersApiClient(dio),
+        // suppliersApiClient: SuppliersApiClient(dio),
       );
 
   SavedKeyPhrasesService _makeSavedKeyPhrasesService() =>

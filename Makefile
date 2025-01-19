@@ -5,3 +5,6 @@ git:
 
 build_runner:
 	dart pub run build_runner build
+
+build_runner_delete:
+	dart pub run build_runner build --delete-conflicting-outputs

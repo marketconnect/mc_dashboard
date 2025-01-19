@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mc_dashboard/infrastructure/api/subjects_summary.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
@@ -16,12 +17,15 @@ class SubjectsSummaryService
 
   SubjectsSummaryService({required this.subjectsSummaryApiClient});
   @override
-  Future<Either<AppErrorBase, List<SubjectSummaryItem>>>
-      fetchSubjectsSummary() async {
+  Future<Either<AppErrorBase, List<SubjectSummaryItem>>> fetchSubjectsSummary(
+      [int? subjectId]) async {
     try {
-      final result = await subjectsSummaryApiClient.getSubjectsSummary();
+      // final result = await subjectsSummaryApiClient.getSubjectsSummaryAsDynamic();
+      final rawJsonMapList = await subjectsSummaryApiClient
+          .getSubjectsSummaryAsDynamic(subjectId: subjectId);
+      final parsedList = await compute(_parseSubjectsList, rawJsonMapList);
 
-      return Right(result);
+      return Right(parsedList);
     } on DioException catch (e, stackTrace) {
       final message = e.response?.data['error'] ??
           "Unknown error occurred while fetching subjects summary";
@@ -47,5 +51,11 @@ class SubjectsSummaryService
       AppLogger.log(error);
       return Left(error);
     }
+  }
+
+  List<SubjectSummaryItem> _parseSubjectsList(List<dynamic> rawList) {
+    return rawList.map((jsonItem) {
+      return SubjectSummaryItem.fromJson(jsonItem.data as Map<String, dynamic>);
+    }).toList();
   }
 }

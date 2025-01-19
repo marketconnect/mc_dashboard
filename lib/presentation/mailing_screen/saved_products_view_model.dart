@@ -35,13 +35,13 @@ class SavedProductsViewModel extends ViewModelBase {
   final List<SavedProduct> _savedProducts = [];
 
   List<SavedProduct> get savedProducts => _savedProducts;
-  String? token;
+  TokenInfo? tokenInfo;
   // Methods
   @override
   Future<void> asyncInit() async {
     //Token
-    final tokenOrEither = await authService.getTokenInfo();
-    if (tokenOrEither.isLeft()) {
+    final tokenInfoOrEither = await authService.getTokenInfo();
+    if (tokenInfoOrEither.isLeft()) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -52,13 +52,13 @@ class SavedProductsViewModel extends ViewModelBase {
       return;
     }
 
-    token =
-        tokenOrEither.fold((l) => throw UnimplementedError(), (r) => r.token);
-    if (token == null) {
+    tokenInfo =
+        tokenInfoOrEither.fold((l) => throw UnimplementedError(), (r) => r);
+    if (tokenInfo == null || tokenInfo!.type == "free") {
       return;
     }
     final savedProductsOrEither =
-        await savedProductsService.getAllSavedProducts(token: token!);
+        await savedProductsService.getAllSavedProducts(token: tokenInfo!.token);
 
     if (savedProductsOrEither.isRight()) {
       final fetchedProducts = savedProductsOrEither.fold(
@@ -69,6 +69,10 @@ class SavedProductsViewModel extends ViewModelBase {
     notifyListeners();
   }
 
+  void addSkuToSaved(String sku) {
+    print("Adding $sku to saved");
+  }
+
   void removeProductsFromSaved(List<String> productIds, bool isSubscribed) {
     if (!isSubscribed) {
       return;
@@ -76,11 +80,15 @@ class SavedProductsViewModel extends ViewModelBase {
     if (productIds.isEmpty) {
       return;
     }
+
+    if (tokenInfo == null || tokenInfo!.type == "free") {
+      return;
+    }
     _savedProducts
         .removeWhere((product) => productIds.contains(product.productId));
 
     savedProductsService.syncSavedProducts(
-        token: token!, products: _savedProducts.toList());
+        token: tokenInfo!.token, products: _savedProducts.toList());
 
     notifyListeners();
     ScaffoldMessenger.of(context).showSnackBar(

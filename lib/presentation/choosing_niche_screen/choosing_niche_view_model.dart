@@ -42,18 +42,26 @@ class ChoosingNicheViewModel extends ViewModelBase {
   List<SubjectSummaryItem> _originalSubjectsSummary = [];
 
   final List<SubjectSummaryItem> _subjectsSummary = [];
+  // void setSubjectsSummary(List<SubjectSummaryItem> value) {
+  //   for (var item in value) {
+  //     // if (item.totalOrders == 0) {
+  //     //   continue;
+  //     // }
+  //     final newSubject = item.copyWith(
+  //       totalRevenue: (item.totalRevenue / 100).ceil(),
+  //       medianPrice: (item.medianPrice / 100).ceil(),
+  //     );
+  //     _subjectsSummary.add(newSubject);
+  //     _originalSubjectsSummary.add(newSubject);
+  //   }
+  // }
+
   void setSubjectsSummary(List<SubjectSummaryItem> value) {
-    for (var item in value) {
-      // if (item.totalOrders == 0) {
-      //   continue;
-      // }
-      final newSubject = item.copyWith(
-        totalRevenue: (item.totalRevenue / 100).ceil(),
-        medianPrice: (item.medianPrice / 100).ceil(),
-      );
-      _subjectsSummary.add(newSubject);
-      _originalSubjectsSummary.add(newSubject);
-    }
+    _originalSubjectsSummary.clear();
+    _originalSubjectsSummary.addAll(value);
+
+    _subjectsSummary.clear();
+    _subjectsSummary.addAll(value);
   }
 
   String get tableHeaderText => _subjectsSummary.length ==
@@ -129,21 +137,51 @@ class ChoosingNicheViewModel extends ViewModelBase {
 
   // Search end
 
-  // Methods
+  // Methods ////////////////////////////////////////////////////////////////////
   @override
   Future<void> asyncInit() async {
-    final result = await subjectsSummaryService.fetchSubjectsSummary();
+    await Future.delayed(Duration.zero);
 
+    final result = await subjectsSummaryService.fetchSubjectsSummary();
     if (result.isRight()) {
       final fetchedSubjectsSummary =
           result.fold((l) => throw UnimplementedError(), (r) => r);
 
-      setSubjectsSummary(fetchedSubjectsSummary);
+      final processed = await _processDataInChunks(fetchedSubjectsSummary);
+
+      setSubjectsSummary(processed);
+
       _updateTopParentRevenue();
+
       _initializeFilterControllers();
     } else {
       setError("Сервер временно недоступен");
     }
+  } // asyncInit ///
+
+  Future<List<SubjectSummaryItem>> _processDataInChunks(
+    List<SubjectSummaryItem> rawData,
+  ) async {
+    final processed = <SubjectSummaryItem>[];
+
+    const chunkSize = 500;
+
+    for (var i = 0; i < rawData.length; i += chunkSize) {
+      final chunk = rawData.skip(i).take(chunkSize);
+
+      for (final item in chunk) {
+        // Та самая логика, которая раньше была в setSubjectsSummary
+        final newSubject = item.copyWith(
+          totalRevenue: (item.totalRevenue / 100).ceil(),
+          medianPrice: (item.medianPrice / 100).ceil(),
+        );
+        processed.add(newSubject);
+      }
+
+      await Future.delayed(Duration.zero);
+    }
+
+    return processed;
   }
 
   set subjectsSummary(List<SubjectSummaryItem> value) {

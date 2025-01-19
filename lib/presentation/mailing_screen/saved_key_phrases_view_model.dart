@@ -36,13 +36,13 @@ class SavedKeyPhrasesViewModel extends ViewModelBase {
   List<KeyPhrase> get keyPhrases => _keyPhrases;
 
   final double tableRowHeight = 60.0;
-  String? token;
+  TokenInfo? tokenInfo;
   // methods ///////////////////////////////////////////////////////////////////
   @override
   Future<void> asyncInit() async {
     //Token
-    final tokenOrEither = await authService.getTokenInfo();
-    if (tokenOrEither.isLeft()) {
+    final tokenInfoOrEither = await authService.getTokenInfo();
+    if (tokenInfoOrEither.isLeft()) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -54,14 +54,14 @@ class SavedKeyPhrasesViewModel extends ViewModelBase {
       return;
     }
 
-    token =
-        tokenOrEither.fold((l) => throw UnimplementedError(), (r) => r.token);
-    if (token == null) {
+    tokenInfo =
+        tokenInfoOrEither.fold((l) => throw UnimplementedError(), (r) => r);
+    if (tokenInfo == null || tokenInfo!.type == "free") {
       return;
     }
 
     final phrasesOrEither =
-        await keyPhrasesService.getKeyPhrases(token: token!);
+        await keyPhrasesService.getKeyPhrases(token: tokenInfo!.token);
 
     if (phrasesOrEither.isRight()) {
       _keyPhrases =
@@ -73,9 +73,12 @@ class SavedKeyPhrasesViewModel extends ViewModelBase {
     if (!isSubscribed) {
       return;
     }
+    if (tokenInfo == null || tokenInfo!.type == "free") {
+      return;
+    }
     for (var phraseText in phrases) {
-      final resultOrEither =
-          await keyPhrasesService.deleteKeyPhrases(token: token!, phrases: [
+      final resultOrEither = await keyPhrasesService
+          .deleteKeyPhrases(token: tokenInfo!.token, phrases: [
         KeyPhrase(phraseText: phraseText, marketPlace: "wb"),
       ]);
       if (resultOrEither.isRight()) {

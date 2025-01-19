@@ -366,6 +366,7 @@ class ProductViewModel extends ViewModelBase {
     }
     final normqueryIds = _normqueries.map((e) => e.normqueryId).toList();
     final kwLemmasOrEither = await kwLemmaService.get(ids: normqueryIds);
+    //
     if (kwLemmasOrEither.isRight()) {
       final kwLemmas = kwLemmasOrEither.fold((l) => <KwLemmaItem>[], (r) => r);
       setKwLemmas(kwLemmas);
@@ -407,38 +408,37 @@ class ProductViewModel extends ViewModelBase {
   }
 
   Future<void> loadUnusedQueries() async {
-    if (normqueries.isNotEmpty) {
-      // Unused queries
-      // get top 20 products ids
-      final detailedOrdersForUnusedQueriesOrEither = await detailedOrdersService
-          .fetchDetailedOrders(subjectId: subjectId, isFbs: 0, pageSize: '20');
+    // Unused queries
+    // get top 20 products ids
+    final detailedOrdersForUnusedQueriesOrEither = await detailedOrdersService
+        .fetchDetailedOrders(subjectId: subjectId, isFbs: 0, pageSize: '20');
 
-      if (detailedOrdersForUnusedQueriesOrEither.isRight()) {
-        final detailedOrdersForUnusedQueries =
-            detailedOrdersForUnusedQueriesOrEither.fold(
-                (l) => throw UnimplementedError, (r) => r);
-        final top20productsIds =
-            detailedOrdersForUnusedQueries.map((e) => e.productId).toList();
-        // get top 20 normqueries
-        final normqueryOrEither =
-            await normqueryService.get(ids: top20productsIds);
-        if (normqueryOrEither.isRight()) {
-          final fetchedNormqueries =
-              normqueryOrEither.fold((l) => throw UnimplementedError, (r) => r);
-          List<NormqueryProduct> uNormqueries = [];
-          // exclude normqueries that are already used
-          for (final normquery in fetchedNormqueries) {
-            if ((!_normqueries
-                    .any((e) => e.normqueryId == normquery.normqueryId) &&
-                !uNormqueries
-                    .any((e) => e.normqueryId == normquery.normqueryId))) {
-              uNormqueries.add(normquery);
-            }
+    if (detailedOrdersForUnusedQueriesOrEither.isRight()) {
+      final detailedOrdersForUnusedQueries =
+          detailedOrdersForUnusedQueriesOrEither.fold(
+              (l) => throw UnimplementedError, (r) => r);
+      final top20productsIds =
+          detailedOrdersForUnusedQueries.map((e) => e.productId).toList();
+      // get top 20 normqueries
+      final normqueryOrEither =
+          await normqueryService.get(ids: top20productsIds);
+      if (normqueryOrEither.isRight()) {
+        final fetchedNormqueries =
+            normqueryOrEither.fold((l) => throw UnimplementedError, (r) => r);
+        List<NormqueryProduct> uNormqueries = [];
+        // exclude normqueries that are already used
+        for (final normquery in fetchedNormqueries) {
+          if ((!_normqueries
+                  .any((e) => e.normqueryId == normquery.normqueryId) &&
+              !uNormqueries
+                  .any((e) => e.normqueryId == normquery.normqueryId))) {
+            uNormqueries.add(normquery);
           }
-          _unusedNormqueries = uNormqueries.toSet().toList();
         }
+        _unusedNormqueries = uNormqueries.toSet().toList();
       }
     }
+
     _unusedQueriesLoaded = true;
     notifyListeners();
   }
@@ -508,6 +508,12 @@ class ProductViewModel extends ViewModelBase {
 
   void onNavigateBack() {
     onNavigateTo(routeName: MainNavigationRouteNames.subjectProductsScreen);
+  }
+
+  void onNavigateToSubjectProductsScreen() {
+    onNavigateTo(
+        routeName: MainNavigationRouteNames.subjectProductsScreen,
+        params: {'subjectId': _subjectId, 'subjectName': _subjectName});
   }
 
   void onNavigateToSubscriptionScreen() {

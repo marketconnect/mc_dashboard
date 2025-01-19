@@ -31,7 +31,6 @@ class SubjectProductsScreen extends StatelessWidget {
           final maxWidth = constraints.maxWidth;
           final maxHeight = constraints.maxHeight;
           final isMobileOrLaptop = maxWidth < 900 || maxHeight < 690;
-          final model = context.watch<SubjectProductsViewModel>();
 
           final clearSellerBrandFilter = model.clearSellerBrandFilter;
           final isFilteredBySeller = model.filteredSeller != null;
@@ -108,7 +107,8 @@ class SubjectProductsScreen extends StatelessWidget {
                             maxWidth: maxWidth,
                           ),
                         ),
-                  if (isFilterVisible) _buildFiltersWidget(context),
+                  if (isFilterVisible)
+                    _buildFiltersWidget(context, isMobileOrLaptop),
                   model.loading
                       ? Shimmer(
                           gradient:
@@ -225,7 +225,8 @@ class SubjectProductsScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-              if (isFilterVisible) _buildFiltersWidget(context),
+              if (isFilterVisible)
+                _buildFiltersWidget(context, isMobileOrLaptop),
               Flexible(
                 flex: 2,
                 child: model.loading
@@ -256,11 +257,13 @@ class SubjectProductsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFiltersWidget(BuildContext context) {
+  Widget _buildFiltersWidget(BuildContext context, bool isMobileOrLaptop) {
     final model = context.watch<SubjectProductsViewModel>();
     final theme = Theme.of(context);
     final textStyle = TextStyle(
-      fontSize: theme.textTheme.bodyMedium!.fontSize,
+      fontSize: isMobileOrLaptop
+          ? theme.textTheme.bodyLarge!.fontSize
+          : theme.textTheme.bodyMedium!.fontSize,
       color: theme.colorScheme.onSurface,
     );
     final labelStyle = TextStyle(
@@ -456,7 +459,7 @@ class _PieChartWithList extends StatelessWidget {
     final theme = Theme.of(context);
 
     if (dataMap.isEmpty) {
-      return const Center(child: Text("Нет данных"));
+      return const Center(child: Text("Загрузка данных..."));
     }
 
     final colorList = _generateColorList(dataMap.length);
@@ -635,7 +638,7 @@ class _TableWidgetState extends State<_TableWidget> {
               // Минимальные ширины для мобильных:
               final mobileMinColumnWidths = [
                 40.0, // колонка с чекбоксом
-                100.0, // Товар
+                150.0, // Товар
                 80.0, // Выручка
                 80.0, // Цена
                 80.0, // Продавец
@@ -647,12 +650,12 @@ class _TableWidgetState extends State<_TableWidget> {
               // Пропорции столбцов для десктопа:
               final columnProportions = [
                 0.05, // Чекбокс
-                0.2, // Товар
-                0.12, // Выручка
-                0.12, // Цена
-                0.12, // Продавец
-                0.12, // Бренд
-                0.12, // Заказы
+                0.3, // Товар
+                0.1, // Выручка
+                0.1, // Цена
+                0.1, // Продавец
+                0.1, // Бренд
+                0.1, // Заказы
                 0.12, // Детали
               ];
 
@@ -737,8 +740,12 @@ class _TableWidgetState extends State<_TableWidget> {
                                             ? TextAlign.left
                                             : TextAlign.center,
                                         style: TextStyle(
-                                          fontSize: theme
-                                              .textTheme.bodyMedium!.fontSize,
+                                          fontSize: isMobile
+                                              ? theme.textTheme.bodyMedium!
+                                                      .fontSize! *
+                                                  1.2
+                                              : theme.textTheme.bodyMedium!
+                                                  .fontSize,
                                           color: theme.colorScheme.onSurface,
                                         ),
                                         overflow: TextOverflow.ellipsis,
@@ -937,22 +944,56 @@ class _TableWidgetState extends State<_TableWidget> {
                                   (item.price * item.orders)
                                       .toString()
                                       .formatWithThousands(),
+                                  style: TextStyle(
+                                      fontSize: isMobileOrLaptop
+                                          ? columns[6].width * 0.12
+                                          : theme
+                                              .textTheme.bodyMedium!.fontSize,
+                                      fontWeight: FontWeight.bold),
                                 );
                                 break;
                               case 2: // Цена
                                 content = Text(
                                   item.price.toString().formatWithThousands(),
+                                  style: TextStyle(
+                                      fontSize: isMobileOrLaptop
+                                          ? columns[6].width * 0.12
+                                          : theme
+                                              .textTheme.bodyMedium!.fontSize,
+                                      fontWeight: FontWeight.bold),
                                 );
                                 break;
                               case 3: // Продавец
-                                content = Text(item.supplier.toString());
+                                content = Text(
+                                  item.supplier.toString(),
+                                  style: TextStyle(
+                                      fontSize: isMobileOrLaptop
+                                          ? columns[6].width * 0.12
+                                          : theme
+                                              .textTheme.bodyMedium!.fontSize,
+                                      fontWeight: FontWeight.bold),
+                                );
                                 break;
                               case 4: // Бренд
-                                content = Text(item.brand);
+                                content = Text(
+                                  item.brand,
+                                  style: TextStyle(
+                                      fontSize: isMobileOrLaptop
+                                          ? columns[6].width * 0.12
+                                          : theme
+                                              .textTheme.bodyMedium!.fontSize,
+                                      fontWeight: FontWeight.bold),
+                                );
                                 break;
                               case 5: // Заказы
                                 content = Text(
                                   item.orders.toString().formatWithThousands(),
+                                  style: TextStyle(
+                                      fontSize: isMobileOrLaptop
+                                          ? columns[6].width * 0.12
+                                          : theme
+                                              .textTheme.bodyMedium!.fontSize,
+                                      fontWeight: FontWeight.bold),
                                 );
                                 break;
                               case 6: // Детали
@@ -1067,6 +1108,8 @@ class _TableWidgetState extends State<_TableWidget> {
                             child: Icon(Icons.analytics,
                                 color: theme.colorScheme.onSecondary),
                             label: "Расширение запросов",
+                            labelStyle: TextStyle(
+                                fontSize: theme.textTheme.bodyLarge!.fontSize),
                             onTap: () =>
                                 model.navigateToSeoRequestsExtendScreen(),
                           ),
@@ -1075,6 +1118,8 @@ class _TableWidgetState extends State<_TableWidget> {
                             child: Icon(Icons.visibility,
                                 color: theme.colorScheme.onSecondary),
                             label: "Отслеживать",
+                            labelStyle: TextStyle(
+                                fontSize: theme.textTheme.bodyLarge!.fontSize),
                             onTap: () => model.saveProducts(),
                           ),
                         ],

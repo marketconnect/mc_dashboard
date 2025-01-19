@@ -1,10 +1,13 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:material_table_view/material_table_view.dart';
+
 import 'package:mc_dashboard/core/utils/colors.dart';
 import 'package:mc_dashboard/core/utils/dates.dart';
 import 'package:mc_dashboard/core/utils/strings_ext.dart';
 import 'package:mc_dashboard/theme/color_schemes.dart';
+import 'package:overlay_loader_with_app_icon/overlay_loader_with_app_icon.dart';
 import 'package:pie_chart/pie_chart.dart' as pie_chart;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
@@ -19,6 +22,7 @@ class ChoosingNicheScreen extends StatelessWidget {
     final surfaceContainerHighest =
         Theme.of(context).colorScheme.surfaceContainerHighest;
     final model = context.watch<ChoosingNicheViewModel>();
+    final theme = Theme.of(context);
     final isLoading = model.loading;
     final toggleExpandedContainer = model.toggleExpandedContainer;
     final expandedContainer = model.expandedContainer;
@@ -26,26 +30,128 @@ class ChoosingNicheScreen extends StatelessWidget {
     final selectedParentName = model.selectedParentName;
     final selectedSubjectName = model.selectedSubjectName;
     return Scaffold(
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final maxWidth = constraints.maxWidth;
-          final maxHeight = constraints.maxHeight;
-          final isMobileOrLaptop = maxWidth < 900 || maxHeight < 690;
+      body: OverlayLoaderWithAppIcon(
+        isLoading: isLoading,
+        overlayBackgroundColor: Colors.black,
+        circularProgressColor: theme.colorScheme.onPrimary,
+        appIconSize: 70,
+        appIcon: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'M',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontFamily: GoogleFonts.alikeAngular().fontFamily,
+                    color: theme.colorScheme.onPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'ARKET',
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontFamily: GoogleFonts.waitingForTheSunrise().fontFamily,
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            Positioned(
+              top: 35,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 20),
+                child: Text(
+                  'CONNECT',
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontFamily: GoogleFonts.waitingForTheSunrise().fontFamily,
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        // Image.asset(ImageConstant.imgFav),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final maxWidth = constraints.maxWidth;
+            final maxHeight = constraints.maxHeight;
+            final isMobileOrLaptop = maxWidth < 900 || maxHeight < 690;
 
-          if (isMobileOrLaptop) {
-            // Mobile and Laptop ///////////////////////////////////////////////
-            return SingleChildScrollView(
-              controller: ScrollController(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (selectedSubjectName != null)
+            if (isMobileOrLaptop) {
+              // Mobile and Laptop ///////////////////////////////////////////////
+              return SingleChildScrollView(
+                controller: ScrollController(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (selectedSubjectName != null)
+                      isLoading
+                          ? Shimmer(
+                              gradient:
+                                  Theme.of(context).colorScheme.shimmerGradient,
+                              child: Container(
+                                height: constraints.maxHeight * 0.4,
+                                width: double.infinity,
+                                margin: const EdgeInsets.all(8.0),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey,
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                              ),
+                            )
+                          : Container(
+                              height: constraints.maxHeight * 0.4,
+                              margin: const EdgeInsets.all(8.0),
+                              padding: const EdgeInsets.all(8.0),
+                              decoration: BoxDecoration(
+                                color: surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              child: const HistoryChartWidget(),
+                            ),
                     isLoading
                         ? Shimmer(
                             gradient:
                                 Theme.of(context).colorScheme.shimmerGradient,
                             child: Container(
-                              height: constraints.maxHeight * 0.4,
+                              height: constraints.maxHeight * 0.8,
+                              margin: const EdgeInsets.all(8.0),
+                              decoration: BoxDecoration(
+                                color: Colors.grey,
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                            ),
+                          )
+                        : Container(
+                            height: constraints.maxHeight, // Height for graph
+                            margin: const EdgeInsets.all(8.0),
+                            padding: const EdgeInsets.all(8.0),
+                            decoration: BoxDecoration(
+                              color: surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                            child: PieChartWidget(
+                                isMobileOrLaptop: isMobileOrLaptop,
+                                maxWidth: maxWidth),
+                          ),
+                    if (isFilterVisible)
+                      _buildFiltersWidget(context, isMobileOrLaptop),
+                    isLoading
+                        ? Shimmer(
+                            gradient:
+                                Theme.of(context).colorScheme.shimmerGradient,
+                            child: Container(
+                              height: constraints.maxHeight, //
                               width: double.infinity,
                               margin: const EdgeInsets.all(8.0),
                               decoration: BoxDecoration(
@@ -55,119 +161,37 @@ class ChoosingNicheScreen extends StatelessWidget {
                             ),
                           )
                         : Container(
-                            height: constraints.maxHeight * 0.4,
+                            height: constraints.maxHeight, // Height for table
                             margin: const EdgeInsets.all(8.0),
-                            padding: const EdgeInsets.all(8.0),
+                            padding: const EdgeInsets.all(2.0),
                             decoration: BoxDecoration(
                               color: surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(8.0),
                             ),
-                            child: const HistoryChartWidget(),
+                            child: const TableWidget(),
                           ),
-                  isLoading
-                      ? Shimmer(
-                          gradient:
-                              Theme.of(context).colorScheme.shimmerGradient,
-                          child: Container(
-                            height: constraints.maxHeight * 0.8,
-                            margin: const EdgeInsets.all(8.0),
-                            decoration: BoxDecoration(
-                              color: Colors.grey,
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                          ),
-                        )
-                      : Container(
-                          height: constraints.maxHeight, // Height for graph
-                          margin: const EdgeInsets.all(8.0),
-                          padding: const EdgeInsets.all(8.0),
-                          decoration: BoxDecoration(
-                            color: surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          child: PieChartWidget(
-                              isMobileOrLaptop: isMobileOrLaptop,
-                              maxWidth: maxWidth),
-                        ),
-                  if (isFilterVisible)
-                    _buildFiltersWidget(context, isMobileOrLaptop),
-                  isLoading
-                      ? Shimmer(
-                          gradient:
-                              Theme.of(context).colorScheme.shimmerGradient,
-                          child: Container(
-                            height: constraints.maxHeight, //
-                            width: double.infinity,
-                            margin: const EdgeInsets.all(8.0),
-                            decoration: BoxDecoration(
-                              color: Colors.grey,
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                          ),
-                        )
-                      : Container(
-                          height: constraints.maxHeight, // Height for table
-                          margin: const EdgeInsets.all(8.0),
-                          padding: const EdgeInsets.all(2.0),
-                          decoration: BoxDecoration(
-                            color: surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          child: const TableWidget(),
-                        ),
-                ],
-              ),
-            );
-          }
+                  ],
+                ),
+              );
+            }
 
-          // Desktop //////////////////////////////////////////////////////////
-          return Column(
-            children: [
-              if (!isFilterVisible)
-                Flexible(
-                  flex: 1,
-                  child: Row(
-                    children: [
-                      if (!expandedContainer)
-                        Flexible(
-                          flex: 1,
-                          child: isLoading
-                              ? Shimmer(
-                                  gradient: Theme.of(context)
-                                      .colorScheme
-                                      .shimmerGradient,
-                                  child: Container(
-                                    margin: const EdgeInsets.all(16.0),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey,
-                                      borderRadius: BorderRadius.circular(8.0),
-                                    ),
-                                  ),
-                                )
-                              : Container(
-                                  margin: const EdgeInsets.all(8.0),
-                                  padding: const EdgeInsets.all(16.0),
-                                  decoration: BoxDecoration(
-                                    color: surfaceContainerHighest,
-                                    borderRadius: BorderRadius.circular(8.0),
-                                  ),
-                                  child: PieChartWidget(
-                                      isMobileOrLaptop: isMobileOrLaptop,
-                                      maxWidth: maxWidth),
-                                ),
-                        ),
-                      Flexible(
-                        flex: 1,
-                        child: Stack(
-                          children: [
-                            isLoading
+            // Desktop //////////////////////////////////////////////////////////
+            return Column(
+              children: [
+                if (!isFilterVisible)
+                  Flexible(
+                    flex: 1,
+                    child: Row(
+                      children: [
+                        if (!expandedContainer)
+                          Flexible(
+                            flex: 1,
+                            child: isLoading
                                 ? Shimmer(
                                     gradient: Theme.of(context)
                                         .colorScheme
                                         .shimmerGradient,
                                     child: Container(
-                                      height: constraints.maxHeight * 0.3,
-                                      width: double.infinity,
                                       margin: const EdgeInsets.all(16.0),
                                       decoration: BoxDecoration(
                                         color: Colors.grey,
@@ -183,71 +207,105 @@ class ChoosingNicheScreen extends StatelessWidget {
                                       color: surfaceContainerHighest,
                                       borderRadius: BorderRadius.circular(8.0),
                                     ),
-                                    child: (selectedParentName == null)
-                                        ? const Center(
-                                            child: Text("Не выбрано"))
-                                        : Container(
-                                            height: constraints.maxHeight *
-                                                0.3, // Общая высота графика
-                                            margin: const EdgeInsets.all(8.0),
-                                            // padding: const EdgeInsets.all(16.0),
-                                            decoration: BoxDecoration(
-                                              color: surfaceContainerHighest,
-                                              borderRadius:
-                                                  BorderRadius.circular(8.0),
-                                            ),
-                                            child:
-                                                // const TotalOrdersHistoryChartWidget(),
-                                                const HistoryChartWidget(),
-                                          ),
+                                    child: PieChartWidget(
+                                        isMobileOrLaptop: isMobileOrLaptop,
+                                        maxWidth: maxWidth),
                                   ),
-                            if (selectedParentName != null)
-                              Positioned(
-                                top: 16,
-                                right: 16,
-                                child: IconButton(
-                                  onPressed: () => toggleExpandedContainer(),
-                                  icon: expandedContainer
-                                      ? const Icon(Icons.close)
-                                      : const Icon(Icons.fullscreen),
+                          ),
+                        Flexible(
+                          flex: 1,
+                          child: Stack(
+                            children: [
+                              isLoading
+                                  ? Shimmer(
+                                      gradient: Theme.of(context)
+                                          .colorScheme
+                                          .shimmerGradient,
+                                      child: Container(
+                                        height: constraints.maxHeight * 0.3,
+                                        width: double.infinity,
+                                        margin: const EdgeInsets.all(16.0),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey,
+                                          borderRadius:
+                                              BorderRadius.circular(8.0),
+                                        ),
+                                      ),
+                                    )
+                                  : Container(
+                                      margin: const EdgeInsets.all(8.0),
+                                      padding: const EdgeInsets.all(16.0),
+                                      decoration: BoxDecoration(
+                                        color: surfaceContainerHighest,
+                                        borderRadius:
+                                            BorderRadius.circular(8.0),
+                                      ),
+                                      child: (selectedParentName == null)
+                                          ? const Center(
+                                              child: Text("Не выбрано"))
+                                          : Container(
+                                              height: constraints.maxHeight *
+                                                  0.3, // Общая высота графика
+                                              margin: const EdgeInsets.all(8.0),
+                                              // padding: const EdgeInsets.all(16.0),
+                                              decoration: BoxDecoration(
+                                                color: surfaceContainerHighest,
+                                                borderRadius:
+                                                    BorderRadius.circular(8.0),
+                                              ),
+                                              child:
+                                                  // const TotalOrdersHistoryChartWidget(),
+                                                  const HistoryChartWidget(),
+                                            ),
+                                    ),
+                              if (selectedParentName != null)
+                                Positioned(
+                                  top: 16,
+                                  right: 16,
+                                  child: IconButton(
+                                    onPressed: () => toggleExpandedContainer(),
+                                    icon: expandedContainer
+                                        ? const Icon(Icons.close)
+                                        : const Icon(Icons.fullscreen),
+                                  ),
                                 ),
-                              ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              if (isFilterVisible && !expandedContainer)
-                _buildFiltersWidget(context, isMobileOrLaptop),
-              if (!expandedContainer)
-                Flexible(
-                  flex: 2,
-                  child: isLoading
-                      ? Shimmer(
-                          gradient:
-                              Theme.of(context).colorScheme.shimmerGradient,
-                          child: Container(
-                            margin: const EdgeInsets.all(16.0),
+                if (isFilterVisible && !expandedContainer)
+                  _buildFiltersWidget(context, isMobileOrLaptop),
+                if (!expandedContainer)
+                  Flexible(
+                    flex: 2,
+                    child: isLoading
+                        ? Shimmer(
+                            gradient:
+                                Theme.of(context).colorScheme.shimmerGradient,
+                            child: Container(
+                              margin: const EdgeInsets.all(16.0),
+                              decoration: BoxDecoration(
+                                color: Colors.grey,
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                            ),
+                          )
+                        : Container(
+                            margin: const EdgeInsets.all(8.0),
+                            padding: const EdgeInsets.all(16.0),
                             decoration: BoxDecoration(
-                              color: Colors.grey,
+                              color: surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(8.0),
                             ),
+                            child: const TableWidget(),
                           ),
-                        )
-                      : Container(
-                          margin: const EdgeInsets.all(8.0),
-                          padding: const EdgeInsets.all(16.0),
-                          decoration: BoxDecoration(
-                            color: surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          child: const TableWidget(),
-                        ),
-                ),
-            ],
-          );
-        },
+                  ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -780,8 +838,12 @@ class _TableWidgetState extends State<TableWidget> {
                                             headers[columnIndex],
                                             textAlign: TextAlign.center,
                                             style: TextStyle(
-                                              fontSize: theme.textTheme
-                                                  .bodyMedium!.fontSize,
+                                              fontSize: isMobile
+                                                  ? theme.textTheme.bodyMedium!
+                                                          .fontSize! *
+                                                      1.2
+                                                  : theme.textTheme.bodyMedium!
+                                                      .fontSize,
                                               color:
                                                   theme.colorScheme.onSurface,
                                             ),

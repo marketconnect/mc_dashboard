@@ -1,5 +1,5 @@
 import 'package:mc_dashboard/.env.dart';
-import 'package:mc_dashboard/domain/entities/subject_summary_item.dart';
+
 import 'package:retrofit/retrofit.dart';
 import 'package:dio/dio.dart';
 
@@ -12,9 +12,20 @@ abstract class SubjectsSummaryApiClient {
       _SubjectsSummaryApiClient;
 
   @GET("/subjects-summary")
-  Future<List<SubjectSummaryItem>> getSubjectsSummary({
+  Future<List<RawJsonMap>> getSubjectsSummaryAsDynamic({
     @Query("subject_id") int? subjectId,
     @Query("subject_name") String? subjectName,
     @Query("subject_parent_name") String? subjectParentName,
   });
+}
+
+/// Обёртка над Map<String, dynamic>
+class RawJsonMap {
+  final Map<String, dynamic> data;
+
+  RawJsonMap(this.data);
+
+  factory RawJsonMap.fromJson(Map<String, dynamic> json) {
+    return RawJsonMap(Map<String, dynamic>.from(json));
+  }
 }

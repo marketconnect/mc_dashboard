@@ -1,11 +1,10 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/core/utils/basket_num.dart';
-import 'package:mc_dashboard/domain/entities/card_info.dart';
+
 import 'package:mc_dashboard/domain/entities/saved_product.dart';
 import 'package:mc_dashboard/domain/entities/sku.dart';
-import 'package:mc_dashboard/domain/entities/supplier_item.dart';
-import 'package:mc_dashboard/infrastructure/api/suppliers_api_client.dart';
+
 import 'package:mc_dashboard/presentation/mailing_screen/saved_products_view_model.dart';
 import 'package:mc_dashboard/presentation/subject_products_screen/subject_products_view_model.dart';
 
@@ -36,12 +35,12 @@ class SavedProductsService
   SavedProductsService({
     required this.savedProductsRepo,
     required this.savedProductsApiClient,
-    required this.suppliersApiClient,
+    // required this.suppliersApiClient,
   });
 
   final SavedProductsRepository savedProductsRepo;
   final SavedProductsApiClient savedProductsApiClient;
-  final SuppliersApiClient suppliersApiClient;
+  // final SuppliersApiClient suppliersApiClient;
 
   /// Синхронизация сохранённых товаров
   @override
@@ -84,7 +83,11 @@ class SavedProductsService
             skus: productsToRemove
                 .map((product) => Sku(
                     id: product.productId,
-                    marketplaceType: product.marketplaceType))
+                    marketplaceType: product.marketplaceType,
+                    sellerId: product.sellerId.toString(),
+                    sellerName: product.sellerName,
+                    brandId: product.brandId.toString(),
+                    brandName: product.brandName))
                 .toList());
         if (deleteResult.isLeft()) {
           return deleteResult;
@@ -112,6 +115,10 @@ class SavedProductsService
       final skus = products.map((product) => Sku(
             id: product.productId.toString(),
             marketplaceType: product.marketplaceType,
+            sellerId: product.sellerId.toString(),
+            sellerName: product.sellerName,
+            brandId: product.brandId.toString(),
+            brandName: product.brandName,
           ));
       await savedProductsApiClient.saveUserSkus(
         token: token,
@@ -155,6 +162,10 @@ class SavedProductsService
       final skus = products.map((product) => Sku(
             id: product.productId.toString(),
             marketplaceType: product.marketplaceType,
+            sellerId: product.sellerId.toString(),
+            sellerName: product.sellerName,
+            brandId: product.brandId.toString(),
+            brandName: product.brandName,
           ));
       await savedProductsApiClient.saveUserSkus(
         token: token,
@@ -183,7 +194,13 @@ class SavedProductsService
     try {
       // Delete on server
       final skusToDelete = skus
-          .map((sku) => Sku(id: sku.id, marketplaceType: sku.marketplaceType))
+          .map((sku) => Sku(
+              id: sku.id,
+              marketplaceType: sku.marketplaceType,
+              sellerId: sku.sellerId,
+              sellerName: sku.sellerName,
+              brandId: sku.brandId,
+              brandName: sku.brandName))
           .toList();
 
       await savedProductsApiClient.deleteUserSkus(
@@ -214,70 +231,61 @@ class SavedProductsService
       // Get from server
       final serverSkus =
           await savedProductsApiClient.findUserSkus(token: token);
-
       // Get from local
       final localProducts = await savedProductsRepo.loadProducts();
       final localSkuIds =
           localProducts.map((product) => product.productId).toList();
 
       // Add new products to local
-      // get suppliers info
-      List<int> suppliersIds = [];
-      Map<int, CardInfo> cardInfoMap = {};
-      Map<int, String> imageUrlMap = {};
-      Map<int, String> marketplaceTypesMap = {};
+
+      Map<String, String> marketplaceTypesMap = {};
       bool localStorageUpdated = false;
       // Get missing products and fetch card info for them
       for (final sku in serverSkus) {
         if (!localSkuIds.contains(sku.id)) {
-          marketplaceTypesMap[int.parse(sku.id)] = sku.marketplaceType;
+          marketplaceTypesMap[sku.id] = sku.marketplaceType;
           final id = int.tryParse(sku.id);
-          if (id == null) {
+          if (id == null || sku.marketplaceType != "wb") {
+            final product = SavedProduct(
+              productId: sku.id,
+              name: "",
+              imageUrl: '',
+              sellerId: sku.sellerId,
+              sellerName: sku.sellerName,
+              brandId: sku.brandId,
+              brandName: sku.brandName,
+              marketplaceType: sku.marketplaceType,
+            );
+            await savedProductsRepo.saveProduct(product);
+            localStorageUpdated = true;
             continue;
           }
+
           final basketNum = getBasketNum(id);
           final imageUrl = calculateImageUrl(basketNum, id);
 
-          imageUrlMap[id] = imageUrl;
           final cardUrl = calculateCardUrl(imageUrl);
           final cardInfo = await fetchCardInfo(cardUrl);
-          suppliersIds.add(cardInfo.supplierId);
 
-          cardInfoMap[id] = cardInfo;
+          final product = SavedProduct(
+            productId: sku.id,
+            name: cardInfo.imtName,
+            imageUrl: imageUrl,
+            sellerId: sku.sellerId,
+            sellerName: sku.sellerName,
+            brandId: sku.brandId,
+            brandName: sku.brandName,
+            marketplaceType: sku.marketplaceType,
+          );
+          await savedProductsRepo.saveProduct(product);
           localStorageUpdated = true;
         }
-      }
-      // Get suppliers for missing products
-      Map<int, SupplierItem> suppliersMap = {};
-
-      final supplierOrEither = await getSuppliers(supplierIds: suppliersIds);
-      if (supplierOrEither.isRight()) {
-        final suppliers =
-            supplierOrEither.fold((l) => throw UnimplementedError(), (r) => r);
-        for (final supplierItem in suppliers) {
-          suppliersMap[supplierItem.id] = supplierItem;
-        }
-      }
-
-      // Add new products to local
-      for (final card in cardInfoMap.entries) {
-        final product = SavedProduct(
-          productId: card.key.toString(),
-          name: card.value.imtName,
-          imageUrl: imageUrlMap[card.key] ?? '',
-          sellerId: card.value.supplierId,
-          sellerName: suppliersMap[card.value.supplierId]?.name ?? '',
-          brandId: 0,
-          brandName: '',
-          marketplaceType: marketplaceTypesMap[card.key] ?? "wb",
-        );
-        await savedProductsRepo.saveProduct(product);
       }
 
       // Delete deleted products
       for (final product in localProducts) {
-        if (!serverSkus.any((sku) => sku.id == product.productId.toString())) {
-          await savedProductsRepo.deleteProduct(product.productId.toString());
+        if (!serverSkus.any((sku) => sku.id == product.productId)) {
+          await savedProductsRepo.deleteProduct(product.productId);
           localStorageUpdated = true;
         }
       }
@@ -298,27 +306,27 @@ class SavedProductsService
     }
   }
 
-  Future<Either<AppErrorBase, List<SupplierItem>>> getSuppliers({
-    required List<int> supplierIds,
-  }) async {
-    try {
-      final response = await suppliersApiClient.getSuppliers(
-        supplierIds: supplierIds.join(','),
-      );
-      return Right(response);
-    } catch (e, stackTrace) {
-      final error = AppErrorBase(
-        'Unexpected error: $e',
-        name: 'getSuppliers',
-        sendTo: true,
-        source: 'SuppliersService',
-        args: [
-          'supplierIds: $supplierIds',
-        ],
-        stackTrace: stackTrace.toString(),
-      );
-      AppLogger.log(error);
-      return Left(error);
-    }
-  }
+  // Future<Either<AppErrorBase, List<SupplierItem>>> getSuppliers({
+  //   required List<int> supplierIds,
+  // }) async {
+  //   try {
+  //     final response = await suppliersApiClient.getSuppliers(
+  //       supplierIds: supplierIds.join(','),
+  //     );
+  //     return Right(response);
+  //   } catch (e, stackTrace) {
+  //     final error = AppErrorBase(
+  //       'Unexpected error: $e',
+  //       name: 'getSuppliers',
+  //       sendTo: true,
+  //       source: 'SuppliersService',
+  //       args: [
+  //         'supplierIds: $supplierIds',
+  //       ],
+  //       stackTrace: stackTrace.toString(),
+  //     );
+  //     AppLogger.log(error);
+  //     return Left(error);
+  //   }
+  // }
 }
