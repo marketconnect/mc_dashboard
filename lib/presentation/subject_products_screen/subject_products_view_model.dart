@@ -463,6 +463,7 @@ class SubjectProductsViewModel extends ViewModelBase {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text(
           'Товары успешно добавлены',
+          style: TextStyle(fontSize: 16),
         ),
         duration: Duration(seconds: 3),
       ));

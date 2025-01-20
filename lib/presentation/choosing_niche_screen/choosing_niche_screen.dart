@@ -757,34 +757,34 @@ class _TableWidgetState extends State<TableWidget> {
                 ),
               ],
             ),
-            if (model.isSearchVisible)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 400),
-                      child: TextField(
-                        decoration: InputDecoration(
-                          labelText: 'Поиск по предметам',
-                          prefixIcon: const Icon(Icons.search),
-                          suffixIcon: IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: () {
-                              model.toggleSearchVisibility();
-                            },
-                          ),
-                          border: const OutlineInputBorder(),
-                        ),
-                        onChanged: (value) {
-                          model.setSearchQuery(value);
-                        },
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            // if (model.isSearchVisible)
+            //   Row(
+            //     mainAxisAlignment: MainAxisAlignment.start,
+            //     children: [
+            //       Padding(
+            //         padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+            //         child: ConstrainedBox(
+            //           constraints: const BoxConstraints(maxWidth: 400),
+            //           child: TextField(
+            //             decoration: InputDecoration(
+            //               labelText: 'Поиск по предметам',
+            //               prefixIcon: const Icon(Icons.search),
+            //               suffixIcon: IconButton(
+            //                 icon: const Icon(Icons.close),
+            //                 onPressed: () {
+            //                   model.toggleSearchVisibility();
+            //                 },
+            //               ),
+            //               border: const OutlineInputBorder(),
+            //             ),
+            //             onChanged: (value) {
+            //               model.setSearchQuery(value);
+            //             },
+            //           ),
+            //         ),
+            //       ),
+            //     ],
+            //   ),
             Expanded(
               child: Container(
                 padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
@@ -851,20 +851,20 @@ class _TableWidgetState extends State<TableWidget> {
                                             maxLines: 2,
                                             softWrap: true,
                                           ),
-                                          IconButton(
-                                            icon: Icon(
-                                              model.isSearchVisible
-                                                  ? null
-                                                  : Icons.search,
-                                              color:
-                                                  theme.colorScheme.onSurface,
-                                              size: theme.textTheme.bodyMedium!
-                                                  .fontSize,
-                                            ),
-                                            onPressed: () {
-                                              model.toggleSearchVisibility();
-                                            },
-                                          ),
+                                          // IconButton(
+                                          //   icon: Icon(
+                                          //     model.isSearchVisible
+                                          //         ? null
+                                          //         : Icons.search,
+                                          //     color:
+                                          //         theme.colorScheme.onSurface,
+                                          //     size: theme.textTheme.bodyMedium!
+                                          //         .fontSize,
+                                          //   ),
+                                          //   onPressed: () {
+                                          //     model.toggleSearchVisibility();
+                                          //   },
+                                          // ),
                                         ],
                                       )
                                     : Text(

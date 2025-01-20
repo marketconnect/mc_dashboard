@@ -303,7 +303,9 @@ class MailingSettingsViewModel extends ViewModelBase {
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Настройки успешно сохранены')),
+        const SnackBar(
+            content: Text('Настройки успешно сохранены',
+                style: TextStyle(fontSize: 16))),
       );
     }
   }

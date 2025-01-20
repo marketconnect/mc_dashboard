@@ -492,7 +492,10 @@ class ProductViewModel extends ViewModelBase {
     } else {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Ключевые фразы сохранены'),
+          content: Text(
+            'Ключевые фразы сохранены',
+            style: TextStyle(fontSize: 16),
+          ),
         ));
       }
     }
