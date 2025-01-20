@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fpdart/fpdart.dart';
@@ -15,16 +17,34 @@ class SubjectsSummaryService
         EmptySubjectViewModelSubjectsSummaryService {
   final SubjectsSummaryApiClient subjectsSummaryApiClient;
 
-  SubjectsSummaryService({required this.subjectsSummaryApiClient});
+  static final SubjectsSummaryService instance = SubjectsSummaryService._();
+
+  // Why singleton? This is a workaround . Because we need to fetch subjects summary only once
+  // despite it is used in multiple screens simultaneously when app is loading
+  // (choose niche, subject products, empty subjects)
+  SubjectsSummaryService._()
+      : subjectsSummaryApiClient = SubjectsSummaryApiClient(Dio());
+
+  Completer<Either<AppErrorBase, List<SubjectSummaryItem>>>?
+      _fetchSubjectsCompleter;
+
   @override
   Future<Either<AppErrorBase, List<SubjectSummaryItem>>> fetchSubjectsSummary(
       [int? subjectId]) async {
     try {
-      // final result = await subjectsSummaryApiClient.getSubjectsSummaryAsDynamic();
+      if (_fetchSubjectsCompleter != null &&
+          !_fetchSubjectsCompleter!.isCompleted) {
+        return _fetchSubjectsCompleter!.future;
+      }
+      _fetchSubjectsCompleter =
+          Completer<Either<AppErrorBase, List<SubjectSummaryItem>>>();
+
       final rawJsonMapList = await subjectsSummaryApiClient
           .getSubjectsSummaryAsDynamic(subjectId: subjectId);
       final parsedList = await compute(_parseSubjectsList, rawJsonMapList);
 
+      //
+      _fetchSubjectsCompleter!.complete(right(parsedList));
       return Right(parsedList);
     } on DioException catch (e, stackTrace) {
       final message = e.response?.data['error'] ??

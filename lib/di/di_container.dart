@@ -9,7 +9,6 @@ import 'package:mc_dashboard/infrastructure/api/lemmatize.dart';
 import 'package:mc_dashboard/infrastructure/api/normqueries.dart';
 import 'package:mc_dashboard/infrastructure/api/orders.dart';
 import 'package:mc_dashboard/infrastructure/api/stocks.dart';
-import 'package:mc_dashboard/infrastructure/api/subjects_summary.dart';
 
 import 'package:mc_dashboard/infrastructure/api/user_emails_api.dart';
 import 'package:mc_dashboard/infrastructure/api/user_search_queries_api.dart';
@@ -107,12 +106,15 @@ class _DIContainer {
   UserSearchQueriesApiClient _makeUserSearchQueriesApiClient() =>
       UserSearchQueriesApiClient();
   // Services //////////////////////////////////////////////////////////////////
-  SubjectsSummaryService _makeSubjectsSummaryService() =>
-      SubjectsSummaryService(
-          subjectsSummaryApiClient: SubjectsSummaryApiClient(dio));
 
   DetailedOrdersService _makeDetailedOrdersService() => DetailedOrdersService(
       detailedOrdersApiClient: DetailedOrdersApiClient(dio));
+
+  // Why singleton? This is a workaround . Because we need to fetch subjects summary only once
+  // despite it is used in multiple screens simultaneously when app is loading
+  // (choose niche, subject products, empty subjects)
+  final SubjectsSummaryService _makeSubjectsSummaryService =
+      SubjectsSummaryService.instance;
 
   StocksService _makeStocksService() =>
       StocksService(stocksApiClient: StocksApiClient(dio));
@@ -172,7 +174,7 @@ class _DIContainer {
               onNavigateToSubjectProducts) =>
       ChoosingNicheViewModel(
           context: context,
-          subjectsSummaryService: _makeSubjectsSummaryService(),
+          subjectsSummaryService: _makeSubjectsSummaryService,
           // authService: _makeAuthService(),
           onNavigateToSubjectProducts: onNavigateToSubjectProducts);
 
@@ -191,7 +193,7 @@ class _DIContainer {
           subjectName: subjectName,
           context: context,
           onNavigateTo: onNavigateTo,
-          subjectSummaryService: _makeSubjectsSummaryService(),
+          subjectSummaryService: _makeSubjectsSummaryService,
           onSaveProductsToTrack: onSaveProductsToTrack,
           detailedOrdersService: _makeDetailedOrdersService(),
           savedProductsService: _makeSavedProductsService(),
@@ -207,7 +209,7 @@ class _DIContainer {
       EmptySubjectViewModel(
           context: context,
           onNavigateTo: onNavigateTo,
-          subjectsSummaryService: _makeSubjectsSummaryService());
+          subjectsSummaryService: _makeSubjectsSummaryService);
 
   EmptyProductViewModel _makeEmptyProductViewModel(
     BuildContext context,

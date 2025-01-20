@@ -51,6 +51,20 @@ class LocalStorageRepo implements AuthServiceStorage {
     }
   }
 
+  static Either<AppErrorBase, void> clearTokenStatic() {
+    try {
+      web.window.localStorage.removeItem('access_token');
+      return right(null);
+    } catch (e) {
+      return left(AppErrorBase(
+        'Caught error: $e',
+        name: 'clearTokenFromLocalStorage',
+        sendTo: true,
+        source: 'LocalStorageRepo',
+      ));
+    }
+  }
+
   static String? getTokenStatic() {
     try {
       final token = web.window.localStorage.getItem('access_token');

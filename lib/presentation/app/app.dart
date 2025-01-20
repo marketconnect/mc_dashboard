@@ -656,21 +656,66 @@ class __ScaffoldState extends State<_Scaffold> {
             ],
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+        Container(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
             children: [
-              Switch(
-                  value: widget.isDarkTheme,
-                  onChanged: (a) => widget.onThemeChanged(!widget.isDarkTheme)),
-              Icon(
-                widget.isDarkTheme ? Icons.brightness_2 : Icons.wb_sunny,
-                color: theme.colorScheme.onSurface,
+              // 1) Кнопка "Выйти" (Logout)
+              ListTile(
+                leading: Icon(Icons.logout, color: theme.colorScheme.onSurface),
+                title: Text(
+                  "Выйти",
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                onTap: () async {
+                  // Логаут пользователя
+                  await FirebaseAuth.instance.signOut();
+                  LocalStorageRepo.clearTokenStatic();
+
+                  // Если Drawer открыт на мобильном - закрываем
+                  if (Responsive.isMobile(context)) {
+                    Navigator.of(context).pop();
+                  }
+                  // При логауте, MaterialApp заново построится и отправит на makeLoginScreen()
+                },
+              ),
+              // Отделим линией
+              _SideMenuDivider(theme: theme),
+              // 2) Переключатель темы
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Switch(
+                    value: widget.isDarkTheme,
+                    onChanged: (a) =>
+                        widget.onThemeChanged(!widget.isDarkTheme),
+                  ),
+                  Icon(
+                    widget.isDarkTheme ? Icons.brightness_2 : Icons.wb_sunny,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ],
               ),
             ],
           ),
         ),
+        // Padding(
+        //   padding: const EdgeInsets.only(bottom: 16.0),
+        //   child: Row(
+        //     mainAxisAlignment: MainAxisAlignment.center,
+        //     children: [
+        //       Switch(
+        //           value: widget.isDarkTheme,
+        //           onChanged: (a) => widget.onThemeChanged(!widget.isDarkTheme)),
+        //       Icon(
+        //         widget.isDarkTheme ? Icons.brightness_2 : Icons.wb_sunny,
+        //         color: theme.colorScheme.onSurface,
+        //       ),
+        //     ],
+        //   ),
+        // ),
       ],
     );
   }

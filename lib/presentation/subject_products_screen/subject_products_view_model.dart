@@ -461,7 +461,9 @@ class SubjectProductsViewModel extends ViewModelBase {
         productsToSave.map((item) => item.productId).toList());
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Товары успешно добавлены'),
+        content: Text(
+          'Товары успешно добавлены',
+        ),
         duration: Duration(seconds: 3),
       ));
     }

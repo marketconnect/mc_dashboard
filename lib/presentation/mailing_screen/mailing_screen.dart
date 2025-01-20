@@ -507,19 +507,26 @@ class _SavedProductsTab extends StatelessWidget {
     final isSubscribed = model.isSubscribed;
     return LayoutBuilder(
       builder: (context, constraints) {
+        final maxHeight = constraints.maxHeight;
+        final maxWidth = constraints.maxWidth;
+        final isMobile = maxWidth < 600;
         return SingleChildScrollView(
           child: Column(
             children: [
               // const _AddSkuWidget(),
               const _Header(),
               Container(
-                margin: const EdgeInsets.all(8.0),
-                padding: const EdgeInsets.all(16.0),
+                margin: isMobile
+                    ? const EdgeInsets.all(2.0)
+                    : const EdgeInsets.all(8.0),
+                padding: isMobile
+                    ? const EdgeInsets.all(4.0)
+                    : const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
                   color: surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8.0),
                 ),
-                height: constraints.maxHeight * 0.9,
+                height: maxHeight * 0.9,
                 child: _SavedTableWidget(
                   isSubscribed: isSubscribed,
                 ),
@@ -732,9 +739,10 @@ class _SavedTableWidgetState extends State<_SavedTableWidget> {
                 children: [
                   Positioned.fill(
                     child: Container(
-                      margin: const EdgeInsets.all(8.0),
-                      padding:
-                          const EdgeInsets.fromLTRB(16.0, 50.0, 16.0, 16.0),
+                      margin: isMobile ? null : const EdgeInsets.all(8.0),
+                      padding: isMobile
+                          ? const EdgeInsets.fromLTRB(4.0, 30.0, 4.0, 4.0)
+                          : const EdgeInsets.fromLTRB(16.0, 50.0, 16.0, 16.0),
                       decoration: BoxDecoration(
                         color: theme.colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(8.0),
@@ -942,9 +950,11 @@ class _TextCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       alignment: Alignment.center,
-      child: Text(text),
+      child: Text(text,
+          style: TextStyle(fontSize: theme.textTheme.bodySmall!.fontSize)),
     );
   }
 }
@@ -955,6 +965,7 @@ class _ProductCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final imageUrl = item.imageUrl;
     final productName = item.name;
     final wildberriesUrl =
@@ -967,7 +978,9 @@ class _ProductCell extends StatelessWidget {
           const SizedBox(width: 8),
           productName.isEmpty
               ? const Text("Описание отсутствует")
-              : Text(productName),
+              : Text(productName,
+                  style:
+                      TextStyle(fontSize: theme.textTheme.bodySmall!.fontSize)),
         ],
       );
     }
@@ -1006,8 +1019,9 @@ class _ProductCell extends StatelessWidget {
                 productName.isEmpty ? "Без названия" : productName,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   decoration: TextDecoration.underline,
+                  fontSize: theme.textTheme.bodySmall!.fontSize,
                   color: Color(0xFF5166e3),
                 ),
               ),
@@ -1030,18 +1044,25 @@ class _SavedKeyPhrasesTab extends StatelessWidget {
     final isSubscribed = model.isSubscribed;
     return LayoutBuilder(
       builder: (context, constraints) {
+        final maxHeight = constraints.maxHeight;
+        final maxWidth = constraints.maxWidth;
+        final isMobile = maxWidth < 600;
         return SingleChildScrollView(
           child: Column(
             children: [
               _KeyPhrasesHeader(),
               Container(
-                margin: const EdgeInsets.all(8.0),
-                padding: const EdgeInsets.all(16.0),
+                margin: isMobile
+                    ? const EdgeInsets.all(2.0)
+                    : const EdgeInsets.all(8.0),
+                padding: isMobile
+                    ? const EdgeInsets.all(4.0)
+                    : const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
                   color: surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8.0),
                 ),
-                height: constraints.maxHeight * 0.9,
+                height: maxHeight * 0.9,
                 child: _KeyPhrasesTableWidget(
                   isSubscribed: isSubscribed,
                 ),
@@ -1126,8 +1147,10 @@ class _KeyPhrasesTableWidgetState extends State<_KeyPhrasesTableWidget> {
           children: [
             Positioned.fill(
               child: Container(
-                margin: const EdgeInsets.all(8.0),
-                padding: const EdgeInsets.fromLTRB(16.0, 50.0, 16.0, 16.0),
+                margin: isMobile ? null : const EdgeInsets.all(8.0),
+                padding: isMobile
+                    ? const EdgeInsets.fromLTRB(4.0, 30.0, 4.0, 4.0)
+                    : const EdgeInsets.fromLTRB(16.0, 50.0, 16.0, 16.0),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8.0),
@@ -1191,7 +1214,9 @@ class _KeyPhrasesTableWidgetState extends State<_KeyPhrasesTableWidget> {
                       return Container(
                         alignment: Alignment.centerLeft,
                         padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                        child: Text(item.phraseText),
+                        child: Text(item.phraseText,
+                            style: TextStyle(
+                                fontSize: theme.textTheme.bodySmall!.fontSize)),
                       );
                     });
                   },

@@ -29,6 +29,7 @@ class _SubjectsSummaryApiClient implements SubjectsSummaryApiClient {
     String? subjectName,
     String? subjectParentName,
   }) async {
+    print("GET subjects summary: $subjectId, $subjectName, $subjectParentName");
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{
       r'subject_id': subjectId,
