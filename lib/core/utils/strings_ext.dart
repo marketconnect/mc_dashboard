@@ -5,4 +5,9 @@ extension StringFormatting on String {
       (Match match) => '${match.group(1)} ',
     );
   }
+
+  bool isNumeric() {
+    final numericRegex = RegExp(r'^[0-9]+$');
+    return numericRegex.hasMatch(this);
+  }
 }

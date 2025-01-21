@@ -906,8 +906,10 @@ class _TableWidgetState extends State<TableWidget> {
                       String text;
                       switch (columnIndex) {
                         case 0:
-                          text =
-                              '${item.subjectParentName ?? ''}/${item.subjectName}';
+                          text = item.subjectParentName == null ||
+                                  item.subjectParentName!.isNumeric()
+                              ? item.subjectName
+                              : '${item.subjectParentName ?? ''}/${item.subjectName}';
                           break;
                         case 1:
                           text = item.totalRevenue
