@@ -241,6 +241,7 @@ class _DIContainer {
         detailedOrdersService: _makeDetailedOrdersService(),
         savedKeyPhrasesService: _makeSavedKeyPhrasesService(),
         whService: _makeWhService(),
+        savedProductsService: _makeSavedProductsService(),
         authService: _makeAuthService(),
         lemmatizeService: _makeLemmatizeService(),
         onSaveKeyPhrasesToTrack: onSaveKeyPhraseToTrack,

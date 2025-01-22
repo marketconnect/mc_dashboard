@@ -11,6 +11,7 @@ import 'package:mc_dashboard/domain/entities/kw_lemmas.dart';
 import 'package:mc_dashboard/domain/entities/lemmatize.dart';
 import 'package:mc_dashboard/domain/entities/normquery_product.dart';
 import 'package:mc_dashboard/domain/entities/order.dart';
+import 'package:mc_dashboard/domain/entities/saved_product.dart';
 import 'package:mc_dashboard/domain/entities/stock.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/domain/entities/token_info.dart';
@@ -82,6 +83,13 @@ abstract class ProductViewModelSavedKeyPhrasesService {
   });
 }
 
+abstract class ProductViewModelSavedProductsService {
+  Future<Either<AppErrorBase, void>> addProducts({
+    required String token,
+    required List<SavedProduct> products,
+  });
+}
+
 class ProductViewModel extends ViewModelBase {
   ProductViewModel(
       {required super.context,
@@ -96,6 +104,7 @@ class ProductViewModel extends ViewModelBase {
       required this.lemmatizeService,
       required this.savedKeyPhrasesService,
       required this.onSaveKeyPhrasesToTrack,
+      required this.savedProductsService,
       required this.onNavigateTo,
       required this.productPrice});
   final int productId;
@@ -109,6 +118,7 @@ class ProductViewModel extends ViewModelBase {
   final ProductViewModelLemmatizeService lemmatizeService;
   final ProductViewModelDetailedOrdersService detailedOrdersService;
   final ProductViewModelSavedKeyPhrasesService savedKeyPhrasesService;
+  final ProductViewModelSavedProductsService savedProductsService;
   final void Function(List<String> keyPhrase) onSaveKeyPhrasesToTrack;
 
   // Navigation
@@ -160,6 +170,9 @@ class ProductViewModel extends ViewModelBase {
   // subject
   String _subjectName = "";
   String get subjectName => _subjectName;
+
+  int _supplierId = 0;
+  String _brand = "";
 
   // images
   final List<String> _images = [];
@@ -273,6 +286,8 @@ class ProductViewModel extends ViewModelBase {
     _characteristicValues = cardInfo.characteristicValues;
     _subjectId = cardInfo.subjId;
     _subjectName = cardInfo.subjName;
+    _supplierId = cardInfo.supplierId;
+    _brand = cardInfo.brand;
 
     // token and sub info
     final tokenInfoOrEither = vals[1] as Either<AppErrorBase, TokenInfo>;
@@ -502,6 +517,69 @@ class ProductViewModel extends ViewModelBase {
 
     // Update mailing keyphrases screen
     onSaveKeyPhrasesToTrack(keyPhrasesStr);
+  }
+
+  Future<void> saveProducts() async {
+    if (isFree) {
+      print('free');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Чтобы получать рассылку, вы должны быть подписчиком.',
+            style: TextStyle(
+                fontSize: Theme.of(context).textTheme.bodyLarge!.fontSize)),
+        action: SnackBarAction(
+          label: 'Оформить подписку',
+          onPressed: () {
+            onNavigateToSubscriptionScreen();
+          },
+        ),
+        duration: Duration(seconds: 10),
+      ));
+      return;
+    } // get selected orders
+
+    // prepare products to save
+    SavedProduct productToSave = SavedProduct(
+        productId: productId.toString(),
+        sellerId: _supplierId.toString(),
+        sellerName: "",
+        brandId: "",
+        brandName: _brand,
+        marketplaceType: "wb",
+        imageUrl: _images[0],
+        name: name);
+
+    //   final imageUrlProductName = _productImageProductName[item.productId];
+    //   if (imageUrlProductName != null) {
+    //     productsToSave.add(SavedProduct(
+    //         productId: item.productId.toString(),
+    //         sellerId: item.supplierId.toString(),
+    //         sellerName: item.supplier,
+    //         brandId: item.brandId.toString(),
+    //         brandName: item.brand,
+    //         marketplaceType: "wb",
+    //         imageUrl: imageUrlProductName.$1,
+    //         name: imageUrlProductName.$2));
+    //   }
+    // }
+
+    // save products
+    if (_tokenInfo == null) {
+      return;
+    }
+    await savedProductsService
+        .addProducts(token: _tokenInfo!.token, products: [productToSave]);
+
+    // callback to update the SavedProductsScreen
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text(
+          'Товар успешно добавлен',
+          style: TextStyle(fontSize: 16),
+        ),
+        duration: Duration(seconds: 3),
+      ));
+    }
   }
 
   // Navigation

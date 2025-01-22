@@ -5,6 +5,8 @@ class CardInfo {
   final int photoCount;
   final int subjId;
   final String subjName;
+
+  final String brand;
   final String description;
   final String characteristicValues;
   final String characteristicFull;
@@ -16,6 +18,7 @@ class CardInfo {
     required this.photoCount,
     required this.subjId,
     required this.subjName,
+    required this.brand,
     required this.description,
     required this.characteristicValues,
     required this.characteristicFull,
@@ -70,12 +73,18 @@ class CardInfo {
         .map((entry) => '${entry.key}: ${entry.value}')
         .join('; ');
 
+    String brand = "";
+    if (json['selling'] != null) {
+      brand = json['selling']['brand_name'];
+    }
+
     return CardInfo(
       imtName: json['imt_name'],
       imtId: json['imt_id'],
       supplierId: json['selling']['supplier_id'],
       subjName: json['subj_name'],
       subjId: json['data']['subject_id'],
+      brand: brand,
       description: json['description'],
       photoCount: media['photo_count'],
       characteristicValues: characteristics,

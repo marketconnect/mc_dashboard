@@ -97,11 +97,21 @@ class _EmptyProductScreenState extends State<EmptyProductScreen> {
     if (name == null || sku == null) {
       return Center(
         key: const ValueKey('no_results'),
-        child: Text(
-          "Товар не найден",
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+        child: Column(
+          children: [
+            Text(
+              "Товар не найден.",
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            Text(
+              "Товар может отсутствовать в системе, если за предыдущие 30 дней он ни разу не попадал на первые две страницы хотя бы по одному из миллиона самых популярных запросов Wildberries.",
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
         ),
       );
     }

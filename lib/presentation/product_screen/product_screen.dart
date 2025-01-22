@@ -136,11 +136,25 @@ class _ProductScreenState extends State<ProductScreen> {
                                     ],
                                   ),
                                 ),
-                                IconButton(
-                                  onPressed: onNavigateToEmptyProductScreen,
-                                  icon:
-                                      const Icon(Icons.search_sharp, size: 24),
-                                  color: theme.colorScheme.primary,
+                                Row(
+                                  children: [
+                                    IconButton(
+                                      onPressed: onNavigateToEmptyProductScreen,
+                                      icon: const Icon(Icons.search_sharp,
+                                          size: 24),
+                                      color: theme.colorScheme.primary,
+                                      tooltip: 'Поиск по артикулу',
+                                    ),
+                                    IconButton(
+                                      onPressed: () {
+                                        model.saveProducts();
+                                      },
+                                      icon: const Icon(Icons.email_outlined,
+                                          size: 24),
+                                      color: theme.colorScheme.primary,
+                                      tooltip: 'Добавить в рассылку',
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -353,14 +367,13 @@ class _ProductScreenState extends State<ProductScreen> {
                       SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Container(
+                          alignment: Alignment.center,
                           width: isMobile ? null : constraints.maxWidth * 0.6,
                           margin: const EdgeInsets.only(bottom: 24),
                           child: Row(
-                            mainAxisAlignment: !model.normqueriesLoaded
+                            mainAxisAlignment: isMobile
                                 ? MainAxisAlignment.center
-                                : isMobile
-                                    ? MainAxisAlignment.spaceEvenly
-                                    : MainAxisAlignment.end,
+                                : MainAxisAlignment.end,
                             children: [
                               if (!model.normqueriesLoaded)
                                 FloatingActionButton.extended(
@@ -375,7 +388,7 @@ class _ProductScreenState extends State<ProductScreen> {
                                     await model.loadNormqueries();
                                   },
                                 ),
-                              const SizedBox(width: 8),
+                              // const SizedBox(width: 8),
 
                               // Анализ релевантности
                               if (model.normqueriesLoaded &&
@@ -395,8 +408,10 @@ class _ProductScreenState extends State<ProductScreen> {
                                     await model.loadSeo();
                                   },
                                 ),
-                              const SizedBox(width: 8),
-
+                              // const SizedBox(width: 8),
+                              if (model.normqueriesLoaded &&
+                                  !model.unusedQueriesLoaded)
+                                const SizedBox(width: 8),
                               // Упущенные запросы
                               if (model.normqueriesLoaded &&
                                   !model.unusedQueriesLoaded)
@@ -411,7 +426,7 @@ class _ProductScreenState extends State<ProductScreen> {
                                     await model.loadUnusedQueries();
                                   },
                                 ),
-                              const SizedBox(width: 28),
+                              // const SizedBox(width: 28),
                             ],
                           ),
                         ),

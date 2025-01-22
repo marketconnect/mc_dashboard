@@ -6,6 +6,7 @@ import 'package:mc_dashboard/domain/entities/saved_product.dart';
 import 'package:mc_dashboard/domain/entities/sku.dart';
 
 import 'package:mc_dashboard/presentation/mailing_screen/saved_products_view_model.dart';
+import 'package:mc_dashboard/presentation/product_screen/product_view_model.dart';
 import 'package:mc_dashboard/presentation/subject_products_screen/subject_products_view_model.dart';
 
 abstract class SavedProductsRepository {
@@ -31,6 +32,7 @@ abstract class SavedProductsApiClient {
 class SavedProductsService
     implements
         SubjectProductsSavedProductsService,
+        ProductViewModelSavedProductsService,
         SavedProductsSavedProductsService {
   SavedProductsService({
     required this.savedProductsRepo,
