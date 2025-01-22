@@ -14,13 +14,31 @@ import 'package:pie_chart/pie_chart.dart' as pie_chart;
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class SubjectProductsScreen extends StatelessWidget {
+class SubjectProductsScreen extends StatefulWidget {
   const SubjectProductsScreen({super.key});
+
+  @override
+  State<SubjectProductsScreen> createState() => _SubjectProductsScreenState();
+}
+
+class _SubjectProductsScreenState extends State<SubjectProductsScreen> {
+  final ScrollController _scrollController = ScrollController();
+  bool _showBackFAB = false;
+  @override
+  void initState() {
+    super.initState();
+
+    _scrollController.addListener(() {
+      setState(() {
+        _showBackFAB = _scrollController.offset > 300;
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final model = context.watch<SubjectProductsViewModel>();
-
+    final onNavigateBack = model.onNavigateBack;
     final isFilterVisible = model.isFilterVisible;
     final theme = Theme.of(context);
     final surfaceContainerHighest = theme.colorScheme.surfaceContainerHighest;
@@ -37,104 +55,134 @@ class SubjectProductsScreen extends StatelessWidget {
           final isFilteredByBrand = model.filteredBrand != null;
           if (isMobileOrLaptop) {
             // Mobile and Laptop ///////////////////////////////////////////////
-            return SingleChildScrollView(
-              controller: ScrollController(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (!model.loading) _Header(),
-                  model.loading
-                      ? Shimmer(
-                          gradient:
-                              Theme.of(context).colorScheme.shimmerGradient,
-                          child: Container(
-                            height: constraints.maxHeight * 0.8,
-                            width: double.infinity,
-                            margin: const EdgeInsets.all(8.0),
-                            decoration: BoxDecoration(
-                              color: Colors.grey,
-                              borderRadius: BorderRadius.circular(8.0),
+            return Stack(
+              children: [
+                SingleChildScrollView(
+                  controller: _scrollController,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (!model.loading) _Header(),
+                      model.loading
+                          ? Shimmer(
+                              gradient:
+                                  Theme.of(context).colorScheme.shimmerGradient,
+                              child: Container(
+                                height: constraints.maxHeight * 0.8,
+                                width: double.infinity,
+                                margin: const EdgeInsets.all(8.0),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey,
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                              ),
+                            )
+                          : Container(
+                              height: constraints.maxHeight, // Height for graph
+                              margin: const EdgeInsets.all(8.0),
+                              padding: const EdgeInsets.all(2.0),
+                              decoration: BoxDecoration(
+                                color: surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              child: _PieChartWithList(
+                                isClearButtonVisible: isFilteredBySeller,
+                                dataMap: model.sellersDataMap,
+                                title: "Продавцы (ТОП-30)",
+                                onTapValue: model.filterBySeller,
+                                clearFilter: clearSellerBrandFilter,
+                                isMobile: isMobileOrLaptop,
+                                maxWidth: maxWidth,
+                              ),
                             ),
-                          ),
-                        )
-                      : Container(
-                          height: constraints.maxHeight, // Height for graph
-                          margin: const EdgeInsets.all(8.0),
-                          padding: const EdgeInsets.all(2.0),
-                          decoration: BoxDecoration(
-                            color: surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          child: _PieChartWithList(
-                            isClearButtonVisible: isFilteredBySeller,
-                            dataMap: model.sellersDataMap,
-                            title: "Продавцы (ТОП-30)",
-                            onTapValue: model.filterBySeller,
-                            clearFilter: clearSellerBrandFilter,
-                            isMobile: isMobileOrLaptop,
-                            maxWidth: maxWidth,
-                          ),
-                        ),
-                  model.loading
-                      ? Shimmer(
-                          gradient:
-                              Theme.of(context).colorScheme.shimmerGradient,
-                          child: Container(
-                            height: constraints.maxHeight * 0.8,
-                            width: double.infinity,
-                            margin: const EdgeInsets.all(8.0),
-                            decoration: BoxDecoration(
-                              color: Colors.grey,
-                              borderRadius: BorderRadius.circular(8.0),
+                      model.loading
+                          ? Shimmer(
+                              gradient:
+                                  Theme.of(context).colorScheme.shimmerGradient,
+                              child: Container(
+                                height: constraints.maxHeight * 0.8,
+                                width: double.infinity,
+                                margin: const EdgeInsets.all(8.0),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey,
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                              ),
+                            )
+                          : Container(
+                              height: constraints.maxHeight, // Height for bar
+                              margin: const EdgeInsets.all(8.0),
+                              padding: const EdgeInsets.all(2.0),
+                              decoration: BoxDecoration(
+                                color: surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              child: _PieChartWithList(
+                                isClearButtonVisible: isFilteredByBrand,
+                                title: "Бренды (ТОП-30)",
+                                onTapValue: model.filterByBrand,
+                                dataMap: model.brandsDataMap,
+                                clearFilter: clearSellerBrandFilter,
+                                isMobile: isMobileOrLaptop,
+                                maxWidth: maxWidth,
+                              ),
                             ),
-                          ),
-                        )
-                      : Container(
-                          height: constraints.maxHeight, // Height for bar
-                          margin: const EdgeInsets.all(8.0),
-                          padding: const EdgeInsets.all(2.0),
-                          decoration: BoxDecoration(
-                            color: surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          child: _PieChartWithList(
-                            isClearButtonVisible: isFilteredByBrand,
-                            title: "Бренды (ТОП-30)",
-                            onTapValue: model.filterByBrand,
-                            dataMap: model.brandsDataMap,
-                            clearFilter: clearSellerBrandFilter,
-                            isMobile: isMobileOrLaptop,
-                            maxWidth: maxWidth,
-                          ),
-                        ),
-                  if (isFilterVisible)
-                    _buildFiltersWidget(context, isMobileOrLaptop),
-                  model.loading
-                      ? Shimmer(
-                          gradient:
-                              Theme.of(context).colorScheme.shimmerGradient,
-                          child: Container(
-                            height: constraints.maxHeight, // Height for table
-                            width: double.infinity,
-                            margin: const EdgeInsets.all(8.0),
-                            decoration: BoxDecoration(
-                              color: Colors.grey,
-                              borderRadius: BorderRadius.circular(8.0),
+                      if (isFilterVisible)
+                        _buildFiltersWidget(context, isMobileOrLaptop),
+                      model.loading
+                          ? Shimmer(
+                              gradient:
+                                  Theme.of(context).colorScheme.shimmerGradient,
+                              child: Container(
+                                height:
+                                    constraints.maxHeight, // Height for table
+                                width: double.infinity,
+                                margin: const EdgeInsets.all(8.0),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey,
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                              ),
+                            )
+                          : Container(
+                              height: constraints.maxHeight, // Height for table
+                              margin: const EdgeInsets.all(8.0),
+                              padding: isMobileOrLaptop
+                                  ? null
+                                  : const EdgeInsets.all(2.0),
+                              decoration: BoxDecoration(
+                                color: surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              child: const _TableWidget(),
                             ),
-                          ),
-                        )
-                      : Container(
-                          height: constraints.maxHeight, // Height for table
-                          margin: const EdgeInsets.all(8.0),
-                          padding: const EdgeInsets.all(2.0),
-                          decoration: BoxDecoration(
-                            color: surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          child: const _TableWidget(),
-                        ),
-                ],
-              ),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  top: 0,
+                  left: 8,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: _showBackFAB
+                        ? FloatingActionButton(
+                            key: const ValueKey('backFab'),
+                            backgroundColor: Colors.transparent,
+                            elevation: 0,
+                            highlightElevation: 0,
+                            hoverElevation: 0,
+                            focusElevation: 0,
+                            splashColor: Colors.transparent,
+                            hoverColor: Colors.transparent,
+                            foregroundColor: Colors.black,
+                            shape: const CircleBorder(),
+                            onPressed: onNavigateBack,
+                            child: const Icon(Icons.arrow_back_ios),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                )
+              ],
             );
           }
 
@@ -684,8 +732,9 @@ class _TableWidgetState extends State<_TableWidget> {
                       margin: isMobileOrLaptop
                           ? EdgeInsets.zero
                           : EdgeInsets.all(8.0),
-                      padding:
-                          const EdgeInsets.fromLTRB(16.0, 50.0, 16.0, 16.0),
+                      padding: isMobile
+                          ? EdgeInsets.only(top: 50.0)
+                          : const EdgeInsets.fromLTRB(16.0, 50.0, 16.0, 16.0),
                       decoration: BoxDecoration(
                         color: theme.colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(8.0),

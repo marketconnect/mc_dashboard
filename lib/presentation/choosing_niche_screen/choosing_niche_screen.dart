@@ -163,7 +163,7 @@ class ChoosingNicheScreen extends StatelessWidget {
                         : Container(
                             height: constraints.maxHeight, // Height for table
                             margin: const EdgeInsets.all(8.0),
-                            padding: const EdgeInsets.all(2.0),
+                            // padding: const EdgeInsets.all(2.0),
                             decoration: BoxDecoration(
                               color: surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(8.0),
@@ -757,37 +757,11 @@ class _TableWidgetState extends State<TableWidget> {
                 ),
               ],
             ),
-            // if (model.isSearchVisible)
-            //   Row(
-            //     mainAxisAlignment: MainAxisAlignment.start,
-            //     children: [
-            //       Padding(
-            //         padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-            //         child: ConstrainedBox(
-            //           constraints: const BoxConstraints(maxWidth: 400),
-            //           child: TextField(
-            //             decoration: InputDecoration(
-            //               labelText: 'Поиск по предметам',
-            //               prefixIcon: const Icon(Icons.search),
-            //               suffixIcon: IconButton(
-            //                 icon: const Icon(Icons.close),
-            //                 onPressed: () {
-            //                   model.toggleSearchVisibility();
-            //                 },
-            //               ),
-            //               border: const OutlineInputBorder(),
-            //             ),
-            //             onChanged: (value) {
-            //               model.setSearchQuery(value);
-            //             },
-            //           ),
-            //         ),
-            //       ),
-            //     ],
-            //   ),
             Expanded(
               child: Container(
-                padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
+                padding: isMobile
+                    ? null
+                    : const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8.0),
@@ -871,8 +845,12 @@ class _TableWidgetState extends State<TableWidget> {
                                         headers[columnIndex],
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
-                                          fontSize: theme
-                                              .textTheme.bodyMedium!.fontSize,
+                                          fontSize: isMobile
+                                              ? theme.textTheme.bodyMedium!
+                                                      .fontSize! *
+                                                  1.2
+                                              : theme.textTheme.bodyMedium!
+                                                  .fontSize,
                                           color: theme.colorScheme.onSurface,
                                         ),
                                         overflow: TextOverflow.ellipsis,
