@@ -125,7 +125,7 @@ class _EmptyProductScreenState extends State<EmptyProductScreen> {
           child: ListTile(
             title: Text(
               name,
-              style: theme.textTheme.bodyMedium?.copyWith(
+              style: theme.textTheme.bodyLarge?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),

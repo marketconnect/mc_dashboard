@@ -117,12 +117,13 @@ class _EmptySubjectProductsScreenState
           child: ListTile(
             title: Text(
               item.subjectName,
-              style: theme.textTheme.bodyMedium?.copyWith(
+              style: theme.textTheme.bodyLarge?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
             subtitle: item.subjectParentName != null
-                ? Text(item.subjectParentName!)
+                ? Text(item.subjectParentName!,
+                    style: theme.textTheme.bodyMedium)
                 : null,
             onTap: () {
               onNavigateToSubjectProducts(item.subjectId, item.subjectName);
