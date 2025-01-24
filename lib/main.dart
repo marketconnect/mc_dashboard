@@ -32,6 +32,13 @@ Future<void> main() async {
   Hive.registerAdapter(KeyPhraseAdapter());
   Hive.registerAdapter(UserEmailAdapter());
   Hive.registerAdapter(DynamicMailingSettingsAdapter());
+
+  // Clear savedProducts boxe
+  // if (Hive.isBoxOpen('savedProducts')) {
+  //   await Hive.box('savedProducts').close();
+  // }
+  // await Hive.deleteBoxFromDisk('savedProducts');
+
   final app = await appFactory.makeApp();
   runApp(app);
 }

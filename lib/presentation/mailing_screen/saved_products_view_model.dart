@@ -55,6 +55,13 @@ class SavedProductsViewModel extends ViewModelBase {
     tokenInfo =
         tokenInfoOrEither.fold((l) => throw UnimplementedError(), (r) => r);
     if (tokenInfo == null || tokenInfo!.type == "free") {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Пожалуйста, оформите подписку"),
+          ),
+        );
+      }
       return;
     }
     final savedProductsOrEither =

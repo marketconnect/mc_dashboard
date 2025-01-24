@@ -15,14 +15,16 @@ class Sku {
     required this.brandName,
   });
 
-  factory Sku.fromJson(Map<String, dynamic> json) => Sku(
-        id: json['id'] as String,
-        marketplaceType: json['marketplace_type'] as String,
-        sellerId: json['seller_id'] as String,
-        sellerName: json['seller_name'] as String,
-        brandId: json['brand_id'] as String,
-        brandName: json['brand_name'] as String,
-      );
+  factory Sku.fromJson(Map<String, dynamic> json) {
+    return Sku(
+      id: json['id']?.toString() ?? '',
+      marketplaceType: json['marketplace_type']?.toString() ?? '',
+      sellerId: json['seller_id']?.toString() ?? '',
+      sellerName: json['seller_name']?.toString() ?? '',
+      brandId: json['brand_id']?.toString() ?? '',
+      brandName: json['brand_name']?.toString() ?? '',
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         'id': id,
