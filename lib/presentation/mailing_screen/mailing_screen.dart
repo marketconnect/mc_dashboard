@@ -453,28 +453,25 @@ class _EmailsEditorState extends State<_EmailsEditor> {
           ),
         ],
         const SizedBox(height: 16),
-        ...emails.map(
-          (email) => ListTile(
-            title: Text(email),
-            trailing: IconButton(
-              icon: CircleAvatar(
-                backgroundColor: theme.colorScheme.secondary,
-                child: Icon(
-                  Icons.delete_outline,
-                  // ADAPTIVE: лучше зафиксировать размер иконки
-                  color: theme.colorScheme.onSecondary,
+        ...emails.map((email) => ListTile(
+              title: Text(email),
+              trailing: GestureDetector(
+                onTap: () {
+                  if (!model.isSubscribed) {
+                    _showSubscribeAlert(context, model);
+                    return;
+                  }
+                  model.removeEmail(email);
+                },
+                child: CircleAvatar(
+                  backgroundColor: theme.colorScheme.secondary,
+                  child: Icon(
+                    Icons.delete_outline,
+                    color: theme.colorScheme.onSecondary,
+                  ),
                 ),
               ),
-              onPressed: () {
-                if (!model.isSubscribed) {
-                  _showSubscribeAlert(context, model);
-                  return;
-                }
-                model.removeEmail(email);
-              },
-            ),
-          ),
-        ),
+            )),
       ],
     );
   }
@@ -528,6 +525,7 @@ class _SavedProductsTab extends StatelessWidget {
                 ),
                 height: maxHeight * 0.9,
                 child: _SavedTableWidget(
+                  key: ValueKey<bool>(isMobile),
                   isSubscribed: isSubscribed,
                 ),
               ),
@@ -538,112 +536,6 @@ class _SavedProductsTab extends StatelessWidget {
     );
   }
 }
-
-// class _AddSkuWidget extends StatefulWidget {
-//   const _AddSkuWidget({Key? key}) : super(key: key);
-
-//   @override
-//   State<_AddSkuWidget> createState() => _AddSkuWidgetState();
-// }
-
-// class _AddSkuWidgetState extends State<_AddSkuWidget> {
-//   final _skuController = TextEditingController();
-
-//   @override
-//   void dispose() {
-//     _skuController.dispose();
-//     super.dispose();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final isSubscribed = context.select<MailingSettingsViewModel, bool>(
-//       (m) => m.isSubscribed,
-//     );
-//     final savedProductsVM = context.read<SavedProductsViewModel>();
-
-//     final isMobile = MediaQuery.of(context).size.width < 600;
-
-//     return Padding(
-//       padding: const EdgeInsets.all(16.0),
-//       child: isMobile
-//           ? Column(
-//               crossAxisAlignment: CrossAxisAlignment.start,
-//               children: [
-//                 TextField(
-//                   controller: _skuController,
-//                   decoration: const InputDecoration(
-//                     labelText: "Добавитьтовар",
-//                     hintText: "Введите артикул товара",
-//                   ),
-//                 ),
-//                 const SizedBox(height: 8),
-//                 ElevatedButton(
-//                   onPressed: () {
-//                     if (!isSubscribed) {
-//                       _showSubscribeAlert(context);
-//                       return;
-//                     }
-//                     final sku = _skuController.text.trim();
-//                     if (sku.isNotEmpty) {
-//                       // Добавляем SKU
-//                       savedProductsVM.addSkuToSaved(sku);
-//                       _skuController.clear();
-//                     }
-//                   },
-//                   child: const Text("Добавить"),
-//                 ),
-//               ],
-//             )
-//           : Row(
-//               children: [
-//                 Expanded(
-//                   child: TextField(
-//                     controller: _skuController,
-//                     decoration: const InputDecoration(
-//                       labelText: "Добавить SKU",
-//                       hintText: "Введите SKU товара",
-//                     ),
-//                   ),
-//                 ),
-//                 const SizedBox(width: 8),
-//                 ElevatedButton(
-//                   onPressed: () {
-//                     if (!isSubscribed) {
-//                       _showSubscribeAlert(context);
-//                       return;
-//                     }
-//                     final sku = _skuController.text.trim();
-//                     if (sku.isNotEmpty) {
-//                       savedProductsVM.addSkuToSaved(sku);
-//                       _skuController.clear();
-//                     }
-//                   },
-//                   child: const Text("Добавить"),
-//                 ),
-//               ],
-//             ),
-//     );
-//   }
-
-//   void _showSubscribeAlert(BuildContext context) {
-//     ScaffoldMessenger.of(context).showSnackBar(
-//       SnackBar(
-//         content: const Text(
-//             'Чтобы сохранять товары и получать по ним рассылку, вы должны быть подписчиком.'),
-//         action: SnackBarAction(
-//           label: 'Оформить подписку',
-//           onPressed: () {
-//             context
-//                 .read<MailingSettingsViewModel>()
-//                 .onNavigateToSubscriptionScreen();
-//           },
-//         ),
-//         duration: const Duration(seconds: 10),
-//       ),
-//     );
-//   }
-// }
 
 class _Header extends StatelessWidget {
   const _Header();
@@ -670,7 +562,7 @@ class _Header extends StatelessWidget {
 }
 
 class _SavedTableWidget extends StatefulWidget {
-  const _SavedTableWidget({required this.isSubscribed});
+  const _SavedTableWidget({required this.isSubscribed, super.key});
   final bool isSubscribed;
 
   @override
@@ -678,17 +570,24 @@ class _SavedTableWidget extends StatefulWidget {
 }
 
 class _SavedTableWidgetState extends State<_SavedTableWidget> {
-  final tableViewController = TableViewController();
+  late final TableViewController _tableViewController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tableViewController = TableViewController();
+  }
 
   @override
   void dispose() {
-    tableViewController.dispose();
+    _tableViewController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final model = context.watch<SavedProductsViewModel>();
+    final mailingModel = context.watch<MailingSettingsViewModel>();
     final onNavigateToSubscriptionScreen =
         context.read<MailingSettingsViewModel>().onNavigateToSubscriptionScreen;
     final theme = Theme.of(context);
@@ -715,6 +614,7 @@ class _SavedTableWidgetState extends State<_SavedTableWidget> {
                 200.0,
                 150.0,
                 150.0,
+                80.0, // Детали
               ];
 
               final columnProportions = [
@@ -722,6 +622,7 @@ class _SavedTableWidgetState extends State<_SavedTableWidget> {
                 0.35,
                 0.28,
                 0.29,
+                0.12,
               ];
 
               final columnWidths = isMobile
@@ -733,6 +634,7 @@ class _SavedTableWidgetState extends State<_SavedTableWidget> {
                 TableColumn(width: columnWidths[1]),
                 TableColumn(width: columnWidths[2]),
                 TableColumn(width: columnWidths[3]),
+                TableColumn(width: columnWidths[4]),
               ];
 
               return Stack(
@@ -748,7 +650,7 @@ class _SavedTableWidgetState extends State<_SavedTableWidget> {
                         borderRadius: BorderRadius.circular(8.0),
                       ),
                       child: TableView.builder(
-                        controller: tableViewController,
+                        controller: TableViewController(),
                         columns: columns,
                         rowHeight: model.tableRowHeight,
                         rowCount: savedList.length,
@@ -764,6 +666,8 @@ class _SavedTableWidgetState extends State<_SavedTableWidget> {
                                 return _buildHeaderCell(context, "Продавец");
                               case 3:
                                 return _buildHeaderCell(context, "Бренд");
+                              case 4:
+                                return _buildHeaderCell(context, "Детали");
                               default:
                                 return const SizedBox();
                             }
@@ -777,6 +681,10 @@ class _SavedTableWidgetState extends State<_SavedTableWidget> {
                               model: model,
                               item: item,
                               contentBuilder: contentBuilder,
+                              isMobileOrLaptop: isMobile,
+                              columns: columns,
+                              navigateToProduct:
+                                  mailingModel.onNavigateToProductScreen,
                             ),
                           );
                         },
@@ -877,6 +785,9 @@ class _SavedTableWidgetState extends State<_SavedTableWidget> {
 class _SavedTableRow extends StatelessWidget {
   final SavedProductsViewModel model;
   final SavedProduct item;
+  final List<TableColumn> columns;
+  final bool isMobileOrLaptop;
+  final void Function(int productId, int price) navigateToProduct;
   final Widget Function(
     BuildContext,
     Widget Function(BuildContext, int columnIndex),
@@ -885,11 +796,15 @@ class _SavedTableRow extends StatelessWidget {
   const _SavedTableRow({
     required this.model,
     required this.item,
+    required this.navigateToProduct,
+    required this.columns,
+    required this.isMobileOrLaptop,
     required this.contentBuilder,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return contentBuilder(context, (context, columnIndex) {
       switch (columnIndex) {
         case 0:
@@ -903,6 +818,28 @@ class _SavedTableRow extends StatelessWidget {
 
         case 3:
           return _TextCell(text: item.brandName);
+        case 4:
+          return MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onTap: () {
+                final productId = int.tryParse(item.productId) ?? 0;
+                navigateToProduct(productId, 0);
+              },
+              child: Container(
+                alignment: Alignment.center,
+                child: Text(
+                  'Перейти',
+                  style: TextStyle(
+                    color: theme.colorScheme.primary,
+                    fontSize: isMobileOrLaptop
+                        ? columns[columnIndex].width * 0.12
+                        : columns[columnIndex].width * 0.06,
+                  ),
+                ),
+              ),
+            ),
+          );
 
         default:
           return const SizedBox();
@@ -930,14 +867,6 @@ class _CheckboxCell extends StatelessWidget {
               context.read<SavedProductsViewModel>().selectRow(productId);
             },
           ),
-          // Checkbox(
-          //   checkColor: theme.colorScheme.secondary,
-          //   activeColor: Colors.transparent,
-          //   value: isSelected,
-          //   onChanged: (bool? value) {
-          //     context.read<SavedProductsViewModel>().selectRow(productId);
-          //   },
-          // ),
         );
       },
     );
@@ -976,11 +905,14 @@ class _ProductCell extends StatelessWidget {
         children: [
           Image.asset('images/no_image.jpg', width: 50),
           const SizedBox(width: 8),
-          productName.isEmpty
-              ? const Text("Описание отсутствует")
-              : Text(productName,
-                  style:
-                      TextStyle(fontSize: theme.textTheme.bodySmall!.fontSize)),
+          Expanded(
+            child: Text(
+              productName.isEmpty ? "Описание отсутствует" : productName,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
+              style: TextStyle(fontSize: theme.textTheme.bodySmall!.fontSize),
+            ),
+          ),
         ],
       );
     }
@@ -1047,28 +979,27 @@ class _SavedKeyPhrasesTab extends StatelessWidget {
         final maxHeight = constraints.maxHeight;
         final maxWidth = constraints.maxWidth;
         final isMobile = maxWidth < 600;
-        return SingleChildScrollView(
-          child: Column(
-            children: [
-              _KeyPhrasesHeader(),
-              Container(
-                margin: isMobile
-                    ? const EdgeInsets.all(2.0)
-                    : const EdgeInsets.all(8.0),
-                padding: isMobile
-                    ? const EdgeInsets.all(4.0)
-                    : const EdgeInsets.all(16.0),
-                decoration: BoxDecoration(
-                  color: surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                height: maxHeight * 0.9,
-                child: _KeyPhrasesTableWidget(
-                  isSubscribed: isSubscribed,
-                ),
+        return Column(
+          children: [
+            _KeyPhrasesHeader(),
+            Container(
+              margin: isMobile
+                  ? const EdgeInsets.all(2.0)
+                  : const EdgeInsets.all(8.0),
+              padding: isMobile
+                  ? const EdgeInsets.all(4.0)
+                  : const EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                color: surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(8.0),
               ),
-            ],
-          ),
+              height: maxHeight * 0.9,
+              child: _KeyPhrasesTableWidget(
+                key: ValueKey<bool>(isMobile),
+                isSubscribed: isSubscribed,
+              ),
+            ),
+          ],
         );
       },
     );
@@ -1096,7 +1027,7 @@ class _KeyPhrasesHeader extends StatelessWidget {
 }
 
 class _KeyPhrasesTableWidget extends StatefulWidget {
-  const _KeyPhrasesTableWidget({required this.isSubscribed});
+  const _KeyPhrasesTableWidget({required this.isSubscribed, key});
   final bool isSubscribed;
 
   @override
@@ -1156,7 +1087,8 @@ class _KeyPhrasesTableWidgetState extends State<_KeyPhrasesTableWidget> {
                   borderRadius: BorderRadius.circular(8.0),
                 ),
                 child: TableView.builder(
-                  controller: tableViewController,
+                  key: ValueKey<bool>(isMobile),
+                  controller: TableViewController(),
                   columns: columns,
                   rowHeight: model.tableRowHeight,
                   rowCount: phrases.length,

@@ -315,4 +315,10 @@ class MailingSettingsViewModel extends ViewModelBase {
   void onNavigateToSubscriptionScreen() {
     onNavigateTo(routeName: MainNavigationRouteNames.subscriptionScreen);
   }
+
+  void onNavigateToProductScreen(int productId, int productPrice) {
+    onNavigateTo(
+        routeName: MainNavigationRouteNames.productScreen,
+        params: {"productId": productId, "productPrice": productPrice});
+  }
 }

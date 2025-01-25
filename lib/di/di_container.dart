@@ -224,6 +224,7 @@ class _DIContainer {
     BuildContext context,
     int productId,
     int productPrice,
+    String prevScreen,
     void Function({
       required String routeName,
       Map<String, dynamic>? params,
@@ -241,6 +242,7 @@ class _DIContainer {
         detailedOrdersService: _makeDetailedOrdersService(),
         savedKeyPhrasesService: _makeSavedKeyPhrasesService(),
         whService: _makeWhService(),
+        prevScreen: prevScreen,
         savedProductsService: _makeSavedProductsService(),
         authService: _makeAuthService(),
         lemmatizeService: _makeLemmatizeService(),
@@ -371,6 +373,7 @@ class ScreenFactoryDefault implements ScreenFactory {
   Widget makeProductScreen({
     required int productId,
     required int productPrice,
+    required String prevScreen,
     required void Function({
       required String routeName,
       Map<String, dynamic>? params,
@@ -378,8 +381,13 @@ class ScreenFactoryDefault implements ScreenFactory {
     required void Function(List<String> keyPhrasesStr) onSaveKeyPhrasesToTrack,
   }) {
     return ChangeNotifierProvider(
-      create: (context) => _diContainer._makeProductViewModel(context,
-          productId, productPrice, onNavigateTo, onSaveKeyPhrasesToTrack),
+      create: (context) => _diContainer._makeProductViewModel(
+          context,
+          productId,
+          productPrice,
+          prevScreen,
+          onNavigateTo,
+          onSaveKeyPhrasesToTrack),
       child: const ProductScreen(),
     );
   }

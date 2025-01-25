@@ -2,6 +2,7 @@ abstract class MainNavigationRouteNames {
   static const String choosingNicheScreen = '/choosing-niche-screen';
   static const String subjectProductsScreen = '/subject-products-screen';
   static const String productScreen = '/product-screen';
+  static const String mailingScreen = '/mailing-screen';
   static const String seoRequestsExtend = '/seo-requests-extend';
   static const String subscriptionScreen = '/subscription-screen';
   // Empty

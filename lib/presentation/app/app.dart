@@ -135,7 +135,7 @@ class __ScaffoldState extends State<_Scaffold> {
       []; // List to store saved to track product IDs
 
   List<String> _keyPhrases = [];
-
+  String _prevScreen = MainNavigationRouteNames.choosingNicheScreen;
   final List<_Section> sections = [
     _Section(
       title: 'Анализ рынка',
@@ -192,6 +192,9 @@ class __ScaffoldState extends State<_Scaffold> {
       case MainNavigationRouteNames.subscriptionScreen:
         _onNavigateToSubscriptionScreen();
         break;
+      case MainNavigationRouteNames.mailingScreen:
+        _onNavigateToMailingScreen();
+        break;
       default:
         throw Exception('Unknown route: $routeName');
     }
@@ -245,6 +248,13 @@ class __ScaffoldState extends State<_Scaffold> {
   void _onNavigateToSubscriptionScreen() {
     setState(() {
       _selectedSectionIndex = 3;
+      _selectedSubsectionIndex = 0;
+    });
+  }
+
+  void _onNavigateToMailingScreen() {
+    setState(() {
+      _selectedSectionIndex = 2;
       _selectedSubsectionIndex = 0;
     });
   }
@@ -329,6 +339,8 @@ class __ScaffoldState extends State<_Scaffold> {
                                 }
                                 if (params.containsKey('productId')) {
                                   _currentProductId = params['productId'];
+                                  _prevScreen = MainNavigationRouteNames
+                                      .subjectProductsScreen;
                                 }
                                 if (params.containsKey('productPrice')) {
                                   _currentProductPrice = params['productPrice'];
@@ -338,28 +350,6 @@ class __ScaffoldState extends State<_Scaffold> {
                                 }
                               }
                               _onNavigate(routeName);
-                              // if (routeName ==
-                              //     MainNavigationRouteNames
-                              //         .seoRequestsExtend) {
-                              //   _onNavigateToSeoRequestsExtendScreen();
-                              // } else if (routeName ==
-                              //     MainNavigationRouteNames.productScreen) {
-                              //   _onNavigateToProductScreen();
-                              // } else if (routeName ==
-                              //     MainNavigationRouteNames
-                              //         .choosingNicheScreen) {
-                              //   _onNavigateToChoosingNicheScreen();
-                              // } else if (routeName ==
-                              //     MainNavigationRouteNames
-                              //         .emptySubjectsScreen) {
-                              //   _currentSubjectId = null;
-                              //   _currentSubjectName = null;
-                              //   _onNavigateToEmptySubjectScreen();
-                              // } else if (routeName ==
-                              //     MainNavigationRouteNames
-                              //         .subscriptionScreen) {
-                              //   _onNavigateToSubscriptionScreen();
-                              // }
                             }),
                       )
                     : widget.screenFactory.makeEmptySubjectProductsScreen(
@@ -378,16 +368,6 @@ class __ScaffoldState extends State<_Scaffold> {
                             }
                           }
                           _onNavigate(routeName);
-                          //   if (routeName ==
-                          //       MainNavigationRouteNames
-                          //           .subjectProductsScreen) {
-                          //     _onNavigateToSubjectProductsScreen();
-
-                          //     _controllers[1].expand();
-                          //   } else if (routeName ==
-                          //       MainNavigationRouteNames.choosingNicheScreen) {
-                          //     _onNavigateToChoosingNicheScreen();
-                          //   }
                         },
                       ),
 
@@ -399,6 +379,7 @@ class __ScaffoldState extends State<_Scaffold> {
                         child: widget.screenFactory.makeProductScreen(
                             productId: _currentProductId!,
                             productPrice: _currentProductPrice!,
+                            prevScreen: _prevScreen,
                             onNavigateTo: ({
                               required String routeName,
                               Map<String, dynamic>? params,
@@ -435,6 +416,8 @@ class __ScaffoldState extends State<_Scaffold> {
                         if (params != null) {
                           if (params.containsKey('productId')) {
                             _currentProductId = params['productId'];
+                            _prevScreen =
+                                MainNavigationRouteNames.emptyProductScreen;
                           }
                           if (params.containsKey('productPrice')) {
                             _currentProductPrice = params['productPrice'];
@@ -471,6 +454,15 @@ class __ScaffoldState extends State<_Scaffold> {
                       required String routeName,
                       Map<String, dynamic>? params,
                     }) {
+                      if (params != null) {
+                        if (params.containsKey('productId')) {
+                          _currentProductId = params['productId'];
+                        }
+                        if (params.containsKey('productPrice')) {
+                          _currentProductPrice = params['productPrice'];
+                        }
+                      }
+                      _prevScreen = MainNavigationRouteNames.mailingScreen;
                       _onNavigate(routeName);
                     })), // MailingSettings
                 widget.screenFactory.makeSubscriptionScreen(), // Subscription
@@ -675,6 +667,7 @@ class __ScaffoldState extends State<_Scaffold> {
                   LocalStorageRepo.clearTokenStatic();
 
                   // Если Drawer открыт на мобильном - закрываем
+
                   if (Responsive.isMobile(context)) {
                     Navigator.of(context).pop();
                   }

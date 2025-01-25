@@ -37,80 +37,78 @@ class SavedKeyPhrasesService
   final SavedKeyPhrasesRepository savedKeyPhrasesRepo;
   final SavedKeyPhrasesApiClient savedKeyPhrasesApiClient;
 
-  /// Синхронизация ключевых фраз между сервером и локальным хранилищем
-  @override
-  Future<Either<AppErrorBase, void>> syncKeyPhrases({
-    required String token,
-    required List<KeyPhrase> newPhrases,
-  }) async {
-    try {
-      final currentPhrases = await savedKeyPhrasesRepo.getAllKeyPhrases();
+  // Future<Either<AppErrorBase, void>> _syncKeyPhrases({
+  //   required String token,
+  //   required List<KeyPhrase> newPhrases,
+  // }) async {
+  //   try {
+  //     final currentPhrases = await savedKeyPhrasesRepo.getAllKeyPhrases();
 
-      // Фразы для добавления или обновления
-      final addedOrUpdatedPhrases = newPhrases
-          .where((phrase) =>
-              !currentPhrases.any((p) => p.phraseText == phrase.phraseText))
-          .toList();
+  //     // Фразы для добавления или обновления
+  //     final addedOrUpdatedPhrases = newPhrases
+  //         .where((phrase) =>
+  //             !currentPhrases.any((p) => p.phraseText == phrase.phraseText))
+  //         .toList();
 
-      // Фразы для удаления
-      final removedPhrases = currentPhrases
-          .where((phrase) =>
-              !newPhrases.any((p) => p.phraseText == phrase.phraseText))
-          .toList();
+  //     // Фразы для удаления
+  //     final removedPhrases = currentPhrases
+  //         .where((phrase) =>
+  //             !newPhrases.any((p) => p.phraseText == phrase.phraseText))
+  //         .toList();
 
-      if (addedOrUpdatedPhrases.isNotEmpty) {
-        final saveResult = await _saveKeyPhrases(
-          token: token,
-          phrases: addedOrUpdatedPhrases,
-        );
-        if (saveResult.isLeft()) {
-          return saveResult;
-        }
-      }
+  //     if (addedOrUpdatedPhrases.isNotEmpty) {
+  //       final saveResult = await _saveKeyPhrases(
+  //         token: token,
+  //         phrases: addedOrUpdatedPhrases,
+  //       );
+  //       if (saveResult.isLeft()) {
+  //         return saveResult;
+  //       }
+  //     }
 
-      if (removedPhrases.isNotEmpty) {
-        final deleteResult = await deleteKeyPhrases(
-          token: token,
-          phrases: removedPhrases,
-        );
-        if (deleteResult.isLeft()) {
-          return deleteResult;
-        }
-      }
-      return right(null);
-    } catch (e) {
-      return left(AppErrorBase(
-        'Caught error: $e',
-        name: 'syncKeyPhrases',
-        sendTo: true,
-        source: 'SavedKeyPhrasesService',
-      ));
-    }
-  }
+  //     if (removedPhrases.isNotEmpty) {
+  //       final deleteResult = await deleteKeyPhrases(
+  //         token: token,
+  //         phrases: removedPhrases,
+  //       );
+  //       if (deleteResult.isLeft()) {
+  //         return deleteResult;
+  //       }
+  //     }
+  //     return right(null);
+  //   } catch (e) {
+  //     return left(AppErrorBase(
+  //       'Caught error: $e',
+  //       name: 'syncKeyPhrases',
+  //       sendTo: true,
+  //       source: 'SavedKeyPhrasesService',
+  //     ));
+  //   }
+  // }
 
   /// Сохранение новых ключевых фраз на сервере и локально
-  Future<Either<AppErrorBase, void>> _saveKeyPhrases({
-    required String token,
-    required List<KeyPhrase> phrases,
-  }) async {
-    try {
-      await savedKeyPhrasesApiClient.saveUserSearchQueries(
-        token: token,
-        phrases: phrases,
-      );
-      for (final phrase in phrases) {
-        await savedKeyPhrasesRepo.saveKeyPhrase(phrase);
-      }
-      return right(null);
-    } catch (e) {
-      return left(AppErrorBase(
-        'Caught error: $e',
-        name: '_saveKeyPhrases',
-        sendTo: true,
-        source: 'SavedKeyPhrasesService',
-      ));
-    }
-  }
+  // Future<Either<AppErrorBase, void>> _saveKeyPhrases({
+  //   required String token,
+  //   required List<KeyPhrase> phrases,
+  // }) async {
+  //   try {
+  //     await savedKeyPhrasesApiClient.saveUserSearchQueries(
+  //       token: token,
+  //       phrases: phrases,
+  //     );
+  //     for (final phrase in phrases) {
+  //       await savedKeyPhrasesRepo.saveKeyPhrase(phrase);
+  //     }
+  //     return right(null);
+  //   } catch (e) {
+  //     return left(AppErrorBase(
+  //       'Caught error: $e',
+  //       name: '_saveKeyPhrases',
+  //       sendTo: true,
+  //       source: 'SavedKeyPhrasesService',
+  //     ));
+  //   }
+  // }
 
   @override
   Future<Either<AppErrorBase, void>> deleteKeyPhrases({
@@ -180,6 +178,36 @@ class SavedKeyPhrasesService
       return left(AppErrorBase(
         'Caught error: $e',
         name: 'getKeyPhrases',
+        sendTo: true,
+        source: 'SavedKeyPhrasesService',
+      ));
+    }
+  }
+
+  @override
+  Future<Either<AppErrorBase, void>> addPhrases({
+    required String token,
+    required List<KeyPhrase> phrases,
+  }) async {
+    try {
+      await savedKeyPhrasesApiClient.saveUserSearchQueries(
+        token: token,
+        phrases: phrases,
+      );
+
+      final localPhrases = await savedKeyPhrasesRepo.getAllKeyPhrases();
+      for (final phrase in phrases) {
+        if (localPhrases.any((p) => p.phraseText == phrase.phraseText)) {
+          continue;
+        }
+        await savedKeyPhrasesRepo.saveKeyPhrase(phrase);
+      }
+
+      return right(null);
+    } catch (e) {
+      return left(AppErrorBase(
+        'Caught error: $e',
+        name: 'addPhrases',
         sendTo: true,
         source: 'SavedKeyPhrasesService',
       ));

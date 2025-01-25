@@ -77,9 +77,9 @@ abstract class ProductViewModelDetailedOrdersService {
 
 // Saved key phrases service
 abstract class ProductViewModelSavedKeyPhrasesService {
-  Future<Either<AppErrorBase, void>> syncKeyPhrases({
+  Future<Either<AppErrorBase, void>> addPhrases({
     required String token,
-    required List<KeyPhrase> newPhrases,
+    required List<KeyPhrase> phrases,
   });
 }
 
@@ -106,9 +106,11 @@ class ProductViewModel extends ViewModelBase {
       required this.onSaveKeyPhrasesToTrack,
       required this.savedProductsService,
       required this.onNavigateTo,
+      required this.prevScreen,
       required this.productPrice});
   final int productId;
   final int productPrice;
+  final String prevScreen;
   final ProductViewModelStocksService stocksService;
   final ProductViewModelOrderService ordersService;
   final ProductViewModelWhService whService;
@@ -491,9 +493,9 @@ class ProductViewModel extends ViewModelBase {
       return;
     }
     //
-    final result = await savedKeyPhrasesService.syncKeyPhrases(
+    final result = await savedKeyPhrasesService.addPhrases(
         token: _tokenInfo!.token,
-        newPhrases: keyPhrasesStr
+        phrases: keyPhrasesStr
             .map((e) => KeyPhrase(phraseText: e, marketPlace: 'wb'))
             .toList());
 
@@ -521,7 +523,6 @@ class ProductViewModel extends ViewModelBase {
 
   Future<void> saveProducts() async {
     if (isFree) {
-      print('free');
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Чтобы получать рассылку, вы должны быть подписчиком.',
             style: TextStyle(
@@ -588,7 +589,7 @@ class ProductViewModel extends ViewModelBase {
   }
 
   void onNavigateBack() {
-    onNavigateTo(routeName: MainNavigationRouteNames.subjectProductsScreen);
+    onNavigateTo(routeName: prevScreen);
   }
 
   void onNavigateToSubjectProductsScreen() {

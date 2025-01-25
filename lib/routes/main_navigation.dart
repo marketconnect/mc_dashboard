@@ -30,6 +30,7 @@ abstract class ScreenFactory {
   Widget makeProductScreen({
     required int productId,
     required int productPrice,
+    required String prevScreen,
     required void Function({
       required String routeName,
       Map<String, dynamic>? params,
