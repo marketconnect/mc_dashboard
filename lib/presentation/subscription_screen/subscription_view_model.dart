@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:mc_dashboard/.env.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
 import 'package:mc_dashboard/core/utils/dates.dart';
@@ -81,8 +82,8 @@ class SubscriptionViewModel extends ViewModelBase {
           .add(Duration(days: startDate.difference(DateTime.now()).inDays));
     }
 
-    final paymentUrl =
-        await tinkoffPaymentService.processPayment(100, endDate, user.email!);
+    final paymentUrl = await tinkoffPaymentService.processPayment(
+        PaymentSettings.amount, endDate, user.email!);
     if (paymentUrl == null) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
