@@ -13,6 +13,10 @@ abstract class SavedKeyPhrasesKeyPhrasesService {
     required String token,
     required List<KeyPhrase> phrases,
   });
+  Future<Either<AppErrorBase, void>> addPhrases({
+    required String token,
+    required List<KeyPhrase> phrases,
+  });
 }
 
 // auth service
@@ -86,5 +90,28 @@ class SavedKeyPhrasesViewModel extends ViewModelBase {
       }
     }
     notifyListeners();
+  }
+
+  Future<void> addKeyPhrases(List<String> phrases, bool isSubscribed) async {
+    if (!isSubscribed) {
+      return;
+    }
+    if (tokenInfo == null || tokenInfo!.type == "free") {
+      return;
+    }
+
+    // Преобразуем обычные строки в объекты KeyPhrase
+    final newKeyPhrases = phrases
+        .map((text) => KeyPhrase(phraseText: text, marketPlace: "wb"))
+        .toList();
+
+    final resultOrEither = await keyPhrasesService.addPhrases(
+        token: tokenInfo!.token, phrases: newKeyPhrases);
+
+    if (resultOrEither.isRight()) {
+      // Если всё ок — добавляем эти фразы в локальный список
+      _keyPhrases.addAll(newKeyPhrases);
+      notifyListeners();
+    }
   }
 }

@@ -976,33 +976,65 @@ class _SavedKeyPhrasesTab extends StatelessWidget {
     final isSubscribed = model.isSubscribed;
     return LayoutBuilder(
       builder: (context, constraints) {
-        final maxHeight = constraints.maxHeight;
         final maxWidth = constraints.maxWidth;
         final isMobile = maxWidth < 600;
+
         return Column(
           children: [
             _KeyPhrasesHeader(),
-            Container(
-              margin: isMobile
-                  ? const EdgeInsets.all(2.0)
-                  : const EdgeInsets.all(8.0),
-              padding: isMobile
-                  ? const EdgeInsets.all(4.0)
-                  : const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8.0),
-              ),
-              height: maxHeight * 0.9,
-              child: _KeyPhrasesTableWidget(
-                key: ValueKey<bool>(isMobile),
-                isSubscribed: isSubscribed,
+            const _AddKeyPhrasesWidget(),
+            Expanded(
+              child: Container(
+                margin: isMobile
+                    ? const EdgeInsets.all(2.0)
+                    : const EdgeInsets.all(8.0),
+                padding: isMobile
+                    ? const EdgeInsets.all(4.0)
+                    : const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                child: _KeyPhrasesTableWidget(
+                  key: ValueKey<bool>(isMobile),
+                  isSubscribed: isSubscribed,
+                ),
               ),
             ),
           ],
         );
       },
     );
+    // LayoutBuilder(
+    //   builder: (context, constraints) {
+    //     final maxHeight = constraints.maxHeight;
+    //     final maxWidth = constraints.maxWidth;
+    //     final isMobile = maxWidth < 600;
+    //     return Column(
+    //       children: [
+    //         _KeyPhrasesHeader(),
+    //         const _AddKeyPhrasesWidget(),
+    //         Container(
+    //           margin: isMobile
+    //               ? const EdgeInsets.all(2.0)
+    //               : const EdgeInsets.all(8.0),
+    //           padding: isMobile
+    //               ? const EdgeInsets.all(4.0)
+    //               : const EdgeInsets.all(16.0),
+    //           decoration: BoxDecoration(
+    //             color: surfaceContainerHighest,
+    //             borderRadius: BorderRadius.circular(8.0),
+    //           ),
+    //           height: maxHeight * 0.9,
+    //           child: _KeyPhrasesTableWidget(
+    //             key: ValueKey<bool>(isMobile),
+    //             isSubscribed: isSubscribed,
+    //           ),
+    //         ),
+    //       ],
+    //     );
+    //   },
+    // );
   }
 }
 
@@ -1261,5 +1293,88 @@ class _KeyPhrasesCheckboxCell extends StatelessWidget {
             onToggle(value ?? false);
           },
         ));
+  }
+}
+
+class _AddKeyPhrasesWidget extends StatefulWidget {
+  const _AddKeyPhrasesWidget({Key? key}) : super(key: key);
+
+  @override
+  State<_AddKeyPhrasesWidget> createState() => _AddKeyPhrasesWidgetState();
+}
+
+class _AddKeyPhrasesWidgetState extends State<_AddKeyPhrasesWidget> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    // Подтягиваем SavedKeyPhrasesViewModel, где мы делали метод addKeyPhrases
+    final savedPhrasesModel = context.watch<SavedKeyPhrasesViewModel>();
+    // Проверяем, есть ли подписка
+    final isSubscribed = context.watch<MailingSettingsViewModel>().isSubscribed;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      padding: const EdgeInsets.all(8.0),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Добавить ключевые фразы (по одной в строке):",
+            style: theme.textTheme.bodyLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _controller,
+            maxLines: 4, // Делаем многострочным
+            decoration: const InputDecoration(
+              hintText:
+                  "Например:\nкроссовки женские\nлетнее платье\nрюкзак городской",
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton(
+            onPressed: () async {
+              final rawText = _controller.text.trim();
+              if (rawText.isEmpty) return;
+
+              // Разбиваем по строкам, удаляем пустые
+              final lines = rawText
+                  .split('\n')
+                  .map((e) => e.trim())
+                  .where((element) => element.isNotEmpty)
+                  .toList();
+
+              await savedPhrasesModel.addKeyPhrases(lines, isSubscribed);
+
+              if (!mounted) return;
+              if (lines.isNotEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Фразы добавлены")),
+                );
+              }
+
+              // Очищаем поле
+              _controller.clear();
+            },
+            child: const Text("Сохранить фразы"),
+          ),
+        ],
+      ),
+    );
   }
 }
