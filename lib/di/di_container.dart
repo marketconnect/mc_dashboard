@@ -256,13 +256,15 @@ class _DIContainer {
             required String routeName,
             Map<String, dynamic>? params,
           }) onNavigateTo,
-          List<int> productIds) =>
+          List<int> productIds,
+          List<String> charactiristics) =>
       SeoRequestsExtendViewModel(
           context: context,
           onNavigateTo: onNavigateTo,
           normqueryService: _makeNormqueryService(),
           authService: _makeAuthService(),
-          productIds: productIds);
+          productIds: productIds,
+          charactiristics: charactiristics);
 
   MailingSettingsViewModel _makeMailingSettingsViewModel(
     BuildContext context,
@@ -398,12 +400,14 @@ class ScreenFactoryDefault implements ScreenFactory {
         required String routeName,
         Map<String, dynamic>? params,
       }) onNavigateTo,
-      required List<int> productIds}) {
+      required List<int> productIds,
+      required List<String> charactiristics}) {
     return ChangeNotifierProvider(
       create: (context) => _diContainer._makeSeoRequestsExtendViewModel(
         context,
         onNavigateTo,
         productIds,
+        charactiristics,
       ),
       child: const SeoRequestsExtendScreen(),
     );

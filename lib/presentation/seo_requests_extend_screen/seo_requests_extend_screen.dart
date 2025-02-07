@@ -23,120 +23,142 @@ class SeoRequestsExtendScreen extends StatelessWidget {
     final normqueryProducts = model.normqueries;
     final selectedRows = model.selectedRows;
     final theme = Theme.of(context);
-    return Scaffold(
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: selectedRows.isEmpty
-          ? null
-          : MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: GestureDetector(
-                  onTap: () {
-                    final selectedItems = selectedRows
-                        .map((index) => normqueryProducts[index])
-                        .toList();
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: theme.scaffoldBackgroundColor,
+          elevation: 0,
+          toolbarHeight: 0.0,
+          bottom: TabBar(
+            labelColor: theme.colorScheme.primary,
+            unselectedLabelColor: theme.colorScheme.onSurface,
+            tabs: const [
+              Tab(text: "Расширенные запросы"),
+              Tab(text: "Характеристики"),
+            ],
+          ),
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+        floatingActionButton: selectedRows.isEmpty
+            ? null
+            : MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                    onTap: () {
+                      final selectedItems = selectedRows
+                          .map((index) => normqueryProducts[index])
+                          .toList();
 
-                    if (selectedItems.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Нет выбранных элементов для экспорта'),
-                        ),
-                      );
-                      return;
-                    }
+                      if (selectedItems.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content:
+                                Text('Нет выбранных элементов для экспорта'),
+                          ),
+                        );
+                        return;
+                      }
 
-                    // Создаём Excel
-                    final excel = exc.Excel.createExcel();
+                      // Создаём Excel
+                      final excel = exc.Excel.createExcel();
 
-                    final sheet = excel['Sheet1'];
-                    sheet.appendRow(<exc.CellValue?>[
-                      exc.TextCellValue("Ключевой запрос"),
-                      exc.TextCellValue("Кластер"),
-                      exc.TextCellValue("Частота"),
-                      exc.TextCellValue("Всего товаров"),
-                    ]);
-
-                    for (var product in selectedItems) {
+                      final sheet = excel['Sheet1'];
                       sheet.appendRow(<exc.CellValue?>[
-                        exc.TextCellValue(product.normquery),
-                        exc.TextCellValue(product.kw),
-                        exc.IntCellValue(product.freq),
-                        exc.IntCellValue(product.total),
+                        exc.TextCellValue("Ключевой запрос"),
+                        exc.TextCellValue("Кластер"),
+                        exc.TextCellValue("Частота"),
+                        exc.TextCellValue("Всего товаров"),
                       ]);
-                    }
 
-                    final List<int>? fileBytes = excel.save(
-                        fileName:
-                            "${formatDateTimeToDayMonthYearHourMinute(DateTime.now())}_запросы.xlsx");
-                    if (fileBytes == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Ошибка: fileBytes == null')),
-                      );
-                      return;
-                    }
+                      for (var product in selectedItems) {
+                        sheet.appendRow(<exc.CellValue?>[
+                          exc.TextCellValue(product.normquery),
+                          exc.TextCellValue(product.kw),
+                          exc.IntCellValue(product.freq),
+                          exc.IntCellValue(product.total),
+                        ]);
+                      }
 
-                    // -- Web-подход (скачиваем файл):
-                    final bytes = Uint8List.fromList(fileBytes);
-                    final blob = html.Blob([bytes]);
-                    final url = html.Url.createObjectUrlFromBlob(blob);
+                      final List<int>? fileBytes = excel.save(
+                          fileName:
+                              "${formatDateTimeToDayMonthYearHourMinute(DateTime.now())}_запросы.xlsx");
+                      if (fileBytes == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Ошибка: fileBytes == null')),
+                        );
+                        return;
+                      }
 
-                    final anchor = html.document.createElement('a')
-                        as html.AnchorElement
-                      ..href = url
-                      ..style.display = 'none'
-                      ..download =
-                          "${formatDateTimeToDayMonthYearHourMinute(DateTime.now())}_запросы.xlsx"; // <-- здесь ваше желаемое имя
+                      // -- Web-подход (скачиваем файл):
+                      final bytes = Uint8List.fromList(fileBytes);
+                      final blob = html.Blob([bytes]);
+                      final url = html.Url.createObjectUrlFromBlob(blob);
 
-                    html.document.body!.children.add(anchor);
-                    anchor.click();
+                      final anchor = html.document.createElement('a')
+                          as html.AnchorElement
+                        ..href = url
+                        ..style.display = 'none'
+                        ..download =
+                            "${formatDateTimeToDayMonthYearHourMinute(DateTime.now())}_запросы.xlsx"; // <-- здесь ваше желаемое имя
 
-                    // Удаляем ссылку и освобождаем URL-объект
-                    Future.delayed(const Duration(seconds: 1), () {
-                      anchor.remove();
-                      html.Url.revokeObjectUrl(url);
-                    });
-                  },
-                  child: IntrinsicWidth(
-                    child: IntrinsicHeight(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.secondary,
-                          borderRadius: BorderRadius.circular(8.0),
-                          border:
-                              Border.all(color: theme.colorScheme.onSecondary),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 20.0, horizontal: 16.0),
-                        child: Row(
-                          mainAxisSize:
-                              MainAxisSize.min, // Минимизирует размер Row
-                          children: [
-                            Icon(
-                              Icons.download,
-                              color: theme.colorScheme.onSecondary,
-                            ),
-                            const SizedBox(width: 8.0),
-                            Text(
-                              'Экспорт в Excel',
-                              style: TextStyle(
+                      html.document.body!.children.add(anchor);
+                      anchor.click();
+
+                      // Удаляем ссылку и освобождаем URL-объект
+                      Future.delayed(const Duration(seconds: 1), () {
+                        anchor.remove();
+                        html.Url.revokeObjectUrl(url);
+                      });
+                    },
+                    child: IntrinsicWidth(
+                      child: IntrinsicHeight(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.secondary,
+                            borderRadius: BorderRadius.circular(8.0),
+                            border: Border.all(
+                                color: theme.colorScheme.onSecondary),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 20.0, horizontal: 16.0),
+                          child: Row(
+                            mainAxisSize:
+                                MainAxisSize.min, // Минимизирует размер Row
+                            children: [
+                              Icon(
+                                Icons.download,
                                 color: theme.colorScheme.onSecondary,
-                                fontWeight: FontWeight.w600,
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 8.0),
+                              Text(
+                                'Экспорт в Excel',
+                                style: TextStyle(
+                                  color: theme.colorScheme.onSecondary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  )),
-            ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+                    )),
+              ),
+        body: TabBarView(
           children: [
-            const _Header(),
-            Expanded(
-              child: const _NormqueryTableWidget(),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  const _Header(),
+                  Expanded(
+                    child: const _NormqueryTableWidget(),
+                  ),
+                ],
+              ),
             ),
+            _CharacteristicsTabView(),
           ],
         ),
       ),
@@ -415,6 +437,78 @@ class _NormqueryTableWidgetState extends State<_NormqueryTableWidget> {
         SizedBox(width: 8),
         Text('Нет данных для отображения'),
       ],
+    );
+  }
+}
+
+class _CharacteristicsTabView extends StatelessWidget {
+  const _CharacteristicsTabView({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final model = context.watch<SeoRequestsExtendViewModel>();
+    // Словарь типа { "Состав": {"эластан", "вискоза"}, "Цвет": {"черный", "серый"}, ... }
+    final characteristicsMap = model.parsedCharacteristics;
+
+    // Список всех названий характеристик
+    final allKeys = characteristicsMap.keys.toList();
+
+    // Если нет характеристик
+    if (allKeys.isEmpty) {
+      return const Center(child: Text("Нет характеристик для отображения"));
+    }
+
+    // Для адаптивности используем DefaultTabController
+    return DefaultTabController(
+      length: allKeys.length,
+      child: Column(
+        children: [
+          // Сам TabBar
+          TabBar(
+            isScrollable: true, // Можно прокручивать, если ключей много
+            tabs: allKeys.map((key) => Tab(text: key)).toList(),
+          ),
+          // Содержимое вкладок
+          Expanded(
+            child: TabBarView(
+              children: allKeys.map((key) {
+                // Извлекаем все значения для этой характеристики
+                final values = characteristicsMap[key]?.toList() ?? [];
+                // Здесь решаем, как именно показывать — список, сетку и т.п.
+                return _buildValuesList(context, key, values);
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildValuesList(
+      BuildContext context, String key, List<String> values) {
+    // Проверяем ширину экрана, если < 600 — мобильный вариант
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    // Можно сделать простой ListView или GridView
+    // Ниже пример с ListView:
+    if (values.isEmpty) {
+      return Center(
+        child: Text("Нет значений для характеристики: $key"),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(8),
+      itemCount: values.length,
+      itemBuilder: (context, index) {
+        final value = values[index];
+        return Card(
+          margin: const EdgeInsets.symmetric(vertical: 4.0),
+          child: ListTile(
+            title: Text(value),
+          ),
+        );
+      },
     );
   }
 }

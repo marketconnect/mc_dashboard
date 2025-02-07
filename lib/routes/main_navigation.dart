@@ -40,6 +40,7 @@ abstract class ScreenFactory {
 
   Widget makeSeoRequestsExtendScreen({
     required List<int> productIds,
+    required List<String> charactiristics,
     required void Function({
       required String routeName,
       Map<String, dynamic>? params,

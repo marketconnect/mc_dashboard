@@ -26,9 +26,11 @@ class SeoRequestsExtendViewModel extends ViewModelBase {
     required this.normqueryService,
     required this.authService,
     required this.onNavigateTo,
+    required this.charactiristics,
   });
 
   final List<int> productIds;
+  final List<String> charactiristics;
   final SeoRequestsExtendNormqueryService normqueryService;
   final SeoRequestsExtendAuthService authService;
   // Navigation
@@ -102,6 +104,47 @@ class SeoRequestsExtendViewModel extends ViewModelBase {
   }
 
   void _setNormqueries(List<Normquery> value) => _normqueries.addAll(value);
+  Map<String, Set<String>> get parsedCharacteristics {
+    final Map<String, Set<String>> result = {};
+
+    for (var bigLine in charactiristics) {
+      // Пример bigLine:
+      // "Состав: эластан; вискоза; полиэстер; Цвет: черный; Сезон: круглогодичный; ..."
+      // Разобьём строку по символу `;`, чтобы получить отдельные фрагменты.
+      final fragments = bigLine.split(';');
+
+      // Для удобства запомним "последнюю" характеристику,
+      // если внезапно в одном фрагменте нет двоеточия, значит это продолжение предыдущей
+      String? lastKey;
+
+      for (var fragment in fragments) {
+        fragment = fragment.trim();
+        if (fragment.isEmpty) continue;
+
+        // Проверим, есть ли в фрагменте двоеточие
+        if (fragment.contains(':')) {
+          // "Состав: эластан" -> разделяем на key="Состав", value="эластан"
+          final parts = fragment.split(':');
+          final key = parts[0].trim();
+          final value = parts[1].trim();
+
+          // Сохраняем пару (key -> value)
+          result.putIfAbsent(key, () => <String>{});
+          result[key]!.add(value);
+
+          lastKey = key; // Запоминаем текущую характеристику
+        } else {
+          // Если двоеточия нет, предполагаем, что это "доп. значение" для последней характеристики
+          if (lastKey != null) {
+            // Например "вискоза" или "полиэстер"
+            result[lastKey]!.add(fragment);
+          }
+        }
+      }
+    }
+
+    return result;
+  }
 
   // Navigation
   void onNavigateBack() {

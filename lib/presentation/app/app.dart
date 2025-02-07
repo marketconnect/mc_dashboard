@@ -133,7 +133,8 @@ class __ScaffoldState extends State<_Scaffold> {
       _selectedProductIds; // List to store selected product IDs for SeoRequestsExtendScreen
   List<String> _savedProductIds =
       []; // List to store saved to track product IDs
-
+  List<String> _savedProductCharactiristics =
+      []; // List to store saved to track product IDs
   List<String> _keyPhrases = [];
   String _prevScreen = MainNavigationRouteNames.choosingNicheScreen;
   final List<_Section> sections = [
@@ -151,10 +152,6 @@ class __ScaffoldState extends State<_Scaffold> {
       _Subsection(title: 'Расширение запросов'),
     ]),
     _Section(title: 'Рассылка', icon: Icons.mail, subsections: []),
-    // _Section(title: 'Поиск по SKU', icon: Icons.search, subsections: []),
-    // _Section(        title: 'Настройка рассылок', icon: Icons.settings, subsections: []),
-    // Section(title: 'Настройка', icon: Icons.settings, subsections: []),
-    // Section(title: 'Помощь', icon: Icons.help, subsections: []),
     _Section(title: 'Подписка', icon: Icons.lock_open, subsections: []),
   ];
 
@@ -342,6 +339,10 @@ class __ScaffoldState extends State<_Scaffold> {
                                   _prevScreen = MainNavigationRouteNames
                                       .subjectProductsScreen;
                                 }
+                                if (params.containsKey('characteristics')) {
+                                  _savedProductCharactiristics =
+                                      params['characteristics'];
+                                }
                                 if (params.containsKey('productPrice')) {
                                   _currentProductPrice = params['productPrice'];
                                 }
@@ -431,6 +432,7 @@ class __ScaffoldState extends State<_Scaffold> {
                         child: widget.screenFactory.makeSeoRequestsExtendScreen(
                             // 3 SeoRequestsExtendScreen //////////////////////////
                             productIds: _selectedProductIds!,
+                            charactiristics: _savedProductCharactiristics,
                             onNavigateTo: ({
                               required String routeName,
                               Map<String, dynamic>? params,

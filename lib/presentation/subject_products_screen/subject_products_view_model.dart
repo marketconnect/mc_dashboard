@@ -93,9 +93,15 @@ class SubjectProductsViewModel extends ViewModelBase {
   int _totalRevenue = 0;
   int get totalRevenue => _totalRevenue;
 
+  Map<int, String> _productCharactiristics = {};
+
   // Setters
   void addProductImage(int productId, String imageUrl, String productName) {
     _productImageProductName[productId] = (imageUrl, productName);
+  }
+
+  void addProductCharactiristics(int productId, String characteristics) {
+    _productCharactiristics[productId] = characteristics;
   }
 
   String? _token;
@@ -473,9 +479,14 @@ class SubjectProductsViewModel extends ViewModelBase {
   // Navigation
   void navigateToSeoRequestsExtendScreen() {
     final ids = _selectedRows.toList();
+    List<String> selected = ids
+        .map((key) => _productCharactiristics[key])
+        .where((value) => value != null) // Убираем `null`, если ключа нет
+        .cast<String>() // Приводим к List<String>
+        .toList();
     onNavigateTo(
         routeName: MainNavigationRouteNames.seoRequestsExtend,
-        params: {"productIds": ids});
+        params: {"productIds": ids, "characteristics": selected});
   }
 
   void onNavigateToProductScreen(int productId, int productPrice) {

@@ -673,6 +673,7 @@ class _TableWidgetState extends State<_TableWidget> {
     final toggleFilterVisibility = model.toggleFilterVisibility;
     final navigateToProduct = model.onNavigateToProductScreen;
     final addProductImage = model.addProductImage;
+    final addProductCharactiristics = model.addProductCharactiristics;
     return Column(
       children: [
         Expanded(
@@ -863,10 +864,16 @@ class _TableWidgetState extends State<_TableWidget> {
                                       )
                                     : FutureBuilder<String>(
                                         future: fetchCardInfo(cardUrl)
-                                            .then((value) => value.imtName),
+                                            .then((value) {
+                                          addProductCharactiristics(
+                                              item.productId,
+                                              value.characteristicFull);
+                                          return value.imtName;
+                                        }),
                                         builder: (context, snapshot) {
                                           final description =
                                               snapshot.data ?? "Загрузка...";
+
                                           addProductImage(item.productId,
                                               imageUrl, snapshot.data ?? "");
                                           final wildberriesUrl =
