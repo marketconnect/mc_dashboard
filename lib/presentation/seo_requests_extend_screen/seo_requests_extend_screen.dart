@@ -487,7 +487,7 @@ class _CharacteristicsTabView extends StatelessWidget {
   Widget _buildValuesList(
       BuildContext context, String key, List<String> values) {
     // Проверяем ширину экрана, если < 600 — мобильный вариант
-    final isMobile = MediaQuery.of(context).size.width < 600;
+    // final isMobile = MediaQuery.of(context).size.width < 600;
 
     // Можно сделать простой ListView или GridView
     // Ниже пример с ListView:

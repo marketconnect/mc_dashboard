@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 
 import 'package:flutter/material.dart';
+import 'package:mc_dashboard/domain/services/promotion_service.dart';
+import 'package:mc_dashboard/domain/services/wb_token_service.dart';
 
 import 'package:mc_dashboard/infrastructure/api/auth.dart';
 import 'package:mc_dashboard/infrastructure/api/detailed_orders.dart';
@@ -8,6 +10,7 @@ import 'package:mc_dashboard/infrastructure/api/kw_lemmas.dart';
 import 'package:mc_dashboard/infrastructure/api/lemmatize.dart';
 import 'package:mc_dashboard/infrastructure/api/normqueries.dart';
 import 'package:mc_dashboard/infrastructure/api/orders.dart';
+import 'package:mc_dashboard/infrastructure/api/promotions_api.dart';
 import 'package:mc_dashboard/infrastructure/api/stocks.dart';
 
 import 'package:mc_dashboard/infrastructure/api/user_emails_api.dart';
@@ -30,7 +33,10 @@ import 'package:mc_dashboard/domain/services/subjects_summary_service.dart';
 import 'package:mc_dashboard/domain/services/tinkoff_payment_service.dart';
 import 'package:mc_dashboard/domain/services/user_emails_service.dart';
 import 'package:mc_dashboard/domain/services/warehouses_service.dart';
+import 'package:mc_dashboard/infrastructure/repositories/wb_token_storage.dart';
 import 'package:mc_dashboard/main.dart';
+import 'package:mc_dashboard/presentation/api_keys_screen/api_keys_screen.dart';
+import 'package:mc_dashboard/presentation/api_keys_screen/api_keys_view_model.dart';
 
 import 'package:mc_dashboard/presentation/choosing_niche_screen/choosing_niche_screen.dart';
 import 'package:mc_dashboard/presentation/choosing_niche_screen/choosing_niche_view_model.dart';
@@ -49,6 +55,8 @@ import 'package:mc_dashboard/presentation/product_screen/product_view_model.dart
 import 'package:mc_dashboard/presentation/mailing_screen/saved_key_phrases_view_model.dart';
 
 import 'package:mc_dashboard/presentation/mailing_screen/saved_products_view_model.dart';
+import 'package:mc_dashboard/presentation/promotions_screen/promotions_screen.dart';
+import 'package:mc_dashboard/presentation/promotions_screen/promotions_view_model.dart';
 import 'package:mc_dashboard/presentation/seo_requests_extend_screen/seo_requests_extend_screen.dart';
 import 'package:mc_dashboard/presentation/seo_requests_extend_screen/seo_requests_extend_view_model.dart';
 import 'package:mc_dashboard/presentation/subject_products_screen/subject_products_screen.dart';
@@ -99,12 +107,16 @@ class _DIContainer {
 
   MailingSettingsRepo _makeMailingSettingsRepo() => MailingSettingsRepo();
 
-  UserSkusApiClient _makeUserSkusApiClient() => UserSkusApiClient();
+  WbTokenRepo _makeApiKeyRepo() => WbTokenRepo();
+
   // Api clients ///////////////////////////////////////////////////////////////
   AuthApiClient _makeAuthApiClient() => const AuthApiClient();
   UserEmailsApiClient _makeUserEmailsApiClient() => UserEmailsApiClient();
+  UserSkusApiClient _makeUserSkusApiClient() => UserSkusApiClient();
   UserSearchQueriesApiClient _makeUserSearchQueriesApiClient() =>
       UserSearchQueriesApiClient();
+
+  PromotionsApiClient _makePromotionsApiClient() => PromotionsApiClient();
   // Services //////////////////////////////////////////////////////////////////
 
   DetailedOrdersService _makeDetailedOrdersService() => DetailedOrdersService(
@@ -166,7 +178,13 @@ class _DIContainer {
   //       suppliersApiClient: SuppliersApiClient(dio),
   //     );
 
+  WbTokenService _makeApiKeyService() =>
+      WbTokenService(storage: _makeApiKeyRepo());
+
   TinkoffPaymentService _makeTinkoffPaymentService() => TinkoffPaymentService();
+
+  PromotionsServiceImpl _makePromotionsService() =>
+      PromotionsServiceImpl(apiClient: _makePromotionsApiClient());
   // ViewModels ////////////////////////////////////////////////////////////////
   ChoosingNicheViewModel _makeChoosingNicheViewModel(
           BuildContext context,
@@ -306,6 +324,18 @@ class _DIContainer {
   LoginViewModel _makeLoginViewModel(BuildContext context) => LoginViewModel(
         context: context,
         authService: _makeAuthService(),
+      );
+
+  ApiKeyViewModel _makeApiKeyViewModel(BuildContext context) => ApiKeyViewModel(
+        context: context,
+        apiKeyStorageService: _makeApiKeyService(),
+      );
+
+  PromotionsViewModel _makePromotionsViewModel(BuildContext context) =>
+      PromotionsViewModel(
+        context: context,
+        promotionsService: _makePromotionsService(),
+        apiKeyService: _makeApiKeyService(),
       );
 }
 
@@ -460,6 +490,26 @@ class ScreenFactoryDefault implements ScreenFactory {
         context,
       ),
       child: const LoginScreen(),
+    );
+  }
+
+  @override
+  Widget makeApiKeysScreen() {
+    return ChangeNotifierProvider(
+      create: (context) => _diContainer._makeApiKeyViewModel(
+        context,
+      ),
+      child: const ApiKeyScreen(),
+    );
+  }
+
+  @override
+  Widget makePromotionsScreen() {
+    return ChangeNotifierProvider(
+      create: (context) => _diContainer._makePromotionsViewModel(
+        context,
+      ),
+      child: const PromotionsScreen(),
     );
   }
 }

@@ -57,4 +57,8 @@ abstract class ScreenFactory {
   Widget makeSubscriptionScreen();
 
   Widget makeLoginScreen();
+
+  Widget makeApiKeysScreen();
+
+  Widget makePromotionsScreen();
 }

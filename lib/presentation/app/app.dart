@@ -153,6 +153,10 @@ class __ScaffoldState extends State<_Scaffold> {
     ]),
     _Section(title: 'Рассылка', icon: Icons.mail, subsections: []),
     _Section(title: 'Подписка', icon: Icons.lock_open, subsections: []),
+    _Section(title: 'Wildberries', icon: Icons.store, subsections: [
+      _Subsection(title: 'Токен'),
+      _Subsection(title: 'Акции'),
+    ]),
   ];
 
   @override
@@ -468,6 +472,8 @@ class __ScaffoldState extends State<_Scaffold> {
                       _onNavigate(routeName);
                     })), // MailingSettings
                 widget.screenFactory.makeSubscriptionScreen(), // Subscription
+                widget.screenFactory.makeApiKeysScreen(),
+                widget.screenFactory.makePromotionsScreen(), // API
               ],
             ),
           ),
@@ -487,6 +493,10 @@ class __ScaffoldState extends State<_Scaffold> {
       return 4;
     } else if (_selectedSectionIndex == 3) {
       return 5;
+    } else if (_selectedSectionIndex == 4 && _selectedSubsectionIndex == 0) {
+      return 6; // API
+    } else if (_selectedSectionIndex == 4 && _selectedSubsectionIndex == 1) {
+      return 7; // Promotions
     }
     return 0;
   }

@@ -8,4 +8,6 @@ abstract class MainNavigationRouteNames {
   // Empty
   static const String emptySubjectsScreen = '/empty-subject-products-screen';
   static const String emptyProductScreen = '/empty-product-screen';
+  static const String apiKeysScreen = '/api-keys';
+  static const String promotionsScreen = '/promotions-screen';
 }
