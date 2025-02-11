@@ -51,6 +51,26 @@ class PromotionsViewModel extends ViewModelBase {
   bool get isLoading => _isLoading;
 
   // Methods
+  Future<void> loadAllPromotionNomenclatures() async {
+    if (_token == null) return;
+    // Параллельно загружаем номенклатуры для каждой акции.
+    await Future.wait(
+        promotions.map((promo) => loadPromotionNomenclatures(promo.id)));
+  }
+
+  /// Вычисляемое свойство, формирующее данные по товарам из акций.
+  Map<int, Map<int, PromotionNomenclature>> get promotionProductsData {
+    final Map<int, Map<int, PromotionNomenclature>> productData = {};
+    for (var promo in promotions) {
+      final nomenclatures = promotionNomenclaturesMap[promo.id] ?? [];
+      for (var item in nomenclatures) {
+        productData.putIfAbsent(item.id, () => {});
+        productData[item.id]![promo.id] = item;
+      }
+    }
+    return productData;
+  }
+
   @override
   Future<void> asyncInit() async {
     await refreshData();
@@ -68,7 +88,9 @@ class PromotionsViewModel extends ViewModelBase {
       return;
     }
     _token = tokenOrNull;
+
     await loadPromotions();
+    await loadAllPromotionNomenclatures(); // Загружаем номенклатуры один раз
     _isLoading = false;
     notifyListeners();
   }
@@ -83,7 +105,7 @@ class PromotionsViewModel extends ViewModelBase {
       token: _token!,
       startDate: startDate,
       endDate: endDate,
-      allPromo: true,
+      allPromo: false,
     );
 
     if (promotionsOrEither.isRight()) {
@@ -136,5 +158,22 @@ class PromotionsViewModel extends ViewModelBase {
         notifyListeners();
       },
     );
+  }
+
+  Future<Map<int, Map<int, PromotionNomenclature>>>
+      getPromotionProductsData() async {
+    // Загружаем номенклатуры для всех акций (если не загружены)
+    await Future.wait(
+        promotions.map((promo) => loadPromotionNomenclatures(promo.id)));
+
+    final Map<int, Map<int, PromotionNomenclature>> productData = {};
+    for (var promo in promotions) {
+      final nomenclatures = promotionNomenclaturesMap[promo.id] ?? [];
+      for (var item in nomenclatures) {
+        productData.putIfAbsent(item.id, () => {});
+        productData[item.id]![promo.id] = item;
+      }
+    }
+    return productData;
   }
 }

@@ -46,7 +46,8 @@ class PromotionsServiceImpl implements PromotionsViewModelService {
         endDate: endDate,
         allPromo: allPromo,
       );
-      return right(promotions);
+      final notAutoPromo = promotions.where((e) => e.type != "auto").toList();
+      return right(notAutoPromo);
     } catch (e) {
       return left(AppErrorBase(
         'Ошибка получения списка акций: $e',
@@ -83,12 +84,20 @@ class PromotionsServiceImpl implements PromotionsViewModelService {
     required int promotionId,
   }) async {
     try {
+      // in action
       final products = await apiClient.fetchPromotionNomenclatures(
         token: token,
         promotionId: promotionId,
         inAction: false,
       );
-      return right(products);
+
+      final productsInAction = await apiClient.fetchPromotionNomenclatures(
+        token: token,
+        promotionId: promotionId,
+        inAction: true,
+      );
+
+      return right(products + productsInAction);
     } catch (e) {
       return left(AppErrorBase(
         'Ошибка получения списка товаров для акции: $e',

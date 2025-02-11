@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:mc_dashboard/domain/entities/promotions.dart';
 import 'package:mc_dashboard/domain/services/promotion_service.dart';
@@ -6,9 +7,32 @@ import 'package:mc_dashboard/domain/services/promotion_service.dart';
 class PromotionsApiClient implements PromotionsServiceApiClient {
   final String baseUrl;
 
+  // Список для хранения времени отправки запросов
+  final List<DateTime> _requestTimestamps = [];
+
   PromotionsApiClient(
       {this.baseUrl =
           "https://dp-calendar-api.wildberries.ru/api/v1/calendar"});
+
+  Future<void> _rateLimit() async {
+    while (true) {
+      final now = DateTime.now();
+
+      _requestTimestamps.removeWhere(
+          (timestamp) => now.difference(timestamp) > Duration(seconds: 6));
+
+      if (_requestTimestamps.length < 5) {
+        break;
+      }
+
+      final earliest = _requestTimestamps.first;
+      final waitDuration = Duration(seconds: 6) - now.difference(earliest);
+      print(
+          "Rate limit exceeded, delaying request for ${waitDuration.inMilliseconds} ms");
+      await Future.delayed(waitDuration);
+    }
+    _requestTimestamps.add(DateTime.now());
+  }
 
   @override
   Future<List<Promotion>> fetchPromotions({
@@ -19,7 +43,7 @@ class PromotionsApiClient implements PromotionsServiceApiClient {
     int limit = 10,
     int offset = 0,
   }) async {
-    print("fetchPromotions");
+    await _rateLimit(); // Применяем ограничение скорости запросов
     final response = await http.get(
       Uri.parse("$baseUrl/promotions").replace(queryParameters: {
         'startDateTime': startDate.toUtc().toIso8601String(),
@@ -39,6 +63,7 @@ class PromotionsApiClient implements PromotionsServiceApiClient {
     }
 
     final data = jsonDecode(response.body);
+    print("fetchPromotions resp body: $data");
     return (data['data']['promotions'] as List)
         .map((e) => Promotion.fromJson(e))
         .toList();
@@ -49,6 +74,7 @@ class PromotionsApiClient implements PromotionsServiceApiClient {
     required String token,
     required List<int> promotionIds,
   }) async {
+    await _rateLimit(); // Применяем ограничение скорости запросов
     print("fetchPromotionDetails");
     final response = await http.get(
       Uri.parse("$baseUrl/promotions/details").replace(queryParameters: {
@@ -76,7 +102,7 @@ class PromotionsApiClient implements PromotionsServiceApiClient {
     int limit = 10,
     int offset = 0,
   }) async {
-    print("params $promotionId $inAction $limit $offset");
+    await _rateLimit(); // Применяем ограничение скорости запросов
 
     final uri = Uri.parse("$baseUrl/promotions/nomenclatures").replace(
       queryParameters: {
@@ -91,8 +117,7 @@ class PromotionsApiClient implements PromotionsServiceApiClient {
     final response = await http.get(
       uri,
       headers: {
-        'Authorization':
-            'Bearer $token', // Используем тот же заголовок, что и в остальных методах
+        'Authorization': 'Bearer $token', // Тот же заголовок авторизации
         'Content-Type': 'application/json',
       },
     );
