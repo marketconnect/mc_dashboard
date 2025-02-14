@@ -3,6 +3,8 @@ import 'package:fpdart/fpdart.dart';
 import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
 import 'package:mc_dashboard/core/utils/basket_num.dart';
 import 'package:mc_dashboard/core/utils/similarity.dart';
+import 'package:mc_dashboard/core/utils/strings_ext.dart';
+import 'package:mc_dashboard/domain/entities/box_tariff.dart';
 import 'package:mc_dashboard/domain/entities/card_info.dart';
 import 'package:mc_dashboard/domain/entities/detailed_order_item.dart';
 import 'package:mc_dashboard/domain/entities/feedback_info.dart';
@@ -14,8 +16,10 @@ import 'package:mc_dashboard/domain/entities/order.dart';
 import 'package:mc_dashboard/domain/entities/saved_product.dart';
 import 'package:mc_dashboard/domain/entities/stock.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
+import 'package:mc_dashboard/domain/entities/tariff.dart';
 import 'package:mc_dashboard/domain/entities/token_info.dart';
 import 'package:mc_dashboard/domain/entities/warehouse.dart';
+import 'package:mc_dashboard/domain/entities/wb_product.dart';
 
 import 'package:mc_dashboard/presentation/product_screen/table_row_model.dart';
 import 'package:mc_dashboard/routes/main_navigation_route_names.dart';
@@ -90,6 +94,25 @@ abstract class ProductViewModelSavedProductsService {
   });
 }
 
+abstract class ProductViewModelTariffsService {
+  Future<Either<AppErrorBase, List<Tariff>>> fetchTariffs({
+    required String token,
+    String locale,
+  });
+  Future<Either<AppErrorBase, List<BoxTariff>>> fetchBoxTariffs({
+    required String token,
+    required String date,
+  });
+}
+
+abstract class ProductViewModelApiKeyService {
+  Future<String?> getWbToken();
+}
+
+abstract class WbProductsService {
+  Future<Either<AppErrorBase, List<WbProduct>>> fetchProducts(List<int> nmIds);
+}
+
 class ProductViewModel extends ViewModelBase {
   ProductViewModel(
       {required super.context,
@@ -107,11 +130,17 @@ class ProductViewModel extends ViewModelBase {
       required this.savedProductsService,
       required this.onNavigateTo,
       required this.prevScreen,
+      required this.tariffsService,
+      required this.apiKeyService,
+      required this.wbProductsService,
       required this.productPrice});
   final int productId;
   final int productPrice;
   final String prevScreen;
   final ProductViewModelStocksService stocksService;
+  final ProductViewModelApiKeyService apiKeyService;
+  final ProductViewModelTariffsService tariffsService;
+  final WbProductsService wbProductsService;
   final ProductViewModelOrderService ordersService;
   final ProductViewModelWhService whService;
   final ProductViewModelNormqueryService normqueryService;
@@ -131,9 +160,31 @@ class ProductViewModel extends ViewModelBase {
 
   // Fields ////////////////////////////////////////////////////////////////////
 
+  // tariffs
+  // List<Tariff> _tariffs = [];
+  // List<Tariff> get tariffs => _tariffs;
+
   // token and sub info
   TokenInfo? _tokenInfo;
   bool get isFree => _tokenInfo == null || _tokenInfo!.type == "free";
+
+  // get tariffs for product
+  Tariff? _productTariff;
+  Tariff? get productTariff => _productTariff;
+  Tariff? getProductTariff(List<Tariff> tariffs) {
+    if (_subjectId == 0) return null;
+
+    final t = tariffs.where((e) {
+      return e.subjectID == _subjectId;
+    });
+    return t.isNotEmpty ? t.first : null;
+  }
+
+  int _price = 0;
+  int get price => _price == 0 ? productPrice : _price;
+  // logistics tariff
+  double _logisticsTariff = 0.0;
+  double get logisticsTariff => _logisticsTariff;
 
   // basket num
   String? _basketNum;
@@ -217,6 +268,46 @@ class ProductViewModel extends ViewModelBase {
   List<NormqueryProduct> _unusedNormqueries = [];
   List<NormqueryProduct> get unusedNormqueries => _unusedNormqueries;
 
+  int _wbDiscount = 0; // Скидка в %
+  double _returnRate = 10.0;
+  int get wbDiscount => _wbDiscount;
+  double get returnRate => _returnRate;
+  void increaseDiscount() {
+    _wbDiscount += 1;
+    notifyListeners();
+  }
+
+  void decreaseDiscount() {
+    if (_wbDiscount > 0) {
+      _wbDiscount -= 1;
+      notifyListeners();
+    }
+  }
+
+  void increaseReturnRate() {
+    if (_returnRate < 100) {
+      _returnRate += 1.0;
+      notifyListeners();
+    }
+  }
+
+  void decreaseReturnRate() {
+    if (_returnRate > 0) {
+      _returnRate -= 1.0;
+      notifyListeners();
+    }
+  }
+
+  double calculateNetProfit() {
+    if (productPrice == 0 || productTariff == null || logisticsTariff == 0) {
+      return 0.0;
+    }
+    final discountedPrice = productPrice + (productPrice * (_wbDiscount / 100));
+    final commission = (productPrice * productTariff!.paidStorageKgvp) / 100;
+    final netProfit = discountedPrice - commission - logisticsTariff;
+    return netProfit;
+  }
+
   // pros and cons
   List<String> pros = [];
   List<String> cons = [];
@@ -275,6 +366,7 @@ class ProductViewModel extends ViewModelBase {
       fetchCardInfo(
           calculateCardUrl(calculateImageUrl(_basketNum, productId))), // 0
       authService.getTokenInfo(), // 1
+      apiKeyService.getWbToken()
     ]);
 
     // card info
@@ -287,6 +379,7 @@ class ProductViewModel extends ViewModelBase {
     _characteristics = cardInfo.characteristicFull;
     _characteristicValues = cardInfo.characteristicValues;
     _subjectId = cardInfo.subjId;
+
     _subjectName = cardInfo.subjName;
     _supplierId = cardInfo.supplierId;
     _brand = cardInfo.brand;
@@ -302,18 +395,74 @@ class ProductViewModel extends ViewModelBase {
           content: Text(error.message ?? 'Unknown error'),
         ));
       }
+
       return;
     }
 
     _tokenInfo =
         tokenInfoOrEither.fold((l) => throw UnimplementedError(), (r) => r);
 
+    // get tariffs for product
+    final token = vals[2] as String?;
+    if (token != null) {
+      final tariffs = await loadTariffs(token);
+      if (tariffs != null) {
+        _productTariff = getProductTariff(tariffs);
+      }
+
+      // details
+      final a = await wbProductsService.fetchProducts([productId]);
+
+      if (a.isRight()) {
+        final volume =
+            a.fold((l) => throw UnimplementedError(), (r) => r.first.volume);
+        _price = a.fold(
+            (l) => throw UnimplementedError(), (r) => r.first.price.toInt());
+        // fetchBoxTariffs
+        final date = getTomorrowDate();
+        final boxTariffsOrEither =
+            await tariffsService.fetchBoxTariffs(token: token, date: date);
+        if (boxTariffsOrEither.isLeft()) {
+          final err = boxTariffsOrEither.fold(
+              (l) => l, (r) => throw UnimplementedError());
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(err.message ?? 'Unknown error'),
+            ));
+          }
+          notifyListeners();
+          return;
+        }
+        if (boxTariffsOrEither.isRight()) {
+          final boxTariffs = boxTariffsOrEither.fold(
+              (l) => throw UnimplementedError(), (r) => r);
+          // _boxTariffs = getBoxTariff(boxTariffs, volume);
+          final fbsBoxTarrif = boxTariffs
+              .where((e) => e.warehouseName == "Маркетплейс")
+              .toList();
+
+          if (fbsBoxTarrif.isNotEmpty) {
+            final boxDeliveryBase = fbsBoxTarrif.first.boxDeliveryBase;
+            final boxDeliveryLiter = fbsBoxTarrif.first.boxDeliveryLiter;
+            _logisticsTariff = calculateTariff(
+                volume.toDouble(), boxDeliveryBase, boxDeliveryLiter);
+          } else {}
+
+          if (fbsBoxTarrif.isNotEmpty) {
+            final boxDeliveryBase = fbsBoxTarrif.first.boxDeliveryBase;
+            final boxDeliveryLiter = fbsBoxTarrif.first.boxDeliveryLiter;
+            _logisticsTariff = calculateTariff(
+                volume.toDouble(), boxDeliveryBase, boxDeliveryLiter);
+          }
+        }
+      }
+    }
+    // final tariffs = vals[2] as List<Tariff>;
     final values = await Future.wait([
       fetchFeedbacks(cardInfo.imtId), // 0
       ordersService.getOneMonthOrders(productId: productId), // 1
       stocksService.getMonthStocks(productId: productId), // 2
     ]);
-
     final feedbackInfo = values[0] as FeedbackInfo;
     List<int> whIds = [];
     // Orders
@@ -583,6 +732,23 @@ class ProductViewModel extends ViewModelBase {
     }
   }
 
+  Future<List<Tariff>?> loadTariffs(String token) async {
+    // Получаем токен Wildberries через ApiKeyService
+
+    // Запрашиваем тарифы
+    final tariffsOrEither = await tariffsService.fetchTariffs(
+      token: token,
+      locale: "ru",
+    );
+
+    if (tariffsOrEither.isRight()) {
+      return tariffsOrEither.fold((l) => [], (r) => r);
+    }
+
+    notifyListeners();
+    return null;
+  }
+
   // Navigation
   void onNavigateToEmptyProductScreen() {
     onNavigateTo(routeName: MainNavigationRouteNames.emptyProductScreen);
@@ -601,4 +767,13 @@ class ProductViewModel extends ViewModelBase {
   void onNavigateToSubscriptionScreen() {
     onNavigateTo(routeName: MainNavigationRouteNames.subscriptionScreen);
   }
+}
+
+double calculateTariff(
+    double volumeLiters, double boxDeliveryBase, double boxDeliveryLiter) {
+  volumeLiters /= 10; // Делим на 10, чтобы привести к исходному значению
+  if (volumeLiters <= 1) {
+    return boxDeliveryBase;
+  }
+  return (volumeLiters - 1) * boxDeliveryLiter + boxDeliveryBase;
 }

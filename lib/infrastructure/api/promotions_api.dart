@@ -27,8 +27,7 @@ class PromotionsApiClient implements PromotionsServiceApiClient {
 
       final earliest = _requestTimestamps.first;
       final waitDuration = Duration(seconds: 6) - now.difference(earliest);
-      print(
-          "Rate limit exceeded, delaying request for ${waitDuration.inMilliseconds} ms");
+
       await Future.delayed(waitDuration);
     }
     _requestTimestamps.add(DateTime.now());

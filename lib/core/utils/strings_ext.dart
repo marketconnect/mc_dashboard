@@ -11,3 +11,8 @@ extension StringFormatting on String {
     return numericRegex.hasMatch(this);
   }
 }
+
+String getTomorrowDate() {
+  final tomorrow = DateTime.now().add(Duration(days: 1));
+  return "${tomorrow.year}-${tomorrow.month.toString().padLeft(2, '0')}-${tomorrow.day.toString().padLeft(2, '0')}";
+}

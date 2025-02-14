@@ -24,7 +24,6 @@ class UserSkusApiClient implements SavedProductsApiClient {
         'Content-Type': 'application/json',
       },
     );
-    print("GET SKUS resp body: ${response.body}");
 
     if (response.statusCode == 200) {
       final resp = UserSkusResponse.fromJson(jsonDecode(response.body));

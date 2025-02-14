@@ -1,4 +1,5 @@
 import 'package:mc_dashboard/presentation/api_keys_screen/api_keys_view_model.dart';
+import 'package:mc_dashboard/presentation/product_screen/product_view_model.dart';
 import 'package:mc_dashboard/presentation/promotions_screen/promotions_view_model.dart';
 
 abstract class WbTokenServiceStorage {
@@ -8,7 +9,10 @@ abstract class WbTokenServiceStorage {
 }
 
 class WbTokenService
-    implements ApiKeyViewModelStorageService, PromotionsViewModelApiKeyService {
+    implements
+        ApiKeyViewModelStorageService,
+        PromotionsViewModelApiKeyService,
+        ProductViewModelApiKeyService {
   WbTokenService({required this.storage});
   final WbTokenServiceStorage storage;
 

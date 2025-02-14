@@ -57,9 +57,10 @@ class _ProductScreenState extends State<ProductScreen> {
     final onNavigateToEmptyProductScreen = model.onNavigateToEmptyProductScreen;
     final name = model.name;
     final subjectName = model.subjectName;
-    final price = model.productPrice;
+    final price = model.price;
     final rating = model.rating;
-
+    final productTariff = model.productTariff;
+    final logisticsTariff = model.logisticsTariff;
     final orders = model.orders;
     final dailyStockSums = model.dailyStocksSums;
     final pieDataMap = model.warehousesOrdersSum;
@@ -227,6 +228,36 @@ class _ProductScreenState extends State<ProductScreen> {
                                 _buildStatCard(
                                     'Продажи за 30 дней', '$orders30d шт.'),
                                 _buildStatCard('Рейтинг', '$rating ★'),
+                                if (productTariff != null && price != 0)
+                                  _buildStatCard('Комиссия',
+                                      '${productTariff.paidStorageKgvp} % ${(price * productTariff.paidStorageKgvp / 100).ceil()} ₽'),
+                                if (logisticsTariff != 0)
+                                  _buildStatCard('Логистика (FBS)',
+                                      '${logisticsTariff.ceil()} ₽'),
+                                if (price != 0 &&
+                                    productTariff != null &&
+                                    logisticsTariff != 0)
+                                  _buildProfitCard(
+                                    'Доход после WB',
+                                    price,
+                                    productTariff.paidStorageKgvp,
+                                    logisticsTariff,
+                                    context
+                                        .watch<ProductViewModel>()
+                                        .returnRate, // Передаем процент возвратов
+                                    () => context
+                                        .read<ProductViewModel>()
+                                        .increaseDiscount(),
+                                    () => context
+                                        .read<ProductViewModel>()
+                                        .decreaseDiscount(),
+                                    () => context
+                                        .read<ProductViewModel>()
+                                        .increaseReturnRate(), // Увеличить возвраты
+                                    () => context
+                                        .read<ProductViewModel>()
+                                        .decreaseReturnRate(), // Уменьшить возвраты
+                                  ),
                               ],
                             ),
                             const SizedBox(height: 24),
@@ -475,6 +506,126 @@ class _ProductScreenState extends State<ProductScreen> {
       buffer.write(s[i]);
     }
     return buffer.toString();
+  }
+
+  Widget _buildProfitCard(
+      String title,
+      int price,
+      double commissionRate,
+      double logistics,
+      double returnRate, // Процент возвратов
+      VoidCallback onIncreaseDiscount,
+      VoidCallback onDecreaseDiscount,
+      VoidCallback onIncreaseReturn,
+      VoidCallback onDecreaseReturn) {
+    final model = context.watch<ProductViewModel>();
+    final int wbDiscount = model.wbDiscount;
+
+    // Рассчитываем новую цену с учетом WB скидки
+    final double discountedPrice = price * (1 + wbDiscount / 100);
+
+    // Рассчитываем комиссию от новой цены
+    final double commission = discountedPrice * (commissionRate / 100);
+
+    // Стоимость возвратов по исправленной формуле
+    final double returnLogisticsCost =
+        50.0; // Фиксированная цена обратной логистики
+    final double totalReturnCost =
+        (logistics + returnLogisticsCost) * (returnRate / (100 - returnRate));
+
+    // Итоговая сумма после вычета комиссии, логистики и возвратов
+    final double netAmount =
+        discountedPrice - commission - logistics - totalReturnCost;
+
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Text(
+                title,
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Center(
+              child: Text(
+                '${netAmount.toStringAsFixed(2)} ₽',
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Divider(),
+            const SizedBox(height: 4),
+            Text(
+              "📌 Формула расчета:",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Text(
+              "($price ₽ + $price ₽ * ($wbDiscount%)) - "
+              "\n(${commission.toStringAsFixed(2)} ₽ комиссия) - "
+              "\n(${logistics.toStringAsFixed(2)} ₽ логистика) - "
+              "\n(${totalReturnCost.toStringAsFixed(2)} ₽ возвраты)",
+              style: TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            Divider(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  children: [
+                    Text(
+                      'WB Скидка: $wbDiscount%',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.remove),
+                          onPressed: onDecreaseDiscount,
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.add),
+                          onPressed: onIncreaseDiscount,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                Column(
+                  children: [
+                    Text(
+                      'Процент возвратов: ${returnRate.toStringAsFixed(1)}%',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.remove),
+                          onPressed: onDecreaseReturn,
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.add),
+                          onPressed: onIncreaseReturn,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildStatCard(String title, String value) {

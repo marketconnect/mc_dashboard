@@ -1,0 +1,43 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:mc_dashboard/.env.dart';
+import 'package:mc_dashboard/domain/entities/wb_product.dart';
+import 'package:mc_dashboard/domain/services/wb_products_service.dart';
+
+class WbProductsApiClient implements WbProductsServiceApiClient {
+  static const String _baseUrl = ApiSettings.wbDetailsProxy;
+
+  @override
+  Future<List<WbProduct>> fetchProducts(List<int> nmIds) async {
+    final uri = Uri.parse(_baseUrl).replace(queryParameters: {
+      'appType': '1',
+      'curr': 'rub',
+      'dest': '123589415',
+      'spp': '30',
+      'ab_testing': 'false',
+      'nm': nmIds.map((id) => id.toString()).join(';'),
+    });
+
+    final headers = {
+      'Accept': '*/*',
+      'Accept-Encoding': 'gzip, deflate, br, zstd',
+      'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7,fr;q=0.6',
+      'Sec-Fetch-Dest': 'empty',
+      'Sec-Fetch-Mode': 'cors',
+      'Sec-Fetch-Site': 'same-origin',
+      'User-Agent':
+          'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+    };
+
+    final response = await http.get(uri, headers: headers);
+
+    if (response.statusCode != 200) {
+      throw Exception("Failed to fetch WB products: ${response.statusCode}");
+    }
+
+    final data = jsonDecode(response.body);
+    final productsJson = data['data']['products'] as List<dynamic>;
+
+    return productsJson.map((json) => WbProduct.fromJson(json)).toList();
+  }
+}

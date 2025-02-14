@@ -74,7 +74,10 @@ Future<CardInfo> fetchCardInfo(String cardUrl) async {
         characteristicFull: "",
         brand: "",
         supplierId: 0,
-        characteristicValues: "");
+        characteristicValues: "",
+        packageLength: "",
+        packageHeight: "",
+        packageWidth: "");
   }
 }
 

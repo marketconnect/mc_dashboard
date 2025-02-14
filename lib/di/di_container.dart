@@ -2,6 +2,8 @@ import 'package:dio/dio.dart';
 
 import 'package:flutter/material.dart';
 import 'package:mc_dashboard/domain/services/promotion_service.dart';
+import 'package:mc_dashboard/domain/services/tariff_service.dart';
+import 'package:mc_dashboard/domain/services/wb_products_service.dart';
 import 'package:mc_dashboard/domain/services/wb_token_service.dart';
 
 import 'package:mc_dashboard/infrastructure/api/auth.dart';
@@ -12,6 +14,7 @@ import 'package:mc_dashboard/infrastructure/api/normqueries.dart';
 import 'package:mc_dashboard/infrastructure/api/orders.dart';
 import 'package:mc_dashboard/infrastructure/api/promotions_api.dart';
 import 'package:mc_dashboard/infrastructure/api/stocks.dart';
+import 'package:mc_dashboard/infrastructure/api/tariffs_api_client.dart';
 
 import 'package:mc_dashboard/infrastructure/api/user_emails_api.dart';
 import 'package:mc_dashboard/infrastructure/api/user_search_queries_api.dart';
@@ -33,6 +36,7 @@ import 'package:mc_dashboard/domain/services/subjects_summary_service.dart';
 import 'package:mc_dashboard/domain/services/tinkoff_payment_service.dart';
 import 'package:mc_dashboard/domain/services/user_emails_service.dart';
 import 'package:mc_dashboard/domain/services/warehouses_service.dart';
+import 'package:mc_dashboard/infrastructure/api/wb_products_api_client.dart';
 import 'package:mc_dashboard/infrastructure/repositories/wb_token_storage.dart';
 import 'package:mc_dashboard/main.dart';
 import 'package:mc_dashboard/presentation/api_keys_screen/api_keys_screen.dart';
@@ -117,6 +121,11 @@ class _DIContainer {
       UserSearchQueriesApiClient();
 
   PromotionsApiClient _makePromotionsApiClient() => PromotionsApiClient();
+
+  // TariffsApiClient _makeTariffsApiClient() => TariffsApiClient();
+  TariffsApiClient tariffsApiClient = TariffsApiClient.instance;
+
+  WbProductsApiClient _makeWbProductsApiClient() => WbProductsApiClient();
   // Services //////////////////////////////////////////////////////////////////
 
   DetailedOrdersService _makeDetailedOrdersService() => DetailedOrdersService(
@@ -185,6 +194,13 @@ class _DIContainer {
 
   PromotionsServiceImpl _makePromotionsService() =>
       PromotionsServiceImpl(apiClient: _makePromotionsApiClient());
+
+  TariffsServiceImpl _makeTariffsService() =>
+      TariffsServiceImpl(apiClient: tariffsApiClient);
+
+  WbProductsServiceImpl _makeWbProductsService() =>
+      WbProductsServiceImpl(apiClient: _makeWbProductsApiClient());
+
   // ViewModels ////////////////////////////////////////////////////////////////
   ChoosingNicheViewModel _makeChoosingNicheViewModel(
           BuildContext context,
@@ -264,8 +280,11 @@ class _DIContainer {
         savedProductsService: _makeSavedProductsService(),
         authService: _makeAuthService(),
         lemmatizeService: _makeLemmatizeService(),
+        wbProductsService: _makeWbProductsService(),
         onSaveKeyPhrasesToTrack: onSaveKeyPhraseToTrack,
         productPrice: productPrice,
+        tariffsService: _makeTariffsService(),
+        apiKeyService: _makeApiKeyService(),
       );
 
   SeoRequestsExtendViewModel _makeSeoRequestsExtendViewModel(

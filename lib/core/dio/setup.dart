@@ -7,19 +7,30 @@ Future<Dio> setupDio() async {
 
   final cacheOptions = CacheOptions(
     store: cacheStore,
-    policy: CachePolicy.refreshForceCache,
-    hitCacheOnErrorExcept: [401, 403, 500],
+    policy:
+        CachePolicy.refresh, // ✅ Используем refresh (не берет ошибки из кэша)
+    hitCacheOnErrorExcept: [
+      400,
+      404,
+      401,
+      403,
+      500,
+      504
+    ], // ✅ Ошибки НЕ берутся из кэша
     keyBuilder: CacheOptions.defaultCacheKeyBuilder,
-    maxStale: const Duration(days: 1),
+    maxStale: const Duration(days: 1), // Кэш живет 1 день
     priority: CachePriority.high,
     allowPostMethod: false,
   );
 
   final dio = Dio();
-  dio.interceptors.add(DioCacheInterceptor(options: cacheOptions));
+  dio.interceptors
+      .add(DioCacheInterceptor(options: cacheOptions)); // ✅ Вернули кэш
   dio.interceptors.add(DioLoggingInterceptor());
-  dio.options.connectTimeout = Duration(seconds: 30);
-  dio.options.receiveTimeout = Duration(seconds: 30);
+
+  dio.options
+    ..connectTimeout = const Duration(seconds: 120)
+    ..receiveTimeout = const Duration(seconds: 120);
 
   return dio;
 }
