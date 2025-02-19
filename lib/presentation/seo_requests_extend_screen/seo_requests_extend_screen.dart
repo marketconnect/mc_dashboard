@@ -73,8 +73,8 @@ class SeoRequestsExtendScreen extends StatelessWidget {
 
                       for (var product in selectedItems) {
                         sheet.appendRow(<exc.CellValue?>[
-                          exc.TextCellValue(product.normquery),
                           exc.TextCellValue(product.kw),
+                          exc.TextCellValue(product.normquery),
                           exc.IntCellValue(product.freq),
                           exc.IntCellValue(product.total),
                         ]);
@@ -486,26 +486,42 @@ class _CharacteristicsTabView extends StatelessWidget {
 
   Widget _buildValuesList(
       BuildContext context, String key, List<String> values) {
-    // Проверяем ширину экрана, если < 600 — мобильный вариант
-    // final isMobile = MediaQuery.of(context).size.width < 600;
-
-    // Можно сделать простой ListView или GridView
-    // Ниже пример с ListView:
     if (values.isEmpty) {
       return Center(
         child: Text("Нет значений для характеристики: $key"),
       );
     }
-
     return ListView.builder(
-      padding: const EdgeInsets.all(8),
       itemCount: values.length,
       itemBuilder: (context, index) {
         final value = values[index];
-        return Card(
-          margin: const EdgeInsets.symmetric(vertical: 4.0),
-          child: ListTile(
-            title: Text(value),
+
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            // Подсветка при клике/hover, если нужно:
+            hoverColor: Colors.blue.withOpacity(0.1),
+            splashColor: Colors.blue.withOpacity(0.2),
+
+            // Задаём поведение при долгом тапе (долгом нажатии):
+            onTap: () {
+              Clipboard.setData(ClipboardData(text: value));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Текст скопирован: $value')),
+              );
+            },
+
+            // Если нужно, чтобы курсор наводился именно «рукой»:
+            mouseCursor: SystemMouseCursors.click,
+
+            // Основной контейнер для контента строки
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.symmetric(vertical: 4.0),
+              // Можно кастомизировать под дизайн
+              child: Text(value),
+            ),
           ),
         );
       },
