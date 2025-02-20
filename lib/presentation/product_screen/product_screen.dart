@@ -57,6 +57,7 @@ class _ProductScreenState extends State<ProductScreen> {
     final onNavigateToEmptyProductScreen = model.onNavigateToEmptyProductScreen;
     final name = model.name;
     final subjectName = model.subjectName;
+    final subjectId = model.subjectId;
     final price = model.price;
     final rating = model.rating;
     final productTariff = model.productTariff;
@@ -196,6 +197,29 @@ class _ProductScreenState extends State<ProductScreen> {
                                       children: [
                                         Text(
                                           ' $subjectName',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium
+                                              ?.copyWith(
+                                                  fontWeight: FontWeight.bold),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Icon(Icons.arrow_forward_ios, size: 12),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                MouseRegion(
+                                  cursor: SystemMouseCursors.click,
+                                  child: GestureDetector(
+                                    //Copy to clipboard
+                                    onTap: () => Clipboard.setData(
+                                        ClipboardData(
+                                            text: subjectId.toString())),
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          ' $subjectId',
                                           style: Theme.of(context)
                                               .textTheme
                                               .titleMedium
