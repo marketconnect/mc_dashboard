@@ -219,7 +219,7 @@ class _ProductScreenState extends State<ProductScreen> {
                                     child: Row(
                                       children: [
                                         Text(
-                                          ' $subjectId',
+                                          '$subjectId',
                                           style: Theme.of(context)
                                               .textTheme
                                               .titleMedium
@@ -227,7 +227,7 @@ class _ProductScreenState extends State<ProductScreen> {
                                                   fontWeight: FontWeight.bold),
                                         ),
                                         const SizedBox(width: 4),
-                                        Icon(Icons.arrow_forward_ios, size: 12),
+                                        Icon(Icons.copy, size: 12),
                                       ],
                                     ),
                                   ),
