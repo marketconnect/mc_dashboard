@@ -5,7 +5,7 @@ import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
 import 'package:mc_dashboard/core/utils/strings_ext.dart';
 import 'package:mc_dashboard/domain/entities/detailed_order_item.dart';
-import 'package:mc_dashboard/domain/entities/saved_product.dart';
+
 import 'package:mc_dashboard/domain/entities/subject_summary_item.dart';
 import 'package:mc_dashboard/domain/entities/token_info.dart';
 
@@ -28,14 +28,6 @@ abstract class SubjectProductsSubjectSummaryService {
       int subjectId);
 }
 
-// Saved Products Service
-abstract class SubjectProductsSavedProductsService {
-  Future<Either<AppErrorBase, void>> addProducts({
-    required String token,
-    required List<SavedProduct> products,
-  });
-}
-
 class SubjectProductsViewModel extends ViewModelBase {
   SubjectProductsViewModel(
       {required super.context,
@@ -44,7 +36,6 @@ class SubjectProductsViewModel extends ViewModelBase {
       required this.onNavigateTo,
       required this.detailedOrdersService,
       required this.authService,
-      required this.savedProductsService,
       required this.subjectSummaryService,
       required this.onSaveProductsToTrack});
 
@@ -52,7 +43,7 @@ class SubjectProductsViewModel extends ViewModelBase {
   final String subjectName;
   final SubjectProductsAuthService authService;
   final SubjectProductsViewModelDetailedOrdersService detailedOrdersService;
-  final SubjectProductsSavedProductsService savedProductsService;
+
   final SubjectProductsSubjectSummaryService subjectSummaryService;
   final void Function(List<String>) onSaveProductsToTrack;
 
@@ -421,61 +412,6 @@ class SubjectProductsViewModel extends ViewModelBase {
     notifyListeners();
   }
 
-  Future<void> saveProducts() async {
-    if (isFree) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Чтобы получать рассылку, вы должны быть подписчиком.',
-            style: TextStyle(
-                fontSize: Theme.of(context).textTheme.bodyLarge!.fontSize)),
-        action: SnackBarAction(
-          label: 'Оформить подписку',
-          onPressed: () {
-            onNavigateToSubscriptionScreen();
-          },
-        ),
-        duration: Duration(seconds: 10),
-      ));
-      return;
-    } // get selected orders
-    final selectedOrders = _filteredOrders.where((item) {
-      return _selectedRows.contains(item.productId);
-    });
-
-    // prepare products to save
-    List<SavedProduct> productsToSave = [];
-    for (var item in selectedOrders) {
-      final imageUrlProductName = _productImageProductName[item.productId];
-      if (imageUrlProductName != null) {
-        productsToSave.add(SavedProduct(
-            productId: item.productId.toString(),
-            sellerId: item.supplierId.toString(),
-            sellerName: item.supplier,
-            brandId: item.brandId.toString(),
-            brandName: item.brand,
-            marketplaceType: "wb",
-            imageUrl: imageUrlProductName.$1,
-            name: imageUrlProductName.$2));
-      }
-    }
-
-    // save products
-    await savedProductsService.addProducts(
-        token: _token!, products: productsToSave);
-
-    // callback to update the SavedProductsScreen
-    onSaveProductsToTrack(
-        productsToSave.map((item) => item.productId).toList());
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text(
-          'Товары успешно добавлены',
-          style: TextStyle(fontSize: 16),
-        ),
-        duration: Duration(seconds: 3),
-      ));
-    }
-  }
-
   // Navigation
   void navigateToSeoRequestsExtendScreen() {
     final ids = _selectedRows.toList();
@@ -484,26 +420,35 @@ class SubjectProductsViewModel extends ViewModelBase {
         .where((value) => value != null) // Убираем `null`, если ключа нет
         .cast<String>() // Приводим к List<String>
         .toList();
-    onNavigateTo(
-        routeName: MainNavigationRouteNames.seoRequestsExtend,
-        params: {"productIds": ids, "characteristics": selected});
+
+    Navigator.of(context).pushNamed(
+      MainNavigationRouteNames.seoRequestsExtend,
+      arguments: {"productIds": ids, "characteristics": selected},
+    );
   }
 
   void onNavigateToProductScreen(int productId, int productPrice) {
-    onNavigateTo(
-        routeName: MainNavigationRouteNames.productScreen,
-        params: {"productId": productId, "productPrice": productPrice});
+    print("Navigate to product screen $productId $productPrice");
+    Navigator.of(context).pushNamed(
+      MainNavigationRouteNames.productScreen,
+      arguments: {"productId": productId, "productPrice": productPrice},
+    );
   }
 
   void onNavigateBack() {
-    onNavigateTo(routeName: MainNavigationRouteNames.choosingNicheScreen);
+    Navigator.of(context).pop();
   }
 
   void onNavigateToEmptySubject() {
-    onNavigateTo(routeName: MainNavigationRouteNames.emptySubjectsScreen);
+    tableViewController?.dispose();
+
+    Navigator.of(context)
+        .pushNamed(MainNavigationRouteNames.emptySubjectsScreen);
   }
 
   void onNavigateToSubscriptionScreen() {
-    onNavigateTo(routeName: MainNavigationRouteNames.subscriptionScreen);
+    Navigator.of(context).pushNamed(
+      MainNavigationRouteNames.subscriptionScreen,
+    );
   }
 }

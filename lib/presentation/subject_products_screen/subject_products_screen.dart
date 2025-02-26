@@ -62,8 +62,8 @@ class _SubjectProductsScreenState extends State<SubjectProductsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      if (!model.loading) _Header(),
-                      model.loading
+                      if (!model.isLoading) _Header(),
+                      model.isLoading
                           ? Shimmer(
                               gradient:
                                   Theme.of(context).colorScheme.shimmerGradient,
@@ -95,7 +95,7 @@ class _SubjectProductsScreenState extends State<SubjectProductsScreen> {
                                 maxWidth: maxWidth,
                               ),
                             ),
-                      model.loading
+                      model.isLoading
                           ? Shimmer(
                               gradient:
                                   Theme.of(context).colorScheme.shimmerGradient,
@@ -129,7 +129,7 @@ class _SubjectProductsScreenState extends State<SubjectProductsScreen> {
                             ),
                       if (isFilterVisible)
                         _buildFiltersWidget(context, isMobileOrLaptop),
-                      model.loading
+                      model.isLoading
                           ? Shimmer(
                               gradient:
                                   Theme.of(context).colorScheme.shimmerGradient,
@@ -189,7 +189,7 @@ class _SubjectProductsScreenState extends State<SubjectProductsScreen> {
           // Desktop //////////////////////////////////////////////////////////
           return Column(
             children: [
-              if (!model.loading) _Header(),
+              if (!model.isLoading) _Header(),
               if (!isFilterVisible)
                 Flexible(
                   flex: 1,
@@ -197,7 +197,7 @@ class _SubjectProductsScreenState extends State<SubjectProductsScreen> {
                     children: [
                       Flexible(
                         flex: 1,
-                        child: model.loading
+                        child: model.isLoading
                             ? Shimmer(
                                 gradient: Theme.of(context)
                                     .colorScheme
@@ -231,7 +231,7 @@ class _SubjectProductsScreenState extends State<SubjectProductsScreen> {
                       ),
                       Flexible(
                         flex: 1,
-                        child: model.loading
+                        child: model.isLoading
                             ? Shimmer(
                                 gradient: Theme.of(context)
                                     .colorScheme
@@ -277,7 +277,7 @@ class _SubjectProductsScreenState extends State<SubjectProductsScreen> {
                 _buildFiltersWidget(context, isMobileOrLaptop),
               Flexible(
                 flex: 2,
-                child: model.loading
+                child: model.isLoading
                     ? Shimmer(
                         gradient: Theme.of(context).colorScheme.shimmerGradient,
                         child: Container(
@@ -1163,20 +1163,11 @@ class _TableWidgetState extends State<_TableWidget> {
                             backgroundColor: theme.colorScheme.secondary,
                             child: Icon(Icons.analytics,
                                 color: theme.colorScheme.onSecondary),
-                            label: "Расширение запросов",
+                            label: "SEO-анализ",
                             labelStyle: TextStyle(
                                 fontSize: theme.textTheme.bodyLarge!.fontSize),
                             onTap: () =>
                                 model.navigateToSeoRequestsExtendScreen(),
-                          ),
-                          SpeedDialChild(
-                            backgroundColor: theme.colorScheme.secondary,
-                            child: Icon(Icons.visibility,
-                                color: theme.colorScheme.onSecondary),
-                            label: "Отслеживать",
-                            labelStyle: TextStyle(
-                                fontSize: theme.textTheme.bodyLarge!.fontSize),
-                            onTap: () => model.saveProducts(),
                           ),
                         ],
                       ),

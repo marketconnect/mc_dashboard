@@ -3,78 +3,72 @@ START SPECIFICATION:
 # Technical Specification
 
 ## System Overview
-The `mc_dashboard` system is a multi-platform application built using Flutter, designed to provide a comprehensive dashboard for managing various business operations. The system integrates Firebase for authentication and data storage, Hive for local storage, and external APIs for data retrieval. The main components include the frontend (Flutter UI), backend services (Firebase, external APIs), local storage (Hive), and utility functions for text processing and similarity calculations.
+The system is a multi-platform Flutter application designed to provide a comprehensive dashboard for managing various business operations. The application integrates with Firebase for authentication and backend services, utilizes local storage for data persistence, and interacts with external APIs for fetching and processing data. The main components include the frontend (Flutter UI), backend services (Firebase), local storage (Hive), and external APIs (custom and third-party).
 
 ## Core Functionality
 
-### 1. Authentication and User Management
-**Importance Score: 95**
-- **Files**: `lib/domain/services/auth_service.dart`, `lib/presentation/login_screen/login_view_model.dart`
-- **Primary Functions**:
-  - `signIn(email, password)` - Handles user sign-in.
-  - `register(email, password)` - Handles user registration.
-  - `resetPassword(email)` - Handles password reset.
-- **Core Data Models**:
-  - `User` - Represents a user with properties like `email`, `uid`.
-- **Main Connection Points**:
-  - Interacts with Firebase Auth for authentication.
-  - `LoginViewModel` manages UI states and user interactions.
+### Dependency Injection Container (`lib/di/di_container.dart`)
+- **Importance Score: 90**
+- **Primary Exported Functions and Classes:**
+  - `makeAppFactory`: Returns an instance of `_AppFactoryDefault`, which creates the main application widget.
+  - `_AppFactoryDefault`: Implements `AppFactory` and utilizes the dependency injection container to create the main application widget.
+  - `_DIContainer`: Central container providing instances of repositories, API clients, services, and view models.
+- **Core Behavior and Data Flow:**
+  - **Repositories**: Provides instances like `ProductCostRepository`, `McAuthRepo`, `CardSourceRepo`, and `SecureTokenStorageRepo`.
+  - **API Clients**: Provides instances like `AuthApiClient`, `ProductsApiClient`, `TariffsApiClient`, and `WbProductsApiClient`.
+  - **Services**: Provides instances like `DetailedOrdersService`, `SubjectsSummaryService`, `StocksService`, `OrderService`, and `AuthService`.
+  - **View Models**: Provides instances like `ChoosingNicheViewModel`, `SubjectProductsViewModel`, `EmptySubjectViewModel`, and `ProductViewModel`.
+- **Main Connection Points:**
+  - Repositories are connected to services and view models for data storage and retrieval.
+  - API Clients are connected to services to fetch data from external APIs.
+  - Services are connected to view models to provide business logic and data processing.
+  - View Models are connected to screens to provide data and logic for UI components.
 
-### 2. Data Retrieval and Management
-**Importance Score: 90**
-- **Files**: `lib/domain/services/detailed_orders_service.dart`, `lib/infrastructure/api/detailed_orders.dart`
-- **Primary Functions**:
-  - `fetchDetailedOrders(params)` - Retrieves detailed order data.
-- **Core Data Models**:
-  - `DetailedOrder` - Represents an order with properties like `orderId`, `products`, `total`.
-- **Main Connection Points**:
-  - Interacts with external APIs via `DetailedOrdersApiClient`.
+### Navigation (`lib/routes/main_navigation.dart` and `lib/routes/main_navigation_route_names.dart`)
+- **Importance Score: 85**
+- **Primary Exported Classes:**
+  - `ScreenFactory`: Abstract class defining methods to create various screens.
+  - `MainNavigation`: Implements `AppNavigation` and handles route generation based on `RouteSettings`.
+- **Core Behavior and Data Flow:**
+  - `onGenerateRoute`: Method in `MainNavigation` that generates routes based on `RouteSettings`. It uses the `ScreenFactory` to create appropriate screens.
+- **Main Connection Points:**
+  - `ScreenFactory` is connected to `MainNavigation` to provide screen instances.
+  - `RouteSettings` is used by `MainNavigation` to determine which route to generate.
+- **Route Names (`lib/routes/main_navigation_route_names.dart`):**
+  - Provides constants for various route names used throughout the application, ensuring consistency and ease of maintenance.
 
-### 3. Local Storage and State Management
-**Importance Score: 85**
-- **Files**: `lib/core/base_classes/view_model_base_class.dart`, `lib/infrastructure/repositories/local_storage.dart`
-- **Primary Functions**:
-  - `saveData(key, value)` - Saves data to local storage.
-  - `getData(key)` - Retrieves data from local storage.
-- **Core Data Models**:
-  - `LocalStorageItem` - Represents an item stored locally with properties like `key`, `value`.
-- **Main Connection Points**:
-  - Utilizes Hive for local data storage.
+### Firebase Configuration and Initialization (`lib/firebase_options.dart` and `lib/main.dart`)
+- **Importance Score: 90**
+- **DefaultFirebaseOptions Class:**
+  - Provides platform-specific Firebase configuration options.
+  - Key Methods: `get currentPlatform`: Returns the appropriate `FirebaseOptions` based on the current platform.
+  - Key Properties: `web`, `android`, `ios`, `macos`, `windows`: Static constants holding platform-specific `FirebaseOptions`.
+- **AppFactory Abstract Class:**
+  - Defines a contract for creating the application widget.
+  - Key Methods: `Future<Widget> makeApp()`: Abstract method to be implemented by concrete factory classes.
+- **main Function:**
+  - Entry point of the application.
+  - Key Steps:
+    - Initializes Flutter bindings.
+    - Initializes Firebase using platform-specific options.
+    - Sets default Firebase language.
+    - Initializes Hive for local data storage and registers adapters.
+    - Opens Hive boxes for product costs and tokens.
+    - Creates and runs the application widget using `appFactory`.
 
-### 4. Text Similarity Calculation
-**Importance Score: 80**
-- **Files**: `lib/core/utils/similarity.dart`
-- **Primary Functions**:
-  - `calculateCosineSimilarity(text1, text2)` - Computes cosine similarity between two texts.
-- **Core Data Models**:
-  - N/A
-- **Main Connection Points**:
-  - Used in features requiring text comparison.
-
-### 5. Dependency Injection
-**Importance Score: 85**
-- **Files**: `lib/di/di_container.dart`
-- **Primary Functions**:
-  - `register<T>(T instance)` - Registers a service or repository.
-  - `resolve<T>()` - Resolves a registered service or repository.
-- **Core Data Models**:
-  - N/A
-- **Main Connection Points**:
-  - Manages the lifecycle and provision of services and repositories.
+### Deployment Script (`deploy.sh`)
+- **Importance Score: 100**
+- **Core Behavior:**
+  - Builds the Flutter web application in release mode.
+  - Clears the Yandex bucket to ensure a clean slate for the new deployment.
+  - Uploads files to Yandex Object Storage with correct Content-Type headers.
 
 ## Architecture
+The system follows a modular architecture with clear separation of concerns. The dependency injection container (`_DIContainer`) centralizes the management of dependencies, ensuring that repositories, API clients, services, and view models are easily accessible throughout the application. 
 
-### Data Flow Patterns
-**Importance Score: 90**
-- Describes how data flows through the system for key functionalities like authentication, data retrieval, local storage, and text similarity.
-- Data enters the system through user interactions (e.g., login, data requests) and external APIs.
-- It is processed by services (e.g., `AuthService`, `DetailedOrdersService`) and stored locally using Hive.
-- The processed data is then used to update the UI and provide feedback to the user.
+Navigation is handled by `MainNavigation`, which uses `RouteSettings` to generate routes dynamically. This allows for flexible and maintainable routing logic.
 
-### Component Interaction
-**Importance Score: 85**
-- Details how different components (Frontend, Backend Services, Local Storage, External APIs) interact to provide the system's core functionalities.
-- The frontend components (Flutter UI) interact with backend services (Firebase, external APIs) to fetch and display data.
-- Local storage (Hive) is used to cache data and provide offline capabilities.
-- Utility functions (e.g., text similarity calculations) are used to enhance the functionality of the system.
+Firebase integration is managed through `DefaultFirebaseOptions`, which provides platform-specific configurations. The `main` function initializes the application, setting up Firebase, local storage, and the main widget factory.
+
+The deployment process is automated via `deploy.sh`, which builds the web application, clears the deployment bucket, and uploads the build artifacts with correct Content-Type headers, ensuring the web application is served correctly.
 END SPECIFICATION

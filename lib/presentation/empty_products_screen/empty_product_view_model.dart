@@ -1,14 +1,11 @@
+import 'package:flutter/cupertino.dart';
 import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
 import 'package:mc_dashboard/core/utils/basket_num.dart';
 import 'package:mc_dashboard/routes/main_navigation_route_names.dart';
 
 class EmptyProductViewModel extends ViewModelBase {
-  EmptyProductViewModel({required super.context, required this.onNavigateTo});
-  // Navigation
-  final void Function({
-    required String routeName,
-    Map<String, dynamic>? params,
-  }) onNavigateTo;
+  EmptyProductViewModel({required super.context});
+
   // Fields
   String searchQuery = '';
   String? searchedProductName;
@@ -39,15 +36,13 @@ class EmptyProductViewModel extends ViewModelBase {
 
   // Navigation
   void onNavigateBack() {
-    onNavigateTo(
-      routeName: MainNavigationRouteNames.choosingNicheScreen,
-    );
+    Navigator.of(context).pop();
   }
 
   void onNavigateToProductScreen(int productId, int productPrice) {
-    onNavigateTo(
-      routeName: MainNavigationRouteNames.productScreen,
-      params: {"productId": productId, "productPrice": productPrice},
+    Navigator.of(context).pushNamed(
+      MainNavigationRouteNames.productScreen,
+      arguments: {'productId': productId, 'productPrice': productPrice},
     );
   }
 }

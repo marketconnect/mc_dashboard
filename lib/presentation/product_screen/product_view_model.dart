@@ -13,7 +13,6 @@ import 'package:mc_dashboard/domain/entities/kw_lemmas.dart';
 import 'package:mc_dashboard/domain/entities/lemmatize.dart';
 import 'package:mc_dashboard/domain/entities/normquery_product.dart';
 import 'package:mc_dashboard/domain/entities/order.dart';
-import 'package:mc_dashboard/domain/entities/saved_product.dart';
 import 'package:mc_dashboard/domain/entities/stock.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/domain/entities/tariff.dart';
@@ -87,13 +86,6 @@ abstract class ProductViewModelSavedKeyPhrasesService {
   });
 }
 
-abstract class ProductViewModelSavedProductsService {
-  Future<Either<AppErrorBase, void>> addProducts({
-    required String token,
-    required List<SavedProduct> products,
-  });
-}
-
 abstract class ProductViewModelTariffsService {
   Future<Either<AppErrorBase, List<Tariff>>> fetchTariffs({
     required String token,
@@ -125,18 +117,13 @@ class ProductViewModel extends ViewModelBase {
       required this.kwLemmaService,
       required this.detailedOrdersService,
       required this.lemmatizeService,
-      required this.savedKeyPhrasesService,
-      required this.onSaveKeyPhrasesToTrack,
-      required this.savedProductsService,
-      required this.onNavigateTo,
-      required this.prevScreen,
       required this.tariffsService,
       required this.apiKeyService,
       required this.wbProductsService,
       required this.productPrice});
   final int productId;
   final int productPrice;
-  final String prevScreen;
+
   final ProductViewModelStocksService stocksService;
   final ProductViewModelApiKeyService apiKeyService;
   final ProductViewModelTariffsService tariffsService;
@@ -148,15 +135,6 @@ class ProductViewModel extends ViewModelBase {
   final ProductViewModelKwLemmaService kwLemmaService;
   final ProductViewModelLemmatizeService lemmatizeService;
   final ProductViewModelDetailedOrdersService detailedOrdersService;
-  final ProductViewModelSavedKeyPhrasesService savedKeyPhrasesService;
-  final ProductViewModelSavedProductsService savedProductsService;
-  final void Function(List<String> keyPhrase) onSaveKeyPhrasesToTrack;
-
-  // Navigation
-  final void Function({
-    required String routeName,
-    Map<String, dynamic>? params,
-  }) onNavigateTo;
 
   // Fields ////////////////////////////////////////////////////////////////////
 
@@ -359,6 +337,7 @@ class ProductViewModel extends ViewModelBase {
   // Methods ///////////////////////////////////////////////////////////////////
   @override
   Future<void> asyncInit() async {
+    print("Init product view model");
     // heightOfScreen = MediaQuery.of(context).size.height;
     _basketNum = getBasketNum(productId);
 
@@ -634,104 +613,6 @@ class ProductViewModel extends ViewModelBase {
     return 'Заголовок:${(titleSim * 100).toStringAsFixed(1)}% Описание:${(descSim * 100).toStringAsFixed(1)}% Характеристики:${(charSim * 100).toStringAsFixed(1)}%; Место:$pos';
   }
 
-  Future<void> saveKeyPhrases(List<String> keyPhrasesStr) async {
-    if (_tokenInfo == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Сначала войдите в аккаунт'),
-      ));
-      return;
-    }
-    //
-    final result = await savedKeyPhrasesService.addPhrases(
-        token: _tokenInfo!.token,
-        phrases: keyPhrasesStr
-            .map((e) => KeyPhrase(phraseText: e, marketPlace: 'wb'))
-            .toList());
-
-    if (result.isLeft()) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Произошла ошибка'),
-        ));
-      }
-      return;
-    } else {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text(
-            'Ключевые фразы сохранены',
-            style: TextStyle(fontSize: 16),
-          ),
-        ));
-      }
-    }
-
-    // Update mailing keyphrases screen
-    onSaveKeyPhrasesToTrack(keyPhrasesStr);
-  }
-
-  Future<void> saveProducts() async {
-    if (isFree) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Чтобы получать рассылку, вы должны быть подписчиком.',
-            style: TextStyle(
-                fontSize: Theme.of(context).textTheme.bodyLarge!.fontSize)),
-        action: SnackBarAction(
-          label: 'Оформить подписку',
-          onPressed: () {
-            onNavigateToSubscriptionScreen();
-          },
-        ),
-        duration: Duration(seconds: 10),
-      ));
-      return;
-    } // get selected orders
-
-    // prepare products to save
-    SavedProduct productToSave = SavedProduct(
-        productId: productId.toString(),
-        sellerId: _supplierId.toString(),
-        sellerName: "",
-        brandId: "",
-        brandName: _brand,
-        marketplaceType: "wb",
-        imageUrl: _images[0],
-        name: name);
-
-    //   final imageUrlProductName = _productImageProductName[item.productId];
-    //   if (imageUrlProductName != null) {
-    //     productsToSave.add(SavedProduct(
-    //         productId: item.productId.toString(),
-    //         sellerId: item.supplierId.toString(),
-    //         sellerName: item.supplier,
-    //         brandId: item.brandId.toString(),
-    //         brandName: item.brand,
-    //         marketplaceType: "wb",
-    //         imageUrl: imageUrlProductName.$1,
-    //         name: imageUrlProductName.$2));
-    //   }
-    // }
-
-    // save products
-    if (_tokenInfo == null) {
-      return;
-    }
-    await savedProductsService
-        .addProducts(token: _tokenInfo!.token, products: [productToSave]);
-
-    // callback to update the SavedProductsScreen
-
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text(
-          'Товар успешно добавлен',
-          style: TextStyle(fontSize: 16),
-        ),
-        duration: Duration(seconds: 3),
-      ));
-    }
-  }
-
   Future<List<Tariff>?> loadTariffs(String token) async {
     // Получаем токен Wildberries через ApiKeyService
 
@@ -751,21 +632,26 @@ class ProductViewModel extends ViewModelBase {
 
   // Navigation
   void onNavigateToEmptyProductScreen() {
-    onNavigateTo(routeName: MainNavigationRouteNames.emptyProductScreen);
+    Navigator.of(context).pushNamed(
+      MainNavigationRouteNames.emptyProductScreen,
+    );
   }
 
   void onNavigateBack() {
-    onNavigateTo(routeName: prevScreen);
+    Navigator.of(context).pop();
   }
 
   void onNavigateToSubjectProductsScreen() {
-    onNavigateTo(
-        routeName: MainNavigationRouteNames.subjectProductsScreen,
-        params: {'subjectId': _subjectId, 'subjectName': _subjectName});
+    Navigator.of(context).pushNamed(
+      MainNavigationRouteNames.subjectProductsScreen,
+      arguments: {'subjectId': _subjectId, 'subjectName': _subjectName},
+    );
   }
 
   void onNavigateToSubscriptionScreen() {
-    onNavigateTo(routeName: MainNavigationRouteNames.subscriptionScreen);
+    Navigator.of(context).pushNamed(
+      MainNavigationRouteNames.subscriptionScreen,
+    );
   }
 }
 

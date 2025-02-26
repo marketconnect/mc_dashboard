@@ -27,87 +27,87 @@ class SubscriptionScreen extends StatelessWidget {
                       : Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const SizedBox(height: 24),
-                            Text(
-                              'Информация о подписке',
-                              textAlign: TextAlign.center,
-                              style: theme.textTheme.headlineSmall?.copyWith(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: theme.colorScheme.primary,
-                              ),
-                            ),
+                            // const SizedBox(height: 24),
+                            // Text(
+                            //   'Информация о подписке',
+                            //   textAlign: TextAlign.center,
+                            //   style: theme.textTheme.headlineSmall?.copyWith(
+                            //     fontSize: 24,
+                            //     fontWeight: FontWeight.bold,
+                            //     color: theme.colorScheme.primary,
+                            //   ),
+                            // ),
+                            // const SizedBox(height: 16),
+                            // const SizedBox(height: 16),
+                            // Text(
+                            //   'Что вы получаете:',
+                            //   style: theme.textTheme.titleMedium?.copyWith(
+                            //     fontSize: 18,
+                            //     fontWeight: FontWeight.w600,
+                            //     color: theme.colorScheme.onSurface,
+                            //   ),
+                            // ),
                             const SizedBox(height: 16),
+                            // Text(
+                            //   'Email рассылка с актуальной аналитикой и уведомлениями:',
+                            //   style: theme.textTheme.titleMedium?.copyWith(
+                            //     fontSize: 16,
+                            //     fontWeight: FontWeight.w500,
+                            //     color: theme.colorScheme.onSurface,
+                            //   ),
+                            // ),
+                            // const SizedBox(height: 16),
+                            // _buildBenefitItem(
+                            //   context,
+                            //   'Анализ позиций',
+                            //   'Актуальные данные о месте товаров в поисковой выдаче (глубина 3 страницы).',
+                            // ),
+                            // _buildBenefitItem(
+                            //   context,
+                            //   'Уведомления о ценах',
+                            //   'Отслеживание изменений ваших цен и цен конкурентов.',
+                            // ),
+                            // _buildBenefitItem(
+                            //   context,
+                            //   'Тренды',
+                            //   'Популярные запросы и изменения в спросе внутри ваших категорий.',
+                            // ),
+                            // _buildBenefitItem(
+                            //   context,
+                            //   'Акции',
+                            //   'Информация о входе и выходе ваших товаров и конкурентов из акций.',
+                            // ),
+                            // _buildBenefitItem(
+                            //   context,
+                            //   'Изменения карточек',
+                            //   'Уведомления о корректировках в описаниях, заголовках и характеристиках товаров.',
+                            // ),
+                            // _buildBenefitItem(
+                            //   context,
+                            //   'Изменение ассортимента',
+                            //   'Добавление новых товаров конкурентами или исчезновение существующих.',
+                            // ),
+                            // const SizedBox(height: 24),
+                            // const SizedBox(height: 24),
+                            // Text(
+                            //   'Всего 1000 рублей в месяц за полную картину данных по вашим категориям и товарам.',
+                            //   textAlign: TextAlign.center,
+                            //   style: theme.textTheme.titleMedium?.copyWith(
+                            //     fontSize: 18,
+                            //     fontWeight: FontWeight.bold,
+                            //     color: Colors.green,
+                            //   ),
+                            // ),
                             const SizedBox(height: 16),
-                            Text(
-                              'Что вы получаете:',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Email рассылка с актуальной аналитикой и уведомлениями:',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            _buildBenefitItem(
-                              context,
-                              'Анализ позиций',
-                              'Актуальные данные о месте товаров в поисковой выдаче (глубина 3 страницы).',
-                            ),
-                            _buildBenefitItem(
-                              context,
-                              'Уведомления о ценах',
-                              'Отслеживание изменений ваших цен и цен конкурентов.',
-                            ),
-                            _buildBenefitItem(
-                              context,
-                              'Тренды',
-                              'Популярные запросы и изменения в спросе внутри ваших категорий.',
-                            ),
-                            _buildBenefitItem(
-                              context,
-                              'Акции',
-                              'Информация о входе и выходе ваших товаров и конкурентов из акций.',
-                            ),
-                            _buildBenefitItem(
-                              context,
-                              'Изменения карточек',
-                              'Уведомления о корректировках в описаниях, заголовках и характеристиках товаров.',
-                            ),
-                            _buildBenefitItem(
-                              context,
-                              'Изменение ассортимента',
-                              'Добавление новых товаров конкурентами или исчезновение существующих.',
-                            ),
-                            const SizedBox(height: 24),
-                            const SizedBox(height: 24),
-                            Text(
-                              'Всего 1000 рублей в месяц за полную картину данных по вашим категориям и товарам.',
-                              textAlign: TextAlign.center,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Подключите подписку, чтобы всегда быть в курсе важных изменений и не упустить новые возможности для роста.',
-                              textAlign: TextAlign.center,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontSize: 16,
-                                fontWeight: FontWeight.normal,
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
+                            // Text(
+                            //   'Подключите подписку, чтобы всегда быть в курсе важных изменений и не упустить новые возможности для роста.',
+                            //   textAlign: TextAlign.center,
+                            //   style: theme.textTheme.bodyMedium?.copyWith(
+                            //     fontSize: 16,
+                            //     fontWeight: FontWeight.normal,
+                            //     color: theme.colorScheme.onSurfaceVariant,
+                            //   ),
+                            // ),
                             const SizedBox(height: 16),
                             const SizedBox(height: 24),
                             ElevatedButton(

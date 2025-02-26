@@ -23,7 +23,7 @@ class ChoosingNicheScreen extends StatelessWidget {
         Theme.of(context).colorScheme.surfaceContainerHighest;
     final model = context.watch<ChoosingNicheViewModel>();
     final theme = Theme.of(context);
-    final isLoading = model.loading;
+    final isLoading = model.isLoading;
     final toggleExpandedContainer = model.toggleExpandedContainer;
     final expandedContainer = model.expandedContainer;
     final isFilterVisible = model.isFilterVisible;
@@ -450,7 +450,7 @@ class PieChartWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final model = context.watch<ChoosingNicheViewModel>();
-    final loading = model.loading;
+    final loading = model.isLoading;
     final error = model.error;
     final selectedParentName =
         model.selectedParentName ?? 'Родительские категории';
@@ -692,7 +692,7 @@ class _TableWidgetState extends State<TableWidget> {
     final isAscending = model.isAscending;
     final theme = Theme.of(context);
     final toggleFilterVisibility = model.toggleFilterVisibility;
-    final onNavigateToSubjectProducts = model.onNavigateToSubjectProducts;
+    final onNavigateToSubjectProducts = model.onNavigateToSubjectProductsScreen;
     return LayoutBuilder(builder: (context, constraints) {
       final maxWidth = constraints.maxWidth;
       final maxHeight = constraints.maxHeight;
@@ -741,6 +741,7 @@ class _TableWidgetState extends State<TableWidget> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                    SizedBox(width: 16.0),
                   ],
                 ),
                 TextButton(
@@ -776,7 +777,7 @@ class _TableWidgetState extends State<TableWidget> {
                     scrollToSubjectName();
                     return contentBuilder(context, (context, columnIndex) {
                       final headers = [
-                        "Предметы",
+                        "Категория",
                         "Выручка (₽)",
                         "Товары",
                         "Кол-во заказов",
@@ -825,6 +826,7 @@ class _TableWidgetState extends State<TableWidget> {
                                             maxLines: 2,
                                             softWrap: true,
                                           ),
+
                                           // IconButton(
                                           //   icon: Icon(
                                           //     model.isSearchVisible
@@ -922,7 +924,8 @@ class _TableWidgetState extends State<TableWidget> {
                           onTap: () {
                             if (columnIndex == 6) {
                               onNavigateToSubjectProducts(
-                                  item.subjectId, item.subjectName);
+                                  selectedSubjectId: item.subjectId,
+                                  selectedSubjectName: item.subjectName);
                               return;
                             }
                             model.updateTopSubjectValue(

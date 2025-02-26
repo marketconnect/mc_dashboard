@@ -147,15 +147,6 @@ class _ProductScreenState extends State<ProductScreen> {
                                       color: theme.colorScheme.primary,
                                       tooltip: 'Поиск по артикулу',
                                     ),
-                                    IconButton(
-                                      onPressed: () {
-                                        model.saveProducts();
-                                      },
-                                      icon: const Icon(Icons.email_outlined,
-                                          size: 24),
-                                      color: theme.colorScheme.primary,
-                                      tooltip: 'Добавить в рассылку',
-                                    ),
                                   ],
                                 ),
                               ],
@@ -327,14 +318,14 @@ class _ProductScreenState extends State<ProductScreen> {
                               ],
                             ),
                             const SizedBox(height: 24),
-                            if (!model.loading)
+                            if (!model.isLoading)
                               ConstrainedBox(
                                 constraints:
                                     const BoxConstraints(maxWidth: 1016),
                                 child: StocksSectionWidget(),
                               ),
                             const SizedBox(height: 24),
-                            if (!model.loading)
+                            if (!model.isLoading)
                               ConstrainedBox(
                                 constraints:
                                     const BoxConstraints(maxWidth: 1016),
@@ -402,7 +393,7 @@ class _ProductScreenState extends State<ProductScreen> {
                                 ),
                             ],
                             const SizedBox(height: 24),
-                            if (!model.loading &&
+                            if (!model.isLoading &&
                                 model.unusedQueriesLoaded) ...[
                               Text(
                                 "Упущенные запросы",
@@ -656,7 +647,7 @@ class _ProductScreenState extends State<ProductScreen> {
     final theme = Theme.of(context);
     final model = context.read<ProductViewModel>();
 
-    return model.loading
+    return model.isLoading
         ? Shimmer(
             gradient: Theme.of(context).colorScheme.shimmerGradient,
             child: Container(
@@ -728,7 +719,7 @@ class _ProductScreenState extends State<ProductScreen> {
     final theme = Theme.of(context);
     final model = context.read<ProductViewModel>();
 
-    return model.loading
+    return model.isLoading
         ? Shimmer(
             gradient: Theme.of(context).colorScheme.shimmerGradient,
             child: Container(
@@ -1709,9 +1700,9 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final model = context.watch<ProductViewModel>();
-    final saveKeyPhrases = model.saveKeyPhrases;
+
     final normqueryProducts = model.normqueries;
-    final isFree = model.isFree;
+
     if (normqueryProducts.isEmpty) {
       return _noDataPlaceholder();
     }
@@ -1918,48 +1909,12 @@ class _NormqueryTableWidgetState extends State<NormqueryTableWidget> {
                       );
                     },
                   ),
-                  SpeedDialChild(
-                    backgroundColor: theme.colorScheme.secondary,
-                    child: Icon(Icons.visibility,
-                        color: theme.colorScheme.onSecondary),
-                    label: "Отслеживать",
-                    labelStyle: TextStyle(
-                        fontSize: theme.textTheme.bodyLarge!.fontSize),
-                    onTap: () {
-                      if (isFree) {
-                        _showSubscribeAlert(context, model);
-                        return;
-                      }
-                      final selectedItems = selectedIndices
-                          .map((index) => normqueryProducts[index])
-                          .toList();
-
-                      saveKeyPhrases(selectedItems
-                          .map((product) => product.normquery)
-                          .toList());
-                    },
-                  ),
                 ],
               ),
             ),
         ],
       );
     });
-  }
-
-  void _showSubscribeAlert(BuildContext context, ProductViewModel model) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('Чтобы получать рассылку, вы должны быть подписчиком.',
-          style: TextStyle(
-              fontSize: Theme.of(context).textTheme.bodyLarge!.fontSize)),
-      action: SnackBarAction(
-        label: 'Оформить подписку',
-        onPressed: () {
-          model.onNavigateToSubscriptionScreen();
-        },
-      ),
-      duration: Duration(seconds: 10),
-    ));
   }
 
   Widget _noDataPlaceholder() {
@@ -2199,9 +2154,9 @@ class _UnusedQueryTableWidgetState extends State<UnusedQueryTableWidget> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final model = context.watch<ProductViewModel>();
-    final isFree = model.isFree;
+
     final unusedQueries = model.unusedNormqueries;
-    final saveKeyPhrases = model.saveKeyPhrases;
+
     if (unusedQueries.isEmpty) {
       return _noDataPlaceholder();
     }
@@ -2400,47 +2355,11 @@ class _UnusedQueryTableWidgetState extends State<UnusedQueryTableWidget> {
                     );
                   },
                 ),
-                SpeedDialChild(
-                  backgroundColor: theme.colorScheme.secondary,
-                  child: Icon(Icons.visibility,
-                      color: theme.colorScheme.onSecondary),
-                  label: "Отслеживать",
-                  labelStyle:
-                      TextStyle(fontSize: theme.textTheme.bodyLarge!.fontSize),
-                  onTap: () {
-                    if (isFree) {
-                      _showSubscribeAlert(context, model);
-                      return;
-                    }
-                    final selectedItems = selectedIndices
-                        .map((index) => unusedQueries[index])
-                        .toList();
-
-                    saveKeyPhrases(selectedItems
-                        .map((product) => product.normquery)
-                        .toList());
-                  },
-                ),
               ],
             ),
           ),
       ],
     );
-  }
-
-  void _showSubscribeAlert(BuildContext context, ProductViewModel model) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('Чтобы получать рассылку, вы должны быть подписчиком.',
-          style: TextStyle(
-              fontSize: Theme.of(context).textTheme.bodyLarge!.fontSize)),
-      action: SnackBarAction(
-        label: 'Оформить подписку',
-        onPressed: () {
-          model.onNavigateToSubscriptionScreen();
-        },
-      ),
-      duration: Duration(seconds: 10),
-    ));
   }
 
   Widget _noDataPlaceholder() {

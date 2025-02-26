@@ -1,32 +1,67 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:mc_dashboard/.env.dart';
 import 'package:mc_dashboard/domain/entities/product_item.dart';
-import 'package:retrofit/retrofit.dart';
-import 'package:dio/dio.dart';
 
-part 'products.g.dart';
+class CacheEntry<T> {
+  final T data;
+  final DateTime expiration;
 
-@RestApi(baseUrl: ApiSettings.baseUrl)
-abstract class ProductsApiClient {
-  factory ProductsApiClient(Dio dio, {String baseUrl}) = _ProductsApiClient;
+  CacheEntry({required this.data, required this.expiration});
+}
 
-  @GET("/products")
+class ProductsApiClient {
+  final String baseUrl;
+  final Map<String, CacheEntry<ProductsResponse>> _cache = {};
+
+  ProductsApiClient({String? baseUrl})
+      : baseUrl = baseUrl ?? ApiSettings.baseUrl;
+
   Future<ProductsResponse> getProducts({
-    @Query("brand_id") int? brandId,
-    @Query("subject_id") int? subjectId,
-    @Query("supplier_id") int? supplierId,
-    @Query("page") int? page,
-    @Query("page_size") int? pageSize,
-  });
+    int? brandId,
+    int? subjectId,
+    int? supplierId,
+    int? page,
+    int? pageSize,
+  }) async {
+    final cacheKey = 'products-$brandId-$subjectId-$supplierId-$page-$pageSize';
+    final now = DateTime.now();
+    final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59);
+
+    if (_cache.containsKey(cacheKey) &&
+        _cache[cacheKey]!.expiration.isAfter(now)) {
+      return _cache[cacheKey]!.data;
+    }
+
+    final uri = Uri.parse('$baseUrl/products').replace(queryParameters: {
+      if (brandId != null) 'brand_id': brandId.toString(),
+      if (subjectId != null) 'subject_id': subjectId.toString(),
+      if (supplierId != null) 'supplier_id': supplierId.toString(),
+      if (page != null) 'page': page.toString(),
+      if (pageSize != null) 'page_size': pageSize.toString(),
+    });
+
+    final response = await http.get(uri, headers: {
+      'Content-Type': 'application/json',
+    });
+
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(utf8.decode(response.bodyBytes));
+      final result = ProductsResponse.fromJson(jsonData);
+      _cache[cacheKey] = CacheEntry(data: result, expiration: endOfDay);
+      return result;
+    } else {
+      throw Exception(
+          'Ошибка получения продуктов, статус: ${response.statusCode}');
+    }
+  }
 }
 
 class ProductsResponse {
   final Pagination pagination;
   final List<ProductItem> products;
 
-  ProductsResponse({
-    required this.pagination,
-    required this.products,
-  });
+  ProductsResponse({required this.pagination, required this.products});
 
   factory ProductsResponse.fromJson(Map<String, dynamic> json) {
     return ProductsResponse(

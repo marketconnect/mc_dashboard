@@ -8,3 +8,10 @@ build_runner:
 
 build_runner_delete:
 	dart pub run build_runner build --delete-conflicting-outputs
+
+get:
+	flutter pub get
+
+gen:
+	flutter pub get
+	flutter pub run build_runner build --delete-conflicting-outputs

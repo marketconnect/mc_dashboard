@@ -25,7 +25,6 @@ class SeoRequestsExtendViewModel extends ViewModelBase {
     required this.productIds,
     required this.normqueryService,
     required this.authService,
-    required this.onNavigateTo,
     required this.charactiristics,
   });
 
@@ -33,11 +32,7 @@ class SeoRequestsExtendViewModel extends ViewModelBase {
   final List<String> charactiristics;
   final SeoRequestsExtendNormqueryService normqueryService;
   final SeoRequestsExtendAuthService authService;
-  // Navigation
-  final void Function({
-    required String routeName,
-    Map<String, dynamic>? params,
-  }) onNavigateTo;
+
   //  fields ///////////////////////////////////////////////////////////////////
   TokenInfo? _tokenInfo;
   bool get isFree => _tokenInfo == null || _tokenInfo!.type == "free";
@@ -148,7 +143,7 @@ class SeoRequestsExtendViewModel extends ViewModelBase {
 
   // Navigation
   void onNavigateBack() {
-    onNavigateTo(routeName: MainNavigationRouteNames.subjectProductsScreen);
+    Navigator.of(context).pop();
   }
 
   void onPaymentComplete() {

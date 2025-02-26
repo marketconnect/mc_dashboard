@@ -4,6 +4,7 @@ import 'package:material_table_view/material_table_view.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
 import 'package:mc_dashboard/domain/entities/subject_summary_item.dart';
+import 'package:mc_dashboard/routes/main_navigation_route_names.dart';
 
 abstract class ChoosingNicheViewModelSubjectsSummaryService {
   Future<Either<AppErrorBase, List<SubjectSummaryItem>>> fetchSubjectsSummary();
@@ -11,12 +12,13 @@ abstract class ChoosingNicheViewModelSubjectsSummaryService {
 
 class ChoosingNicheViewModel extends ViewModelBase {
   ChoosingNicheViewModel(
-      {required super.context,
-      required this.subjectsSummaryService,
-      required this.onNavigateToSubjectProducts});
+      {required super.context, required this.subjectsSummaryService
 
-  final void Function(int subjectId, String subjectName)
-      onNavigateToSubjectProducts;
+      // required this.onNavigateToSubjectProducts
+      });
+
+  // final void Function(int subjectId, String subjectName)
+  //     onNavigateToSubjectProducts;
   final ChoosingNicheViewModelSubjectsSummaryService subjectsSummaryService;
 
   // Fields ////////////////////////////////////////////////////////////////////
@@ -448,5 +450,23 @@ class ChoosingNicheViewModel extends ViewModelBase {
       setSearchQuery('');
     }
     notifyListeners();
+  }
+
+  // Navigation
+  void onNavigateToSubjectProductsScreen(
+      {required int selectedSubjectId, required String selectedSubjectName}) {
+    Navigator.of(context).pushNamed(
+      MainNavigationRouteNames.subjectProductsScreen,
+      arguments: {
+        'subjectId': selectedSubjectId,
+        'subjectName': selectedSubjectName
+      },
+    );
+  }
+
+  void onNavigateToEmptySubjectScreen() {
+    Navigator.of(context).pushNamed(
+      MainNavigationRouteNames.emptySubjectsScreen,
+    );
   }
 }

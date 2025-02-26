@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
@@ -12,15 +13,8 @@ class EmptySubjectViewModel extends ViewModelBase {
   EmptySubjectViewModel({
     required super.context,
     required this.subjectsSummaryService,
-    required this.onNavigateTo,
   });
   final EmptySubjectViewModelSubjectsSummaryService subjectsSummaryService;
-
-  // Navigation
-  final void Function({
-    required String routeName,
-    Map<String, dynamic>? params,
-  }) onNavigateTo;
 
   // Fields
   String searchQuery = '';
@@ -52,16 +46,16 @@ class EmptySubjectViewModel extends ViewModelBase {
 
   @override
   Future<void> asyncInit() async {
+    setLoading();
     final result = await subjectsSummaryService.fetchSubjectsSummary();
 
     if (result.isRight()) {
-      final fetchedSubjectsSummary =
-          result.fold((l) => throw UnimplementedError(), (r) => r);
-
-      setSubjectsSummary(fetchedSubjectsSummary);
+      setSubjectsSummary(
+          result.fold((l) => throw UnimplementedError(), (r) => r));
     } else {
       setError("Сервер временно недоступен");
     }
+    setLoaded(); // Завершение загрузки
   }
 
   void onSearchChanged(String value) {
@@ -71,12 +65,15 @@ class EmptySubjectViewModel extends ViewModelBase {
 
   // Navigation
   void onNavigateBack() {
-    onNavigateTo(routeName: MainNavigationRouteNames.choosingNicheScreen);
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
   }
 
   void onNavigateToSubjectProducts(int subjectId, String subjectName) {
-    onNavigateTo(
-        routeName: MainNavigationRouteNames.subjectProductsScreen,
-        params: {"subjectId": subjectId, "subjectName": subjectName});
+    Navigator.of(context).pushNamed(
+      MainNavigationRouteNames.subjectProductsScreen,
+      arguments: {'subjectId': subjectId, 'subjectName': subjectName},
+    );
   }
 }

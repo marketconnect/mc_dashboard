@@ -23,7 +23,7 @@ class SubjectsSummaryService
   // despite it is used in multiple screens simultaneously when app is loading
   // (choose niche, subject products, empty subjects)
   SubjectsSummaryService._()
-      : subjectsSummaryApiClient = SubjectsSummaryApiClient(Dio());
+      : subjectsSummaryApiClient = SubjectsSummaryApiClient();
 
   Completer<Either<AppErrorBase, List<SubjectSummaryItem>>>?
       _fetchSubjectsCompleter;

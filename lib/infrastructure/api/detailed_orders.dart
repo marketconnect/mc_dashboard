@@ -1,23 +1,68 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:mc_dashboard/.env.dart';
 import 'package:mc_dashboard/domain/entities/detailed_order_item.dart';
 
-import 'package:retrofit/retrofit.dart';
-import 'package:dio/dio.dart';
+class CacheEntry<T> {
+  final T data;
+  final DateTime expiration;
 
-part 'detailed_orders.g.dart';
+  CacheEntry({required this.data, required this.expiration});
+}
 
-@RestApi(baseUrl: ApiSettings.baseUrl)
-abstract class DetailedOrdersApiClient {
-  factory DetailedOrdersApiClient(Dio dio, {String baseUrl}) =
-      _DetailedOrdersApiClient;
+class DetailedOrdersApiClient {
+  final String baseUrl;
+  final Map<String, CacheEntry<DetailedOrdersResponse>> _cache = {};
 
-  @GET("/detailed-orders30d")
+  DetailedOrdersApiClient({String? baseUrl})
+      : baseUrl = baseUrl ?? ApiSettings.baseUrl;
+
   Future<DetailedOrdersResponse> getDetailedOrders({
-    @Query("subject_id") int? subjectId,
-    @Query("product_id") int? productId,
-    @Query("is_fbs") int? isFbs,
-    @Query("page_size") String? pageSize,
-  });
+    int? subjectId,
+    int? productId,
+    int? isFbs,
+    String? pageSize,
+  }) async {
+    final cacheKey = 'detailed-orders-$subjectId-$productId-$isFbs-$pageSize';
+
+    // Проверяем кеш
+    final now = DateTime.now();
+    final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59);
+    final cachedEntry = _cache[cacheKey];
+
+    if (cachedEntry != null && cachedEntry.expiration.isAfter(now)) {
+      return cachedEntry.data;
+    }
+
+    final uri = Uri.parse('$baseUrl/detailed-orders30d').replace(
+      queryParameters: {
+        if (subjectId != null) 'subject_id': subjectId.toString(),
+        if (productId != null) 'product_id': productId.toString(),
+        if (isFbs != null) 'is_fbs': isFbs.toString(),
+        if (pageSize != null) 'page_size': pageSize,
+      },
+    );
+
+    // Выполняем GET-запрос
+    final response = await http.get(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(utf8.decode(response.bodyBytes));
+      final result = DetailedOrdersResponse.fromJson(jsonData);
+
+      if (result.detailedOrders.isNotEmpty) {
+        _cache[cacheKey] = CacheEntry(data: result, expiration: endOfDay);
+      }
+
+      return result;
+    } else {
+      throw Exception(
+          'Ошибка получения подробных заказов, статус: ${response.statusCode}');
+    }
+  }
 }
 
 class DetailedOrdersResponse {
@@ -28,7 +73,8 @@ class DetailedOrdersResponse {
   factory DetailedOrdersResponse.fromJson(Map<String, dynamic> json) {
     return DetailedOrdersResponse(
       detailedOrders: (json['detailed_orders30d'] as List)
-          .map((item) => DetailedOrderItem.fromJson(item))
+          .map((item) =>
+              DetailedOrderItem.fromJson(item as Map<String, dynamic>))
           .toList(),
     );
   }

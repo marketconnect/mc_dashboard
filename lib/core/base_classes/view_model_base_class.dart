@@ -26,7 +26,7 @@ abstract class ViewModelBase extends ChangeNotifier {
   }
 
   String? get error => _error;
-  bool get loading => _loading;
+  bool get isLoading => _loading;
 
   Future<void> asyncInit();
 

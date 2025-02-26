@@ -264,7 +264,7 @@ class _NormqueryTableWidgetState extends State<_NormqueryTableWidget> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final model = context.watch<SeoRequestsExtendViewModel>();
-    final loading = model.loading;
+    final loading = model.isLoading;
     final normqueryProducts = model.normqueries;
     final selectedIndices = model.selectedRows;
     final selectRow = model.selectRow;

@@ -3,764 +3,378 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import 'package:google_fonts/google_fonts.dart';
-import 'package:mc_dashboard/core/config.dart';
-
 import 'package:mc_dashboard/infrastructure/repositories/local_storage.dart';
-
-import 'package:mc_dashboard/routes/main_navigation.dart';
 import 'package:mc_dashboard/routes/main_navigation_route_names.dart';
-import 'package:mc_dashboard/theme/text_theme.dart';
-import 'package:mc_dashboard/theme/color_schemes.dart';
-import 'package:mc_dashboard/theme/dialog_theme.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:mc_dashboard/routes/main_navigation.dart';
 
-class App extends StatefulWidget {
+import 'package:mc_dashboard/theme/color_schemes.dart';
+
+import 'package:mc_dashboard/widgets/logo.dart';
+import 'package:mc_dashboard/widgets/speed_dial_menu.dart';
+import 'package:provider/provider.dart';
+
+abstract class AppNavigation {
+  Route<Object> onGenerateRoute(RouteSettings settings);
+}
+
+class ThemeProvider extends ChangeNotifier {
+  bool _isDarkTheme = McAuthRepo.getTheme();
+
+  bool get isDarkTheme => _isDarkTheme;
+
+  void toggleTheme() {
+    _isDarkTheme = !_isDarkTheme;
+    McAuthRepo.setTheme(_isDarkTheme);
+    notifyListeners();
+  }
+}
+
+class NavigationProvider extends ChangeNotifier {
+  int _selectedIndex = 0;
+  int get selectedIndex => _selectedIndex;
+
+  void setIndex(int index) {
+    _selectedIndex = index;
+    notifyListeners();
+  }
+}
+
+class App extends StatelessWidget {
   final ScreenFactory screenFactory;
 
   const App({super.key, required this.screenFactory});
 
   @override
-  _AppState createState() => _AppState();
-}
-
-class _AppState extends State<App> {
-  @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasData) {
-            final authToken = LocalStorageRepo.getTokenStatic();
-
-            if (authToken != null && authToken.isNotEmpty) {
-              return MainScreen(
-                screenFactory: widget.screenFactory,
-              );
-            }
-          }
-          return widget.screenFactory.makeLoginScreen();
-        });
-  }
-}
-
-class MainScreen extends StatefulWidget {
-  final ScreenFactory screenFactory;
-  const MainScreen({
-    super.key,
-    required this.screenFactory,
-  });
-
-  @override
-  // ignore: duplicate_ignore
-  // ignore: library_private_types_in_public_api
-  _MainScreenState createState() => _MainScreenState();
-}
-
-class _MainScreenState extends State<MainScreen> {
-  bool _isDarkTheme = false;
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'MarketConnect',
-      theme: ThemeData(
-        useMaterial3: true,
-        dialogTheme: dialogTheme,
-        textTheme: buildAdaptiveTextTheme(
-          context,
-          baseTextTheme: ThemeData.light().textTheme,
-        ),
-        colorScheme: lightColorScheme,
-        fontFamily: GoogleFonts.roboto().fontFamily,
-      ),
-      darkTheme: ThemeData(
-          useMaterial3: true,
-          colorScheme: darkColorScheme,
-          dialogTheme: dialogTheme,
-          textTheme: buildAdaptiveTextTheme(
-            context,
-            baseTextTheme: ThemeData.dark()
-                .textTheme, // Используем тему для тёмного режима
-          ),
-          fontFamily: GoogleFonts.roboto().fontFamily),
-      debugShowCheckedModeBanner: false,
-      themeMode: _isDarkTheme ? ThemeMode.dark : ThemeMode.light,
-      home: _Scaffold(
-        isDarkTheme: _isDarkTheme,
-        screenFactory: widget.screenFactory,
-        onThemeChanged: (value) {
-          setState(() {
-            _isDarkTheme = value;
-          });
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider<NavigationProvider>(
+            create: (_) => NavigationProvider()),
+      ],
+      child: Consumer2<ThemeProvider, NavigationProvider>(
+        builder: (context, themeProvider, navigationProvider, child) {
+          return MaterialApp(
+            title: 'MarketConnect',
+            theme: ThemeData(
+              useMaterial3: true,
+              colorScheme: lightColorScheme,
+            ),
+            darkTheme: ThemeData(
+              useMaterial3: true,
+              colorScheme: darkColorScheme,
+            ),
+            themeMode:
+                themeProvider.isDarkTheme ? ThemeMode.dark : ThemeMode.light,
+            debugShowCheckedModeBanner: false,
+            home: StreamBuilder<User?>(
+              stream: FirebaseAuth.instance.authStateChanges(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                if (snapshot.hasData) {
+                  final authToken = McAuthRepo.getTokenStatic();
+                  if (authToken != null && authToken.isNotEmpty) {
+                    return MainScreen(screenFactory: screenFactory);
+                  }
+                }
+                return screenFactory.makeLoginScreen();
+              },
+            ),
+            onGenerateRoute: MainNavigation(screenFactory).onGenerateRoute,
+          );
         },
       ),
     );
   }
 }
 
-class _Scaffold extends StatefulWidget {
-  final bool isDarkTheme;
-  final ValueChanged<bool> onThemeChanged;
+class MainScreen extends StatefulWidget {
   final ScreenFactory screenFactory;
-  const _Scaffold({
-    required this.isDarkTheme,
-    required this.onThemeChanged,
-    required this.screenFactory,
-  });
+
+  const MainScreen({super.key, required this.screenFactory});
 
   @override
-  State<_Scaffold> createState() => __ScaffoldState();
+  State<MainScreen> createState() => _MainScreenState();
 }
 
-class __ScaffoldState extends State<_Scaffold> {
-  List<ExpansionTileController> _controllers = [];
-  int _selectedSectionIndex = 0;
-  int? _selectedSubsectionIndex; // Stores the selected subsection index
-
-  int?
-      _currentSubjectId; // Stores the selected subject ID (for SubjectProductsScreen) look _buildBodyContent
-  String?
-      _currentSubjectName; // Stores the selected subject Name (for SubjectProductsScreen) look _buildBodyContent
-
-  int? _currentProductId; // Stores the selected product ID (for ProductScreen)
-  int?
-      _currentProductPrice; // Stores the selected product price (for ProductScreen)
-
-  List<int>?
-      _selectedProductIds; // List to store selected product IDs for SeoRequestsExtendScreen
-  List<String> _savedProductIds =
-      []; // List to store saved to track product IDs
-  List<String> _savedProductCharactiristics =
-      []; // List to store saved to track product IDs
-  List<String> _keyPhrases = [];
-  String _prevScreen = MainNavigationRouteNames.choosingNicheScreen;
-  final List<_Section> sections = [
-    _Section(
-      title: 'Анализ рынка',
-      icon: Icons.leaderboard,
-      subsections: [
-        _Subsection(title: 'Выбор ниши'),
-        _Subsection(title: 'Категория'),
-        _Subsection(title: 'Товары'),
-        // _Subsection(title: 'Бренды'),
-      ],
-    ),
-    _Section(title: 'SEO', icon: Icons.query_stats, subsections: [
-      _Subsection(title: 'Расширение запросов'),
-    ]),
-    _Section(title: 'Рассылка', icon: Icons.mail, subsections: []),
-    _Section(title: 'Подписка', icon: Icons.lock_open, subsections: []),
-    _Section(title: 'Wildberries', icon: Icons.store, subsections: [
-      _Subsection(title: 'Токен'),
-      _Subsection(title: 'Акции'),
-    ]),
-  ];
+class _MainScreenState extends State<MainScreen> {
+  late final List<Widget> _screens;
 
   @override
   void initState() {
     super.initState();
-    _controllers = List.generate(
-      sections.length,
-      (_) => ExpansionTileController(),
-    );
+    _screens = [
+      widget.screenFactory.makeMarketScreen(),
+      widget.screenFactory.makeChoosingNicheScreen(
+        onNavigateToSubjectProducts: (int subjectId, String subjectName) {
+          Navigator.pushReplacementNamed(
+            context,
+            MainNavigationRouteNames.subjectProductsScreen,
+            arguments: {'subjectId': subjectId, 'subjectName': subjectName},
+          );
+        },
+      ),
+      widget.screenFactory.makeSubscriptionScreen(),
+      widget.screenFactory.makeTokensScreen(),
+    ];
   }
 
-  void _onNavigate(
-    String routeName,
-  ) {
-    switch (routeName) {
-      case MainNavigationRouteNames.choosingNicheScreen:
-        _onNavigateToChoosingNicheScreen();
-        break;
-      case MainNavigationRouteNames.productScreen:
-        _onNavigateToProductScreen();
-        break;
-      case MainNavigationRouteNames.seoRequestsExtend:
-        _onNavigateToSeoRequestsExtendScreen();
-        break;
-      case MainNavigationRouteNames.emptySubjectsScreen:
-        _onNavigateToEmptySubjectScreen();
-        break;
-      case MainNavigationRouteNames.emptyProductScreen:
-        _onNavigateToEmptyProductScreen();
-        break;
-      case MainNavigationRouteNames.subjectProductsScreen:
-        _onNavigateToSubjectProductsScreen();
-        break;
-      case MainNavigationRouteNames.subscriptionScreen:
-        _onNavigateToSubscriptionScreen();
-        break;
-      case MainNavigationRouteNames.mailingScreen:
-        _onNavigateToMailingScreen();
-        break;
-      default:
-        throw Exception('Unknown route: $routeName');
-    }
-  }
+  final List<SpeedDialOption> choosingNicheSpeedDialOptions = [
+    SpeedDialOption(
+      label: 'Поиск по артикулу WB',
+      icon: Icons.search,
+      route: MainNavigationRouteNames.emptyProductScreen,
+    ),
+    SpeedDialOption(
+        label: 'Поиск по названию категории',
+        icon: Icons.store,
+        route: MainNavigationRouteNames.emptySubjectsScreen),
+  ];
 
-  void _onNavigateToChoosingNicheScreen() {
-    setState(() {
-      _selectedSectionIndex = 0;
-      _selectedSubsectionIndex = 0;
-    });
-  }
-
-  void _onNavigateToEmptySubjectScreen() {
-    setState(() {
-      _currentSubjectId = null;
-      _selectedSectionIndex = 0;
-      _selectedSubsectionIndex = 1;
-    });
-  }
-
-  void _onNavigateToSubjectProductsScreen() {
-    setState(() {
-      _selectedSectionIndex = 0;
-      _selectedSubsectionIndex = 1;
-    });
-  }
-
-  void _onNavigateToProductScreen() {
-    setState(() {
-      _selectedSectionIndex = 0;
-      _selectedSubsectionIndex = 2;
-    });
-  }
-
-  void _onNavigateToEmptyProductScreen() {
-    setState(() {
-      _currentProductId = null;
-      _selectedSectionIndex = 0;
-      _selectedSubsectionIndex = 2;
-    });
-  }
-
-  void _onNavigateToSeoRequestsExtendScreen() {
-    setState(() {
-      _selectedSectionIndex = 1;
-      _selectedSubsectionIndex = 0;
-      // _controllers[1].expand();
-    });
-  }
-
-  void _onNavigateToSubscriptionScreen() {
-    setState(() {
-      _selectedSectionIndex = 3;
-      _selectedSubsectionIndex = 0;
-    });
-  }
-
-  void _onNavigateToMailingScreen() {
-    setState(() {
-      _selectedSectionIndex = 2;
-      _selectedSubsectionIndex = 0;
-    });
-  }
+  final List<SpeedDialOption> marketScreenSpeedDialOptions = [
+    SpeedDialOption(
+      label: 'Wildberries',
+      icon: Icons.shopping_bag,
+      url: 'https://www.wildberries.ru/',
+    ),
+    SpeedDialOption(
+      label: 'Wildberries Seller',
+      icon: Icons.store,
+      url: 'https://seller.wildberries.ru/',
+    ),
+    SpeedDialOption(
+      label: 'Ozon',
+      icon: Icons.shopping_cart,
+      url: 'https://www.ozon.ru/',
+    ),
+    SpeedDialOption(
+      label: 'Ozon Seller',
+      icon: Icons.business,
+      url: 'https://seller.ozon.ru/app/dashboard/main',
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
 
+    final navigationProvider = Provider.of<NavigationProvider>(context);
+    bool isMobile = Responsive.isMobile(context);
     return Scaffold(
-      appBar: Responsive.isMobile(context)
+      floatingActionButton: SpeedDialMenu(
+        options: navigationProvider.selectedIndex == 0
+            ? marketScreenSpeedDialOptions
+            : choosingNicheSpeedDialOptions,
+      ),
+      appBar: isMobile
           ? AppBar(
-              scrolledUnderElevation: 2,
-              shadowColor: Colors.black,
-              surfaceTintColor: Colors.transparent,
-            )
-          : null,
-      drawer: Responsive.isMobile(context)
-          ? Drawer(
-              backgroundColor: theme.colorScheme.surfaceContainerHighest,
-              child: buildSideMenu())
-          : null,
-      body: Row(
-        children: [
-          if (!Responsive.isMobile(context))
-            Container(
-              // Side Menu =============================================
-              width: AppConfig.sideMenuWidth,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                border: Border(
-                  right: BorderSide(
-                    width: 0.5,
-                    color: theme.colorScheme.onSurface
-                        .withAlpha((0.2 * 255).toInt()),
+              actions: [
+                IconButton(
+                  icon: Icon(
+                    themeProvider.isDarkTheme
+                        ? Icons.dark_mode
+                        : Icons.light_mode,
                   ),
+                  onPressed:
+                      themeProvider.toggleTheme, // Теперь меняем тему прямо тут
+                ),
+              ],
+              leading: Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.menu),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
                 ),
               ),
-              child: buildSideMenu(),
-            ),
-          Expanded(
-            // Body =====================================================
-            child: IndexedStack(
-              index: _getCurrentIndex(),
-              children: [
-                widget.screenFactory.makeChoosingNicheScreen(
-                  // 0 ChoosingNicheScreen /////////////////////////// ChoosingNicheScreen
-                  // 0 ChoosingNicheScreen
-                  onNavigateToSubjectProducts:
-                      (int subjectId, String subjectName) {
-                    setState(() {
-                      _selectedSectionIndex = 0;
-                      _selectedSubsectionIndex = 1;
-                      _currentSubjectId = subjectId;
-                      _currentSubjectName = subjectName;
-                    });
-                  },
-                ),
-                (_currentSubjectId != null &&
-                        _currentSubjectName !=
-                            null) // 1 SubjectProducts //////////////////////////////////////// SubjectProductsScreen 0
-                    ? KeyedSubtree(
-                        key: ValueKey(_currentSubjectId),
-                        child: widget.screenFactory.makeSubjectProductsScreen(
-                            subjectId: _currentSubjectId!,
-                            subjectName: _currentSubjectName!,
-                            onSaveProductsToTrack: (List<String> productIds) {
-                              setState(() {
-                                _savedProductIds = List.from(_savedProductIds)
-                                  ..addAll(productIds);
-                              });
-                            },
-                            onNavigateTo: ({
-                              required String routeName,
-                              Map<String, dynamic>? params,
-                            }) {
-                              if (params != null) {
-                                if (params.containsKey('subjectId')) {
-                                  _currentSubjectId = params['subjectId'];
-                                }
-                                if (params.containsKey('subjectName')) {
-                                  _currentSubjectName = params['subjectName'];
-                                }
-                                if (params.containsKey('productId')) {
-                                  _currentProductId = params['productId'];
-                                  _prevScreen = MainNavigationRouteNames
-                                      .subjectProductsScreen;
-                                }
-                                if (params.containsKey('characteristics')) {
-                                  _savedProductCharactiristics =
-                                      params['characteristics'];
-                                }
-                                if (params.containsKey('productPrice')) {
-                                  _currentProductPrice = params['productPrice'];
-                                }
-                                if (params.containsKey('productIds')) {
-                                  _selectedProductIds = params['productIds'];
-                                }
-                              }
-                              _onNavigate(routeName);
-                            }),
-                      )
-                    : widget.screenFactory.makeEmptySubjectProductsScreen(
-                        // 1 SubjectProducts //////////////////////////////////////// EmptySubjectProducts 1
-
-                        onNavigateTo: ({
-                          required String routeName,
-                          Map<String, dynamic>? params,
-                        }) {
-                          if (params != null) {
-                            if (params.containsKey('subjectId')) {
-                              _currentSubjectId = params['subjectId'];
-                            }
-                            if (params.containsKey('subjectName')) {
-                              _currentSubjectName = params['subjectName'];
-                            }
-                          }
-                          _onNavigate(routeName);
-                        },
-                      ),
-
-                (_currentProductId != null &&
-                        _currentProductPrice !=
-                            null) // 2 Product //////////////////////////////////////// ProductScreen 0
-                    ? KeyedSubtree(
-                        key: ValueKey(_currentProductId),
-                        child: widget.screenFactory.makeProductScreen(
-                            productId: _currentProductId!,
-                            productPrice: _currentProductPrice!,
-                            prevScreen: _prevScreen,
-                            onNavigateTo: ({
-                              required String routeName,
-                              Map<String, dynamic>? params,
-                            }) {
-                              if (params != null) {
-                                if (params.containsKey('productId')) {
-                                  _currentProductId = params['productId'];
-                                }
-                                if (params.containsKey('productPrice')) {
-                                  _currentProductPrice = params['productPrice'];
-                                }
-                                if (params.containsKey('subjectId')) {
-                                  _currentSubjectId = params['subjectId'];
-                                }
-                                if (params.containsKey('subjectName')) {
-                                  _currentSubjectName = params['subjectName'];
-                                }
-                              }
-                              _onNavigate(routeName);
-                            },
-                            onSaveKeyPhrasesToTrack: (List<String> keyPhrases) {
-                              setState(() {
-                                _keyPhrases = List.from(_keyPhrases)
-                                  ..addAll(keyPhrases);
-                              });
-                            }),
-                      )
-                    : widget.screenFactory.makeEmptyProductScreen(
-                        // 2 Product ////////////////////////// EmptyProductScreen
-                        onNavigateTo: ({
-                        required String routeName,
-                        Map<String, dynamic>? params,
-                      }) {
-                        if (params != null) {
-                          if (params.containsKey('productId')) {
-                            _currentProductId = params['productId'];
-                            _prevScreen =
-                                MainNavigationRouteNames.emptyProductScreen;
-                          }
-                          if (params.containsKey('productPrice')) {
-                            _currentProductPrice = params['productPrice'];
-                          }
-                        }
-                        _onNavigate(routeName);
-                      }),
-                (_selectedProductIds != null)
-                    ? KeyedSubtree(
-                        key: ValueKey(_selectedProductIds.hashCode),
-                        child: widget.screenFactory.makeSeoRequestsExtendScreen(
-                            // 3 SeoRequestsExtendScreen //////////////////////////
-                            productIds: _selectedProductIds!,
-                            charactiristics: _savedProductCharactiristics,
-                            onNavigateTo: ({
-                              required String routeName,
-                              Map<String, dynamic>? params,
-                            }) {
-                              _onNavigate(routeName);
-                            }),
-                      )
-                    : Center(
-                        child: Text(
-                          'Вы не выбрали товары',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                KeyedSubtree(
-                    key: ValueKey(
-                        _savedProductIds.hashCode + _keyPhrases.hashCode),
-                    child:
-                        widget.screenFactory.makeMailingScreen(onNavigateTo: ({
-                      required String routeName,
-                      Map<String, dynamic>? params,
-                    }) {
-                      if (params != null) {
-                        if (params.containsKey('productId')) {
-                          _currentProductId = params['productId'];
-                        }
-                        if (params.containsKey('productPrice')) {
-                          _currentProductPrice = params['productPrice'];
-                        }
-                      }
-                      _prevScreen = MainNavigationRouteNames.mailingScreen;
-                      _onNavigate(routeName);
-                    })), // MailingSettings
-                widget.screenFactory.makeSubscriptionScreen(), // Subscription
-                widget.screenFactory.makeApiKeysScreen(),
-                widget.screenFactory.makePromotionsScreen(), // API
-              ],
-            ),
-          ),
-        ],
-      ),
+            )
+          : null,
+      drawer: isMobile ? Drawer(child: _buildMobileSideMenu(context)) : null,
+      body: isMobile ? _buildMobileBody() : _buildDesktopBody(),
     );
   }
 
-  int _getCurrentIndex() {
-    if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 1) {
-      return 1;
-    } else if (_selectedSectionIndex == 0 && _selectedSubsectionIndex == 2) {
-      return 2;
-    } else if (_selectedSectionIndex == 1 && _selectedSubsectionIndex == 0) {
-      return 3;
-    } else if (_selectedSectionIndex == 2) {
-      return 4;
-    } else if (_selectedSectionIndex == 3) {
-      return 5;
-    } else if (_selectedSectionIndex == 4 && _selectedSubsectionIndex == 0) {
-      return 6; // API
-    } else if (_selectedSectionIndex == 4 && _selectedSubsectionIndex == 1) {
-      return 7; // Promotions
-    }
-    return 0;
-  }
-
-  Widget buildSideMenu() {
-    final theme = Theme.of(context);
-
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildDesktopBody() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final navigationProvider = Provider.of<NavigationProvider>(context);
+    return Row(
       children: [
-        Expanded(
-          child: ListView(
-            physics: const BouncingScrollPhysics(),
-            children: [
-              MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: GestureDetector(
-                  onTap: () {
-                    // link to google.com
-                    launchUrl(Uri.parse('https://marketconnect.ru'));
-                  },
-                  child: Container(
-                    alignment: Alignment.centerLeft,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppConfig.sideMenuWidth * 0.2,
-                        vertical: AppConfig.sideMenuWidth * 0.1),
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      alignment: Alignment.center,
-                      children: [
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'M',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontFamily:
-                                    GoogleFonts.alikeAngular().fontFamily,
-                                color: theme.colorScheme.onPrimary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              'ARKET',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontFamily: GoogleFonts.waitingForTheSunrise()
-                                    .fontFamily,
-                                color: theme.colorScheme.primary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Positioned(
-                          top: 20,
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 30),
-                            child: Text(
-                              'CONNECT',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontFamily: GoogleFonts.waitingForTheSunrise()
-                                    .fontFamily,
-                                color: theme.colorScheme.primary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              _SideMenuDivider(theme: theme),
-              ...sections.asMap().entries.map((entry) {
-                int sectionIndex = entry.key;
-                _Section section = entry.value;
-
-                if (section.subsections.isEmpty) {
-                  return ListTile(
-                    leading: Icon(
-                      section.icon,
-                      size: 18,
-                      color: sectionIndex == _selectedSectionIndex
-                          ? theme.colorScheme.onPrimary
-                          : theme.colorScheme.onSurface,
-                    ),
-                    title: Text(section.title,
-                        style: TextStyle(
-                          color: sectionIndex == _selectedSectionIndex
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.onSurface,
-                        )),
-                    selected: _selectedSectionIndex == sectionIndex,
-                    onTap: () {
-                      // ROUTE /////////////////////////////////////////// ROUTE
-                      setState(() {
-                        _selectedSectionIndex = sectionIndex;
-                        _selectedSubsectionIndex = null;
-                      });
-                      if (Responsive.isMobile(context)) Navigator.pop(context);
-                    },
-                  );
-                } else {
-                  return ExpansionTile(
-                    controller: _controllers[sectionIndex],
-                    leading: Icon(
-                      section.icon,
-                      size: 18,
-                      color: sectionIndex == _selectedSectionIndex
-                          ? theme.colorScheme.onPrimary
-                          : theme.colorScheme.onSurface,
-                    ),
-                    title: Text(section.title,
-                        style: TextStyle(
-                          color: sectionIndex == _selectedSectionIndex
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.onSurface,
-                        )),
-                    initiallyExpanded: _selectedSectionIndex == sectionIndex,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(Radius.zero),
-                    ),
-                    collapsedShape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(Radius.zero),
-                    ),
-                    children:
-                        section.subsections.asMap().entries.map((subEntry) {
-                      int subIndex = subEntry.key;
-                      _Subsection subsection = subEntry.value;
-
-                      return ListTile(
-                        selectedTileColor: theme.colorScheme.surfaceBright,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(8.0)),
-                        ),
-                        title: Text(
-                          subsection.title,
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                        selected: _selectedSectionIndex == sectionIndex &&
-                            _selectedSubsectionIndex == subIndex,
-                        onTap: () {
-                          setState(() {
-                            _selectedSectionIndex = sectionIndex;
-                            _selectedSubsectionIndex = subIndex;
-                          });
-                          if (Responsive.isMobile(context)) {
-                            Navigator.pop(context);
-                          }
-                        },
-                      );
-                    }).toList(),
-                  );
-                }
-              }),
-            ],
-          ),
-        ),
+        // Боковая панель
         Container(
-          padding: const EdgeInsets.all(8.0),
+          width: 80,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            border: Border(
+              right: BorderSide(
+                width: 0.5,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+              ),
+            ),
+          ),
           child: Column(
             children: [
-              // 1) Кнопка "Выйти" (Logout)
-              ListTile(
-                leading: Icon(Icons.logout, color: theme.colorScheme.onSurface),
-                title: Text(
-                  "Выйти",
-                  style: TextStyle(
-                    color: theme.colorScheme.onSurface,
-                  ),
+              const SizedBox(height: 20),
+              Logo(theme: Theme.of(context)),
+              const SizedBox(height: 40),
+              Expanded(
+                child: NavigationRail(
+                  selectedIndex: navigationProvider.selectedIndex,
+                  onDestinationSelected: (int index) {
+                    navigationProvider.setIndex(index);
+                  },
+                  labelType: NavigationRailLabelType.all,
+                  backgroundColor: Colors.transparent,
+                  indicatorColor: Colors.transparent,
+                  destinations: [
+                    NavigationRailDestination(
+                      icon: Icon(Icons.home),
+                      selectedIcon: Icon(Icons.home,
+                          color: Theme.of(context).colorScheme.onPrimary),
+                      label: Text('Главная'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.leaderboard),
+                      selectedIcon: Icon(Icons.leaderboard,
+                          color: Theme.of(context).colorScheme.onPrimary),
+                      label: Text(
+                        'Обзор',
+                      ),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.card_travel),
+                      selectedIcon: Icon(Icons.card_travel,
+                          color: Theme.of(context).colorScheme.onPrimary),
+                      label: Text('Подписка'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.security),
+                      selectedIcon: Icon(Icons.security,
+                          color: Theme.of(context).colorScheme.onPrimary),
+                      label: Text('Токены'),
+                    ),
+                  ],
                 ),
-                onTap: () async {
-                  // Логаут пользователя
-                  await FirebaseAuth.instance.signOut();
-                  LocalStorageRepo.clearTokenStatic();
-
-                  // Если Drawer открыт на мобильном - закрываем
-
-                  if (Responsive.isMobile(context)) {
-                    Navigator.of(context).pop();
-                  }
-                  // При логауте, MaterialApp заново построится и отправит на makeLoginScreen()
-                },
               ),
-              // Отделим линией
-              _SideMenuDivider(theme: theme),
-              // 2) Переключатель темы
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Switch(
-                    value: widget.isDarkTheme,
-                    onChanged: (a) =>
-                        widget.onThemeChanged(!widget.isDarkTheme),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: IconButton(
+                  icon: Icon(
+                    themeProvider.isDarkTheme
+                        ? Icons.dark_mode
+                        : Icons.light_mode,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
-                  Icon(
-                    widget.isDarkTheme ? Icons.brightness_2 : Icons.wb_sunny,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ],
+                  onPressed:
+                      themeProvider.toggleTheme, // Теперь меняем тему прямо тут
+                ),
               ),
             ],
           ),
         ),
-        // Padding(
-        //   padding: const EdgeInsets.only(bottom: 16.0),
-        //   child: Row(
-        //     mainAxisAlignment: MainAxisAlignment.center,
-        //     children: [
-        //       Switch(
-        //           value: widget.isDarkTheme,
-        //           onChanged: (a) => widget.onThemeChanged(!widget.isDarkTheme)),
-        //       Icon(
-        //         widget.isDarkTheme ? Icons.brightness_2 : Icons.wb_sunny,
-        //         color: theme.colorScheme.onSurface,
-        //       ),
-        //     ],
-        //   ),
-        // ),
+        Expanded(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            transitionBuilder: (child, animation) => SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
+            ),
+            child: _screens[navigationProvider.selectedIndex],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileBody() {
+    final navigationProvider = Provider.of<NavigationProvider>(context);
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      transitionBuilder: (child, animation) => SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(1, 0),
+          end: Offset.zero,
+        ).animate(animation),
+        child: child,
+      ),
+      child: _screens[navigationProvider.selectedIndex],
+    );
+  }
+
+  Widget _buildMobileSideMenu(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final navigationProvider = Provider.of<NavigationProvider>(context);
+    return ListView(
+      children: [
+        DrawerHeader(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primaryContainer,
+          ),
+          child: Logo(theme: Theme.of(context)), // Логотип для мобильной версии
+        ),
+        ListTile(
+          leading: Icon(
+            themeProvider.isDarkTheme ? Icons.dark_mode : Icons.light_mode,
+          ),
+          title: const Text('Переключить тему'),
+          onTap: themeProvider.toggleTheme, // Теперь меняем тему прямо тут
+        ),
+        ListTile(
+          leading: const Icon(Icons.home),
+          title: const Text('Главная'),
+          selected: navigationProvider.selectedIndex == 0,
+          onTap: () {
+            navigationProvider.setIndex(0);
+            Navigator.of(context).pop();
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.shopping_cart),
+          title: const Text('Товары'),
+          selected: navigationProvider.selectedIndex == 1,
+          onTap: () {
+            navigationProvider.setIndex(1);
+            Navigator.of(context).pop();
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.shopping_cart),
+          title: const Text('Карточки'),
+          selected: navigationProvider.selectedIndex == 2,
+          onTap: () {
+            navigationProvider.setIndex(2);
+            Navigator.of(context).pop();
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.upload),
+          title: const Text('Загрузить'),
+          selected: navigationProvider.selectedIndex == 3,
+          onTap: () {
+            navigationProvider.setIndex(3);
+            Navigator.of(context).pop();
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.security),
+          title: const Text('Токены'),
+          selected: navigationProvider.selectedIndex == 4,
+          onTap: () {
+            navigationProvider.setIndex(4);
+            Navigator.of(context).pop();
+          },
+        ),
       ],
     );
   }
 }
 
-class _SideMenuDivider extends StatelessWidget {
-  const _SideMenuDivider({
-    required this.theme,
-  });
-
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context) {
-    return FractionallySizedBox(
-      widthFactor: 0.8,
-      child: Divider(
-        thickness: 0.5,
-        color: theme.colorScheme.onSurface.withAlpha((0.2 * 255).toInt()),
-      ),
-    );
-  }
-}
-
+/// Утилита для определения мобильных устройств.
 class Responsive {
   static bool isMobile(BuildContext context) =>
       MediaQuery.sizeOf(context).width < 900;
-}
-
-class _Section {
-  final String title;
-  final IconData icon;
-  final List<_Subsection> subsections;
-
-  _Section(
-      {required this.title, required this.icon, required this.subsections});
-}
-
-class _Subsection {
-  final String title;
-
-  _Subsection({required this.title});
 }

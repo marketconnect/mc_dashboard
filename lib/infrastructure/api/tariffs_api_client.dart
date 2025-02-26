@@ -12,10 +12,10 @@ class TariffsApiClient implements TariffsServiceApiClient {
     return instance;
   }
 
-  TariffsApiClient._internal(
-      {this.baseUrl = "https://common-api.wildberries.ru/api/v1/tariffs"});
+  TariffsApiClient._internal();
 
-  final String baseUrl;
+  static const String baseUrl =
+      "https://common-api.wildberries.ru/api/v1/tariffs";
   DateTime? _lastRequestTime;
 
   // Кеш теперь статический, не сбрасывается при пересоздании TariffsApiClient

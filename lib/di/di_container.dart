@@ -1,46 +1,54 @@
-import 'package:dio/dio.dart';
-
 import 'package:flutter/material.dart';
-import 'package:mc_dashboard/domain/services/promotion_service.dart';
+import 'package:mc_dashboard/domain/entities/product.dart';
+import 'package:mc_dashboard/domain/services/api_products_service.dart';
+import 'package:mc_dashboard/domain/services/card_info_service.dart';
+import 'package:mc_dashboard/domain/services/goods_service.dart';
+import 'package:mc_dashboard/domain/services/product_cost_service.dart';
+import 'package:mc_dashboard/domain/services/product_service.dart';
+
 import 'package:mc_dashboard/domain/services/tariff_service.dart';
+import 'package:mc_dashboard/domain/services/token_service.dart';
+import 'package:mc_dashboard/domain/services/wb_api_content_service.dart';
 import 'package:mc_dashboard/domain/services/wb_products_service.dart';
-import 'package:mc_dashboard/domain/services/wb_token_service.dart';
+import 'package:mc_dashboard/domain/services/wb_tariffs_service.dart';
 
 import 'package:mc_dashboard/infrastructure/api/auth.dart';
+import 'package:mc_dashboard/infrastructure/api/card_info_api_client.dart';
 import 'package:mc_dashboard/infrastructure/api/detailed_orders.dart';
+import 'package:mc_dashboard/infrastructure/api/goods_api_client.dart';
 import 'package:mc_dashboard/infrastructure/api/kw_lemmas.dart';
 import 'package:mc_dashboard/infrastructure/api/lemmatize.dart';
 import 'package:mc_dashboard/infrastructure/api/normqueries.dart';
 import 'package:mc_dashboard/infrastructure/api/orders.dart';
-import 'package:mc_dashboard/infrastructure/api/promotions_api.dart';
+import 'package:mc_dashboard/infrastructure/api/products_api_client.dart';
+
 import 'package:mc_dashboard/infrastructure/api/stocks.dart';
 import 'package:mc_dashboard/infrastructure/api/tariffs_api_client.dart';
 
-import 'package:mc_dashboard/infrastructure/api/user_emails_api.dart';
-import 'package:mc_dashboard/infrastructure/api/user_search_queries_api.dart';
-import 'package:mc_dashboard/infrastructure/api/user_settings_api.dart';
-import 'package:mc_dashboard/infrastructure/api/user_skus_api.dart';
 import 'package:mc_dashboard/infrastructure/api/warehouses.dart';
-import 'package:mc_dashboard/core/dio/setup.dart';
+
 import 'package:mc_dashboard/domain/services/auth_service.dart';
 import 'package:mc_dashboard/domain/services/detailed_orders_service.dart';
 import 'package:mc_dashboard/domain/services/kw_lemmas_service.dart';
 import 'package:mc_dashboard/domain/services/lemmatize_service.dart';
-import 'package:mc_dashboard/domain/services/user_sub_settings_service.dart';
+
 import 'package:mc_dashboard/domain/services/normqueries_service.dart';
 import 'package:mc_dashboard/domain/services/orders_service.dart';
-import 'package:mc_dashboard/domain/services/saved_key_phrases_service.dart';
-import 'package:mc_dashboard/domain/services/saved_products_service.dart';
+
 import 'package:mc_dashboard/domain/services/stocks_service.dart';
 import 'package:mc_dashboard/domain/services/subjects_summary_service.dart';
 import 'package:mc_dashboard/domain/services/tinkoff_payment_service.dart';
-import 'package:mc_dashboard/domain/services/user_emails_service.dart';
+
 import 'package:mc_dashboard/domain/services/warehouses_service.dart';
+import 'package:mc_dashboard/infrastructure/api/wb_content_api_client.dart';
 import 'package:mc_dashboard/infrastructure/api/wb_products_api_client.dart';
-import 'package:mc_dashboard/infrastructure/repositories/wb_token_storage.dart';
+import 'package:mc_dashboard/infrastructure/repositories/card_source_repo.dart';
+import 'package:mc_dashboard/infrastructure/repositories/product_cost_repo.dart';
+import 'package:mc_dashboard/infrastructure/repositories/secure_token_storage_repo.dart';
+
 import 'package:mc_dashboard/main.dart';
-import 'package:mc_dashboard/presentation/api_keys_screen/api_keys_screen.dart';
-import 'package:mc_dashboard/presentation/api_keys_screen/api_keys_view_model.dart';
+import 'package:mc_dashboard/presentation/add_cards_screen/add_cards_screen.dart';
+import 'package:mc_dashboard/presentation/add_cards_screen/add_cards_view_model.dart';
 
 import 'package:mc_dashboard/presentation/choosing_niche_screen/choosing_niche_screen.dart';
 import 'package:mc_dashboard/presentation/choosing_niche_screen/choosing_niche_view_model.dart';
@@ -51,16 +59,20 @@ import 'package:mc_dashboard/presentation/empty_subjects_screen/empty_subjects_s
 import 'package:mc_dashboard/presentation/empty_subjects_screen/empty_subjects_view_model.dart';
 import 'package:mc_dashboard/presentation/login_screen/login_screen.dart';
 import 'package:mc_dashboard/presentation/login_screen/login_view_model.dart';
-import 'package:mc_dashboard/presentation/mailing_screen/mailing_screen.dart';
-import 'package:mc_dashboard/presentation/mailing_screen/mailing_view_model.dart';
+import 'package:mc_dashboard/presentation/market_screen/market_screen.dart';
+import 'package:mc_dashboard/presentation/market_screen/market_view_model.dart';
+import 'package:mc_dashboard/presentation/product_card_screen/product_card_screen.dart';
+import 'package:mc_dashboard/presentation/product_card_screen/product_card_view_model.dart';
+import 'package:mc_dashboard/presentation/product_cards_screen/product_cards_screen.dart';
+import 'package:mc_dashboard/presentation/product_cards_screen/product_cards_view_model.dart';
+import 'package:mc_dashboard/presentation/product_cost_import_screen/product_cost_import_screen.dart';
+import 'package:mc_dashboard/presentation/product_cost_import_screen/product_cost_import_view_model.dart';
+import 'package:mc_dashboard/presentation/product_detail_screen/product_detail_screen.dart';
+import 'package:mc_dashboard/presentation/product_detail_screen/product_detail_view_model.dart';
+
 import 'package:mc_dashboard/presentation/product_screen/product_screen.dart';
 import 'package:mc_dashboard/presentation/product_screen/product_view_model.dart';
 
-import 'package:mc_dashboard/presentation/mailing_screen/saved_key_phrases_view_model.dart';
-
-import 'package:mc_dashboard/presentation/mailing_screen/saved_products_view_model.dart';
-import 'package:mc_dashboard/presentation/promotions_screen/promotions_screen.dart';
-import 'package:mc_dashboard/presentation/promotions_screen/promotions_view_model.dart';
 import 'package:mc_dashboard/presentation/seo_requests_extend_screen/seo_requests_extend_screen.dart';
 import 'package:mc_dashboard/presentation/seo_requests_extend_screen/seo_requests_extend_view_model.dart';
 import 'package:mc_dashboard/presentation/subject_products_screen/subject_products_screen.dart';
@@ -69,10 +81,9 @@ import 'package:mc_dashboard/presentation/subscription_screen/subscription_scree
 import 'package:mc_dashboard/presentation/subscription_screen/subscription_view_model.dart';
 
 import 'package:mc_dashboard/infrastructure/repositories/local_storage.dart';
-import 'package:mc_dashboard/infrastructure/repositories/mailing_settings_repo.dart';
-import 'package:mc_dashboard/infrastructure/repositories/saved_key_phrases_repo.dart';
-import 'package:mc_dashboard/infrastructure/repositories/saved_products_repo.dart';
-import 'package:mc_dashboard/infrastructure/repositories/user_email_repo.dart';
+import 'package:mc_dashboard/presentation/tokens_screen/tokens_screen.dart';
+import 'package:mc_dashboard/presentation/tokens_screen/tokens_view_model.dart';
+
 import 'package:mc_dashboard/routes/main_navigation.dart';
 import 'package:provider/provider.dart';
 
@@ -84,52 +95,36 @@ class _AppFactoryDefault implements AppFactory {
   @override
   Future<Widget> makeApp() async {
     final screenFactory = _diContainer._makeScreenFactory();
-    await _diContainer._initializeDio();
+
     return App(screenFactory: screenFactory);
   }
 }
 
 class _DIContainer {
-  late final Dio dio;
   _DIContainer();
-  Future<void> _initializeDio() async {
-    dio = await setupDio();
-  }
 
   ScreenFactory _makeScreenFactory() => ScreenFactoryDefault(this);
 
   // Repositories //////////////////////////////////////////////////////////////
   // CookiesRepo _makeCookiesRepo() => const CookiesRepo();
-
-  LocalStorageRepo _makeLocalStorageRepo() => LocalStorageRepo();
-
-  SavedProductsRepo _makeSavedProductsRepo() => SavedProductsRepo();
-
-  SavedKeyPhrasesRepo _makeSavedKeyPhrasesRepo() => SavedKeyPhrasesRepo();
-
-  UserEmailsRepo _makeUserEmailsRepo() => UserEmailsRepo();
-
-  MailingSettingsRepo _makeMailingSettingsRepo() => MailingSettingsRepo();
-
-  WbTokenRepo _makeApiKeyRepo() => WbTokenRepo();
-
+  ProductCostRepository get productCostRepo => const ProductCostRepository();
+  McAuthRepo _makeLocalStorageRepo() => McAuthRepo();
+  CardSourceRepo get cardSourceRepo => const CardSourceRepo();
+  // WbTokenRepo _makeApiKeyRepo() => WbTokenRepo();
+  SecureTokenStorageRepo get secureTokenRepo => SecureTokenStorageRepo();
   // Api clients ///////////////////////////////////////////////////////////////
   AuthApiClient _makeAuthApiClient() => const AuthApiClient();
-  UserEmailsApiClient _makeUserEmailsApiClient() => UserEmailsApiClient();
-  UserSkusApiClient _makeUserSkusApiClient() => UserSkusApiClient();
-  UserSearchQueriesApiClient _makeUserSearchQueriesApiClient() =>
-      UserSearchQueriesApiClient();
-
-  PromotionsApiClient _makePromotionsApiClient() => PromotionsApiClient();
-
+  ProductsApiClient get productSource => const ProductsApiClient();
   // TariffsApiClient _makeTariffsApiClient() => TariffsApiClient();
   TariffsApiClient tariffsApiClient = TariffsApiClient.instance;
 
   WbProductsApiClient _makeWbProductsApiClient() => WbProductsApiClient();
+
+  WbGoodsApiClient _makeWbGoodsApiClient() => const WbGoodsApiClient();
   // Services //////////////////////////////////////////////////////////////////
 
-  DetailedOrdersService _makeDetailedOrdersService() => DetailedOrdersService(
-      detailedOrdersApiClient: DetailedOrdersApiClient(dio));
+  DetailedOrdersService _makeDetailedOrdersService() =>
+      DetailedOrdersService(detailedOrdersApiClient: DetailedOrdersApiClient());
 
   // Why singleton? This is a workaround . Because we need to fetch subjects summary only once
   // despite it is used in multiple screens simultaneously when app is loading
@@ -138,13 +133,12 @@ class _DIContainer {
       SubjectsSummaryService.instance;
 
   StocksService _makeStocksService() =>
-      StocksService(stocksApiClient: StocksApiClient(dio));
+      StocksService(stocksApiClient: StocksApiClient());
 
   OrderService _makeOrdersService() =>
-      OrderService(ordersApiClient: OrdersApiClient(dio));
+      OrderService(ordersApiClient: OrdersApiClient());
 
-  WhService _makeWhService() =>
-      WhService(whApiClient: WarehousesApiClient(dio));
+  WhService _makeWhService() => WhService(whApiClient: WarehousesApiClient());
 
   AuthService _makeAuthService() => AuthService(
         apiClient: _makeAuthApiClient(),
@@ -152,65 +146,61 @@ class _DIContainer {
       );
 
   NormqueryService _makeNormqueryService() =>
-      NormqueryService(NormqueriesApiClient(dio));
+      NormqueryService(NormqueriesApiClient());
 
-  KwLemmaService _makeKwLemmaService() =>
-      KwLemmaService(KwLemmasApiClient(dio));
+  KwLemmaService _makeKwLemmaService() => KwLemmaService(KwLemmasApiClient());
 
   LemmatizeService _makeLemmatizeService() => LemmatizeService(
-        apiClient: LemmatizeApiClient(dio),
+        apiClient: LemmatizeApiClient(),
       );
 
-  UserEmailsService _makeUserEmailsService() => UserEmailsService(
-        userEmailsRepoRepo: _makeUserEmailsRepo(),
-        userEmailsApiClient: _makeUserEmailsApiClient(),
-      );
-  SavedProductsService _makeSavedProductsService() => SavedProductsService(
-        savedProductsRepo: _makeSavedProductsRepo(),
-        savedProductsApiClient: _makeUserSkusApiClient(),
-        // suppliersApiClient: SuppliersApiClient(dio),
-      );
-
-  SavedKeyPhrasesService _makeSavedKeyPhrasesService() =>
-      SavedKeyPhrasesService(
-        savedKeyPhrasesRepo: _makeSavedKeyPhrasesRepo(),
-        savedKeyPhrasesApiClient: _makeUserSearchQueriesApiClient(),
-      );
-
-  UserSubSettingsService _makeMailingSettingsService() =>
-      UserSubSettingsService(
-        mailingSettingsRepo: _makeMailingSettingsRepo(),
-        userSettingsApiClient: UserSettingsApiClient(),
-      );
-
-  // SuppliersService _makeSuppliersService() => SuppliersService(
-  //       suppliersApiClient: SuppliersApiClient(dio),
-  //     );
-
-  WbTokenService _makeApiKeyService() =>
-      WbTokenService(storage: _makeApiKeyRepo());
+  // WbTokenService _makeApiKeyService() =>
+  //     WbTokenService(storage: _makeApiKeyRepo());
 
   TinkoffPaymentService _makeTinkoffPaymentService() => TinkoffPaymentService();
-
-  PromotionsServiceImpl _makePromotionsService() =>
-      PromotionsServiceImpl(apiClient: _makePromotionsApiClient());
 
   TariffsServiceImpl _makeTariffsService() =>
       TariffsServiceImpl(apiClient: tariffsApiClient);
 
   WbProductsServiceImpl _makeWbProductsService() =>
       WbProductsServiceImpl(apiClient: _makeWbProductsApiClient());
+  TokenService get tokenService => TokenService(tokenStorage: secureTokenRepo);
 
+  ProductCostService get productCostService => ProductCostService(
+        storage: productCostRepo,
+      );
+
+  final wbTariffsService = WbTariffsService();
+  WbApiContentService get wbApiContentService => WbApiContentService(
+        apiClient: WbContentApiClient(),
+        wbTokenRepo: secureTokenRepo,
+      );
+
+  ApiProductService get apiProductService => ApiProductService(
+        productsApiClient: productSource,
+      );
+
+  CardInfoService get cardInfoService => CardInfoService(
+        apiClient: CardInfoApiClient(),
+      );
+
+  ProductService get productService =>
+      ProductService(productSource: cardSourceRepo);
+
+  WbGoodsService get wbGoodsService => WbGoodsService(
+        apiClient: _makeWbGoodsApiClient(),
+        wbTokenRepo: secureTokenRepo,
+      );
   // ViewModels ////////////////////////////////////////////////////////////////
   ChoosingNicheViewModel _makeChoosingNicheViewModel(
           BuildContext context,
           void Function(int subjectId, String subjectName)
               onNavigateToSubjectProducts) =>
       ChoosingNicheViewModel(
-          context: context,
-          subjectsSummaryService: _makeSubjectsSummaryService,
-          // authService: _makeAuthService(),
-          onNavigateToSubjectProducts: onNavigateToSubjectProducts);
+        context: context,
+        subjectsSummaryService: _makeSubjectsSummaryService,
+        // authService: _makeAuthService(),
+      );
 
   SubjectProductsViewModel _makeSubjectProductsViewModel(
     BuildContext context,
@@ -230,40 +220,26 @@ class _DIContainer {
           subjectSummaryService: _makeSubjectsSummaryService,
           onSaveProductsToTrack: onSaveProductsToTrack,
           detailedOrdersService: _makeDetailedOrdersService(),
-          savedProductsService: _makeSavedProductsService(),
           authService: _makeAuthService());
 
   EmptySubjectViewModel _makeEmptySubjectProductsViewModel(
     BuildContext context,
-    void Function({
-      required String routeName,
-      Map<String, dynamic>? params,
-    }) onNavigateTo,
   ) =>
       EmptySubjectViewModel(
           context: context,
-          onNavigateTo: onNavigateTo,
           subjectsSummaryService: _makeSubjectsSummaryService);
 
   EmptyProductViewModel _makeEmptyProductViewModel(
     BuildContext context,
-    void Function({
-      required String routeName,
-      Map<String, dynamic>? params,
-    }) onNavigateTo,
   ) =>
-      EmptyProductViewModel(context: context, onNavigateTo: onNavigateTo);
+      EmptyProductViewModel(
+        context: context,
+      );
 
   ProductViewModel _makeProductViewModel(
     BuildContext context,
     int productId,
     int productPrice,
-    String prevScreen,
-    void Function({
-      required String routeName,
-      Map<String, dynamic>? params,
-    }) onNavigateTo,
-    void Function(List<String> keyPhrasesStr) onSaveKeyPhraseToTrack,
   ) =>
       ProductViewModel(
         context: context,
@@ -272,66 +248,26 @@ class _DIContainer {
         stocksService: _makeStocksService(),
         normqueryService: _makeNormqueryService(),
         kwLemmaService: _makeKwLemmaService(),
-        onNavigateTo: onNavigateTo,
         detailedOrdersService: _makeDetailedOrdersService(),
-        savedKeyPhrasesService: _makeSavedKeyPhrasesService(),
         whService: _makeWhService(),
-        prevScreen: prevScreen,
-        savedProductsService: _makeSavedProductsService(),
         authService: _makeAuthService(),
         lemmatizeService: _makeLemmatizeService(),
         wbProductsService: _makeWbProductsService(),
-        onSaveKeyPhrasesToTrack: onSaveKeyPhraseToTrack,
         productPrice: productPrice,
         tariffsService: _makeTariffsService(),
-        apiKeyService: _makeApiKeyService(),
+        apiKeyService: tokenService,
       );
 
   SeoRequestsExtendViewModel _makeSeoRequestsExtendViewModel(
           BuildContext context,
-          void Function({
-            required String routeName,
-            Map<String, dynamic>? params,
-          }) onNavigateTo,
           List<int> productIds,
           List<String> charactiristics) =>
       SeoRequestsExtendViewModel(
           context: context,
-          onNavigateTo: onNavigateTo,
           normqueryService: _makeNormqueryService(),
           authService: _makeAuthService(),
           productIds: productIds,
           charactiristics: charactiristics);
-
-  MailingSettingsViewModel _makeMailingSettingsViewModel(
-    BuildContext context,
-    void Function({
-      required String routeName,
-      Map<String, dynamic>? params,
-    }) onNavigateTo,
-  ) =>
-      MailingSettingsViewModel(
-        context: context,
-        userEmailsService: _makeUserEmailsService(),
-        settingsService: _makeMailingSettingsService(),
-        authService: _makeAuthService(),
-        onNavigateTo: onNavigateTo,
-      );
-
-  SavedProductsViewModel _makeSavedProductsViewModel(BuildContext context) =>
-      SavedProductsViewModel(
-        context: context,
-        savedProductsService: _makeSavedProductsService(),
-        authService: _makeAuthService(),
-      );
-
-  SavedKeyPhrasesViewModel _makeSavedKeyPhrasesViewModel(
-          BuildContext context) =>
-      SavedKeyPhrasesViewModel(
-        context: context,
-        keyPhrasesService: _makeSavedKeyPhrasesService(),
-        authService: _makeAuthService(),
-      );
 
   SubscriptionViewModel _makeSubscriptionViewModel(BuildContext context) =>
       SubscriptionViewModel(
@@ -345,17 +281,68 @@ class _DIContainer {
         authService: _makeAuthService(),
       );
 
-  ApiKeyViewModel _makeApiKeyViewModel(BuildContext context) => ApiKeyViewModel(
-        context: context,
-        apiKeyStorageService: _makeApiKeyService(),
-      );
+  // ApiKeyViewModel _makeApiKeyViewModel(BuildContext context) => ApiKeyViewModel(
+  //       context: context,
+  //       apiKeyStorageService: _makeApiKeyService(),
+  //     );
 
-  PromotionsViewModel _makePromotionsViewModel(BuildContext context) =>
-      PromotionsViewModel(
-        context: context,
-        promotionsService: _makePromotionsService(),
-        apiKeyService: _makeApiKeyService(),
-      );
+  AddCardsViewModel _makeAddCardsViewModel(BuildContext context) =>
+      AddCardsViewModel(cardsService: productService, context: context);
+
+  ProductDetailViewModel _makeProductDetailViewModel(
+      BuildContext context, Product product) {
+    return ProductDetailViewModel(
+      wbApiContentService: wbApiContentService,
+      product: product,
+      productSource: apiProductService,
+      cardInfoService: cardInfoService,
+      context: context,
+    );
+  }
+
+  ProductCardsViewModel _makeProductCardsViewModel(BuildContext context) {
+    return ProductCardsViewModel(
+      wbApiContentService: wbApiContentService,
+      wbProductCostService: productCostService,
+      wbTariffsService: wbTariffsService,
+      goodsService: wbGoodsService,
+      context: context,
+    );
+  }
+
+  ProductCardViewModel _makeProductCardViewModel(
+      BuildContext context, int imtID, int nmID) {
+    return ProductCardViewModel(
+      contentApiService: wbApiContentService,
+      tariffsService: wbTariffsService,
+      imtID: imtID,
+      productCostService: productCostService,
+      nmID: nmID,
+      context: context,
+    );
+  }
+
+  ProductCostImportViewModel _makeProductCostImportViewModel(
+      BuildContext context) {
+    return ProductCostImportViewModel(
+      productCostService: productCostService,
+      context: context,
+    );
+  }
+
+  TokensViewModel _makeTokensViewModel(BuildContext context) {
+    return TokensViewModel(
+      tokensService: tokenService,
+      context: context,
+    );
+  }
+
+  MarketViewModel _makeMarketViewModel(BuildContext context) {
+    return MarketViewModel(
+      tokensService: tokenService,
+      context: context,
+    );
+  }
 }
 
 class ScreenFactoryDefault implements ScreenFactory {
@@ -393,29 +380,22 @@ class ScreenFactoryDefault implements ScreenFactory {
   }
 
   @override
-  Widget makeEmptySubjectProductsScreen({
-    required void Function({
-      required String routeName,
-      Map<String, dynamic>? params,
-    }) onNavigateTo,
-  }) {
+  Widget makeEmptySubjectProductsScreen() {
     return ChangeNotifierProvider(
-      create: (context) => _diContainer._makeEmptySubjectProductsViewModel(
-          context, onNavigateTo),
+      create: (context) =>
+          _diContainer._makeEmptySubjectProductsViewModel(context),
       child: const EmptySubjectProductsScreen(),
     );
   }
 
   @override
   Widget makeEmptyProductScreen({
-    required void Function({
-      required String routeName,
-      Map<String, dynamic>? params,
-    }) onNavigateTo,
+    nNavigateTo,
   }) {
     return ChangeNotifierProvider(
-      create: (context) =>
-          _diContainer._makeEmptyProductViewModel(context, onNavigateTo),
+      create: (context) => _diContainer._makeEmptyProductViewModel(
+        context,
+      ),
       child: const EmptyProductScreen(),
     );
   }
@@ -424,71 +404,26 @@ class ScreenFactoryDefault implements ScreenFactory {
   Widget makeProductScreen({
     required int productId,
     required int productPrice,
-    required String prevScreen,
-    required void Function({
-      required String routeName,
-      Map<String, dynamic>? params,
-    }) onNavigateTo,
-    required void Function(List<String> keyPhrasesStr) onSaveKeyPhrasesToTrack,
   }) {
     return ChangeNotifierProvider(
-      create: (context) => _diContainer._makeProductViewModel(
-          context,
-          productId,
-          productPrice,
-          prevScreen,
-          onNavigateTo,
-          onSaveKeyPhrasesToTrack),
+      create: (context) =>
+          _diContainer._makeProductViewModel(context, productId, productPrice),
       child: const ProductScreen(),
     );
   }
 
   @override
-  Widget makeSeoRequestsExtendScreen(
-      {required void Function({
-        required String routeName,
-        Map<String, dynamic>? params,
-      }) onNavigateTo,
-      required List<int> productIds,
-      required List<String> charactiristics}) {
+  Widget makeSeoRequestsExtendScreen({
+    required List<int> productIds,
+    required List<String> characteristics,
+  }) {
     return ChangeNotifierProvider(
       create: (context) => _diContainer._makeSeoRequestsExtendViewModel(
         context,
-        onNavigateTo,
         productIds,
-        charactiristics,
+        characteristics,
       ),
       child: const SeoRequestsExtendScreen(),
-    );
-  }
-
-  @override
-  Widget makeMailingScreen({
-    required void Function({
-      required String routeName,
-      Map<String, dynamic>? params,
-    }) onNavigateTo,
-  }) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(
-          create: (context) => _diContainer._makeMailingSettingsViewModel(
-            context,
-            onNavigateTo,
-          ),
-        ),
-        ChangeNotifierProvider(
-          create: (context) => _diContainer._makeSavedProductsViewModel(
-            context,
-          ),
-        ),
-        ChangeNotifierProvider(
-          create: (context) => _diContainer._makeSavedKeyPhrasesViewModel(
-            context,
-          ),
-        ),
-      ],
-      child: const MailingScreen(),
     );
   }
 
@@ -513,22 +448,72 @@ class ScreenFactoryDefault implements ScreenFactory {
   }
 
   @override
-  Widget makeApiKeysScreen() {
+  Widget makeMarketScreen() {
     return ChangeNotifierProvider(
-      create: (context) => _diContainer._makeApiKeyViewModel(
-        context,
-      ),
-      child: const ApiKeyScreen(),
+      create: (context) => _diContainer._makeMarketViewModel(context),
+      child: const MarketScreen(),
+    );
+  }
+
+  // @override
+  // Widget makeApiKeysScreen() {
+  //   return ChangeNotifierProvider(
+  //     create: (context) => _diContainer._makeApiKeyViewModel(
+  //       context,
+  //     ),
+  //     child: const ApiKeyScreen(),
+  //   );
+  // }
+
+  @override
+  Widget makeProductDetailScreen({required Product product}) {
+    return ChangeNotifierProvider(
+      create: (context) =>
+          _diContainer._makeProductDetailViewModel(context, product),
+      child: ProductDetailScreen(product: product),
     );
   }
 
   @override
-  Widget makePromotionsScreen() {
+  Widget makeAddCardsScreen() {
+    print("makeAddCardsScreen");
     return ChangeNotifierProvider(
-      create: (context) => _diContainer._makePromotionsViewModel(
-        context,
-      ),
-      child: const PromotionsScreen(),
+      create: (context) => _diContainer._makeAddCardsViewModel(context),
+      child: const AddCardsScreen(),
+    );
+  }
+
+  @override
+  Widget makeProductCardsScreen() {
+    return ChangeNotifierProvider(
+      create: (context) => _diContainer._makeProductCardsViewModel(context),
+      child: const ProductCardsScreen(),
+    );
+  }
+
+  @override
+  Widget makeProductCardScreen({required int imtID, required int nmID}) {
+    return ChangeNotifierProvider(
+      create: (context) =>
+          _diContainer._makeProductCardViewModel(context, imtID, nmID),
+      child: const ProductCardScreen(),
+    );
+  }
+
+  @override
+  Widget makeProductCostImportScreen() {
+    return ChangeNotifierProvider(
+      create: (context) =>
+          _diContainer._makeProductCostImportViewModel(context),
+      child: const ProductCostImportScreen(),
+    );
+  }
+
+  @override
+  Widget makeTokensScreen() {
+    return ChangeNotifierProvider(
+      create: (context) => _diContainer._makeTokensViewModel(context),
+      child: const TokensScreen(),
     );
   }
 }
