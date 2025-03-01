@@ -65,6 +65,7 @@ class ProductCardViewModel extends ViewModelBase {
       productCard = card;
 
       volumeLiters = _calculateVolumeLiters();
+      print("Volume liters: $volumeLiters");
     } catch (e) {
       errorMessage = "Ошибка загрузки карточки товара: ${e.toString()}";
     }

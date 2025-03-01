@@ -71,8 +71,11 @@ class ProductCardsViewModel extends ViewModelBase {
 
       // Грузим тарифы
       allTariffs = await wbTariffsService.fetchTariffs();
+      final today = DateTime.now();
+      final formattedDate =
+          "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
       allBoxTariffs =
-          await wbTariffsService.fetchBoxTariffs(date: '2025-01-01');
+          await wbTariffsService.fetchBoxTariffs(date: formattedDate);
 
       errorMessage = null;
     } catch (e) {

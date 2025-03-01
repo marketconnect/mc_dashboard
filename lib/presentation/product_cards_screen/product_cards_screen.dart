@@ -24,6 +24,16 @@ class _ProductCardsScreenState extends State<ProductCardsScreen> {
     super.dispose();
   }
 
+  double _calculateLogistics(WbBoxTariff tariff, double volume) {
+    return volume < 1
+        ? tariff.boxDeliveryBase
+        : (volume - 1) * tariff.boxDeliveryLiter + tariff.boxDeliveryBase;
+  }
+
+  double _calculateVolumeLiters(int length, int width, int height) {
+    return (length * width * height) / 1000.0;
+  }
+
   double? _calculateMargin(ProductCard card, ProductCardsViewModel viewModel) {
     double? price = viewModel.goodsPrices[card.nmID];
     final costData = viewModel.productCosts[card.nmID];
@@ -46,11 +56,9 @@ class _ProductCardsScreenState extends State<ProductCardsScreen> {
         costData != null &&
         wbTariff != null &&
         boxTariff != null) {
-      double volumeLiters = (card.length * card.width * card.height) / 1000.0;
-      double logistics = volumeLiters < 1
-          ? boxTariff.boxDeliveryBase
-          : (volumeLiters - 1) * boxTariff.boxDeliveryLiter +
-              boxTariff.boxDeliveryBase;
+      double volumeLiters =
+          _calculateVolumeLiters(card.length, card.width, card.height);
+      double logistics = _calculateLogistics(boxTariff, volumeLiters);
       double commissionPercent = wbTariff.kgvpMarketplace.ceilToDouble();
       double commission = price * (commissionPercent / 100);
       double costOfReturns = 0.0;
@@ -222,18 +230,9 @@ class _ProductCardsScreenState extends State<ProductCardsScreen> {
           : (volumeLiters - 1) * boxTariff.boxDeliveryLiter +
               boxTariff.boxDeliveryBase;
 
-      // ----- Расчёт комиссии -----
-      // в примере вы писали:
-      // double commissionPercent = (wbTariff.kgvpMarketplace.ceil() ?? 0).toDouble();
-      // но .ceil() уже вернёт int, поэтому примерно так:
       double commissionPercent = wbTariff.kgvpMarketplace.ceilToDouble();
       double commission = price * (commissionPercent / 100);
 
-      // ----- Расчёт возвратов -----
-      // Допустим, формула та же, что и в ProductCardScreen:
-      // const double returnLogisticsCost = 50.0;
-      // double costOfReturns = (logistics + returnLogisticsCost) *
-      //    (costData.returnRate / (100 - costData.returnRate));
       double costOfReturns = 0.0;
       if (costData.returnRate < 100) {
         const double returnLogisticsCost = 50.0;
@@ -241,11 +240,9 @@ class _ProductCardsScreenState extends State<ProductCardsScreen> {
             (costData.returnRate / (100 - costData.returnRate));
       }
 
-      // ----- Расчёт налога -----
-      // taxRate хранится в costData.taxRate, допустим 7 = 7%
       double taxCost = price * (costData.taxRate / 100);
-
-      // ----- Складываем все затраты -----
+      print(
+          "nmID ${card.nmID} volume: ${_calculateVolumeLiters(card.length, card.width, card.height)} WH ${costData.warehouseName} TARRIFS ${boxTariff.boxDeliveryBase} ${boxTariff.boxDeliveryLiter}  costPrice: ${costData.costPrice} delivery: ${costData.delivery} packaging: ${costData.packaging} paidAcceptance: ${costData.paidAcceptance} logistics: ${logistics} commission: ${commission} costOfReturns: ${costOfReturns} taxCost: ${taxCost}");
       double totalCosts = costData.costPrice +
           costData.delivery +
           costData.packaging +

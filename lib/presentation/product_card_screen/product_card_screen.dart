@@ -209,6 +209,7 @@ class _ProductCardScreenState extends State<ProductCardScreen> {
     final double costPrice = double.tryParse(_costController.text) ?? 0;
     final double delivery = double.tryParse(_deliveryController.text) ?? 0;
     final double packaging = double.tryParse(_packageController.text) ?? 0;
+    final int taxRate = int.tryParse(_taxRateController.text) ?? 7;
     final double paidAcceptance =
         double.tryParse(_paidAcceptanceController.text) ?? 0;
     final double returnRate =
@@ -242,12 +243,14 @@ class _ProductCardScreenState extends State<ProductCardScreen> {
       logistics,
       storage,
       commissionPercent,
+      taxRate,
     );
     final double finalPriceSelected = selectedResults["finalPrice"]!;
     final double netProfitSelected = selectedResults["netProfit"]!;
     final double breakEvenPriceSelected = selectedResults["breakEvenPrice"]!;
 // 0.07%
-
+    print(
+        "nmID  ${productCard.nmID} wh: ${_selectedWarehouse} tariff: ${selectedBoxTariff.boxDeliveryBase} ${selectedBoxTariff.boxDeliveryLiter} costPrice: ${costPrice} delivery: ${delivery} packaging: ${packaging} paidAcceptance: ${paidAcceptance} logistics: ${logistics} costOfReturns: ${totalReturnCost}");
     return _buildResponsiveLayout(
       model: model,
       productCard: productCard,
@@ -291,7 +294,8 @@ class _ProductCardScreenState extends State<ProductCardScreen> {
 
     // Пересчитываем налог
     double taxCost = finalPrice * (taxRate / 100);
-
+    print('taxCost: $taxCost');
+    print("commission: ${finalPrice * (commissionPercent / 100)}");
     // Все затраты (доп. затраты + логистика + комиссия + налог)
     double totalCosts = costPrice +
         delivery +
@@ -675,6 +679,7 @@ class _ProductCardScreenState extends State<ProductCardScreen> {
     double logistics,
     double storage,
     double commissionPercent,
+    int taxRate,
   ) {
     double finalPrice = 100.0;
     double oldPrice = 0.0;
@@ -686,7 +691,7 @@ class _ProductCardScreenState extends State<ProductCardScreen> {
       iterationCount++;
       oldPrice = finalPrice;
       final double wbCommission = finalPrice * (commissionPercent / 100);
-      final double taxCost = finalPrice * 0.07;
+      final double taxCost = finalPrice * taxRate / 100;
       final double totalCosts = costPrice +
           delivery +
           packaging +
@@ -700,7 +705,7 @@ class _ProductCardScreenState extends State<ProductCardScreen> {
       finalPrice = totalCosts / (1 - marginRatio);
     }
     final double wbCommission = finalPrice * (commissionPercent / 100);
-    final double taxCost = finalPrice * 0.07;
+    final double taxCost = finalPrice * taxRate / 100;
     final double totalCosts = costPrice +
         delivery +
         packaging +
