@@ -193,7 +193,7 @@ class _ProductCardsScreenState extends State<ProductCardsScreen> {
   DataRow _buildDataRow(ProductCardsViewModel viewModel, ProductCard card) {
     double? price = viewModel.goodsPrices[card.nmID];
     final costData = viewModel.productCosts[card.nmID];
-    final rowColor = costData == null
+    final rowColor = costData == null || costData.costPrice == 0
         ? MaterialStateProperty.all(
             Theme.of(context).colorScheme.errorContainer)
         : null;
