@@ -193,7 +193,10 @@ class _ProductCardsScreenState extends State<ProductCardsScreen> {
   DataRow _buildDataRow(ProductCardsViewModel viewModel, ProductCard card) {
     double? price = viewModel.goodsPrices[card.nmID];
     final costData = viewModel.productCosts[card.nmID];
-
+    final rowColor = costData == null
+        ? MaterialStateProperty.all(
+            Theme.of(context).colorScheme.errorContainer)
+        : null;
     // Если нет цены или нет costData, либо нет тарифа — ставим прочерк.
     String marginText = "—";
 
@@ -241,8 +244,6 @@ class _ProductCardsScreenState extends State<ProductCardsScreen> {
       }
 
       double taxCost = price * (costData.taxRate / 100);
-      print(
-          "nmID ${card.nmID} volume: ${_calculateVolumeLiters(card.length, card.width, card.height)} WH ${costData.warehouseName} TARRIFS ${boxTariff.boxDeliveryBase} ${boxTariff.boxDeliveryLiter}  costPrice: ${costData.costPrice} delivery: ${costData.delivery} packaging: ${costData.packaging} paidAcceptance: ${costData.paidAcceptance} logistics: ${logistics} commission: ${commission} costOfReturns: ${costOfReturns} taxCost: ${taxCost}");
       double totalCosts = costData.costPrice +
           costData.delivery +
           costData.packaging +
@@ -259,6 +260,7 @@ class _ProductCardsScreenState extends State<ProductCardsScreen> {
     }
 
     return DataRow(
+      color: rowColor,
       cells: [
         // (1) Фото
         DataCell(
