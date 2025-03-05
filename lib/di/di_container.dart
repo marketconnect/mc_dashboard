@@ -9,6 +9,7 @@ import 'package:mc_dashboard/domain/services/product_service.dart';
 import 'package:mc_dashboard/domain/services/tariff_service.dart';
 import 'package:mc_dashboard/domain/services/token_service.dart';
 import 'package:mc_dashboard/domain/services/wb_api_content_service.dart';
+import 'package:mc_dashboard/domain/services/wb_price_service.dart';
 import 'package:mc_dashboard/domain/services/wb_products_service.dart';
 import 'package:mc_dashboard/domain/services/wb_tariffs_service.dart';
 
@@ -41,6 +42,7 @@ import 'package:mc_dashboard/domain/services/tinkoff_payment_service.dart';
 
 import 'package:mc_dashboard/domain/services/warehouses_service.dart';
 import 'package:mc_dashboard/infrastructure/api/wb_content_api_client.dart';
+import 'package:mc_dashboard/infrastructure/api/wb_price_api_client.dart';
 import 'package:mc_dashboard/infrastructure/api/wb_products_api_client.dart';
 import 'package:mc_dashboard/infrastructure/repositories/card_source_repo.dart';
 import 'package:mc_dashboard/infrastructure/repositories/product_cost_repo.dart';
@@ -121,6 +123,9 @@ class _DIContainer {
   WbProductsApiClient _makeWbProductsApiClient() => WbProductsApiClient();
 
   WbGoodsApiClient _makeWbGoodsApiClient() => const WbGoodsApiClient();
+
+  WbPriceApiServiceApiClient _makeWbPriceApiServiceApiClient() =>
+      const WbPriceApiClient();
   // Services //////////////////////////////////////////////////////////////////
 
   DetailedOrdersService _makeDetailedOrdersService() =>
@@ -191,6 +196,12 @@ class _DIContainer {
         apiClient: _makeWbGoodsApiClient(),
         wbTokenRepo: secureTokenRepo,
       );
+
+  WbApiPriceService get wbPriceService => WbApiPriceService(
+        apiClient: _makeWbPriceApiServiceApiClient(),
+        wbTokenRepo: secureTokenRepo,
+      );
+
   // ViewModels ////////////////////////////////////////////////////////////////
   ChoosingNicheViewModel _makeChoosingNicheViewModel(
           BuildContext context,
@@ -317,6 +328,7 @@ class _DIContainer {
       tariffsService: wbTariffsService,
       imtID: imtID,
       productCostService: productCostService,
+      wbPriceService: wbPriceService,
       nmID: nmID,
       context: context,
     );

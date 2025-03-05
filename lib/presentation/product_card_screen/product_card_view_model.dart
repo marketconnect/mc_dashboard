@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
 import 'package:mc_dashboard/domain/entities/product_card.dart';
 import 'package:mc_dashboard/domain/entities/product_cost_data.dart';
@@ -18,10 +19,16 @@ abstract class ProductCardWbProductCostService {
   Future<void> saveProductCost(ProductCostData costData);
 }
 
+abstract class ProductCardWbPriceService {
+  Future<Map<String, dynamic>> uploadPriceTask(
+      List<Map<String, dynamic>> priceData);
+}
+
 class ProductCardViewModel extends ViewModelBase {
   final ProductCardWbContentApiService contentApiService;
   final ProductCardWbTariffsService tariffsService;
   final ProductCardWbProductCostService productCostService;
+  final ProductCardWbPriceService wbPriceService;
   final int imtID;
   final int nmID;
 
@@ -41,6 +48,7 @@ class ProductCardViewModel extends ViewModelBase {
     required this.productCostService,
     required this.imtID,
     required this.nmID,
+    required this.wbPriceService,
     required super.context,
   });
 
@@ -89,6 +97,22 @@ class ProductCardViewModel extends ViewModelBase {
       );
     } catch (e) {
       errorMessage = "Ошибка загрузки тарифов: ${e.toString()}";
+    }
+  }
+
+  Future<void> uploadProductPrices(List<Map<String, dynamic>> priceData) async {
+    try {
+      await wbPriceService.uploadPriceTask(priceData);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Цена успешно обновлена"),
+          ),
+        );
+      }
+      notifyListeners();
+    } catch (e) {
+      errorMessage = "Ошибка загрузки цен: ${e.toString()}";
     }
   }
 

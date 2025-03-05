@@ -34,6 +34,54 @@ class _ProductCardsScreenState extends State<ProductCardsScreen> {
     return (length * width * height) / 1000.0;
   }
 
+  double? _calculateProfit(ProductCard card, ProductCardsViewModel viewModel) {
+    double? price = viewModel.goodsPrices[card.nmID];
+    final costData = viewModel.productCosts[card.nmID];
+    final wbTariff = viewModel.allTariffs
+            .where((t) => t.subjectID == card.subjectID)
+            .isNotEmpty
+        ? viewModel.allTariffs.firstWhere((t) => t.subjectID == card.subjectID)
+        : null;
+    WbBoxTariff? boxTariff;
+    if (costData != null) {
+      boxTariff = viewModel.allBoxTariffs
+              .where((b) => b.warehouseName == costData.warehouseName)
+              .isNotEmpty
+          ? viewModel.allBoxTariffs
+              .firstWhere((b) => b.warehouseName == costData.warehouseName)
+          : null;
+    }
+    if (price != null &&
+        price > 0 &&
+        costData != null &&
+        wbTariff != null &&
+        boxTariff != null) {
+      double volumeLiters =
+          _calculateVolumeLiters(card.length, card.width, card.height);
+      double logistics = _calculateLogistics(boxTariff, volumeLiters);
+      double commissionPercent = wbTariff.kgvpMarketplace.ceilToDouble();
+      double commission = price * (commissionPercent / 100);
+      double costOfReturns = 0.0;
+      if (costData.returnRate < 100) {
+        const double returnLogisticsCost = 50.0;
+        costOfReturns = (logistics + returnLogisticsCost) *
+            (costData.returnRate / (100 - costData.returnRate));
+      }
+      double taxCost = price * (costData.taxRate / 100);
+      double totalCosts = costData.costPrice +
+          costData.delivery +
+          costData.packaging +
+          costData.paidAcceptance +
+          logistics +
+          commission +
+          costOfReturns +
+          taxCost;
+      double profit = price - totalCosts;
+      return profit;
+    }
+    return null;
+  }
+
   double? _calculateMargin(ProductCard card, ProductCardsViewModel viewModel) {
     double? price = viewModel.goodsPrices[card.nmID];
     final costData = viewModel.productCosts[card.nmID];
@@ -160,36 +208,37 @@ class _ProductCardsScreenState extends State<ProductCardsScreen> {
           child: SingleChildScrollView(
             scrollDirection: Axis.vertical,
             child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
-                columnSpacing: 20,
-                sortColumnIndex: _sortColumnIndex,
-                sortAscending: _ascending,
-                columns: [
-                  const DataColumn(label: Text('Фото')),
-                  _sortableColumn('nmID', 1),
-                  _sortableColumn('subjectID', 2),
-                  _sortableColumn('Название предмета', 3),
-                  _sortableColumn('Код продавца', 4),
-                  const DataColumn(label: Text('Цена')),
-                  _sortableColumn('Рентабельность', 6),
-                  const DataColumn(label: Text('Длина (см)')),
-                  const DataColumn(label: Text('Ширина (см)')),
-                  const DataColumn(label: Text('Высота (см)')),
-                  const DataColumn(label: Text('Размеры валидны?')),
-                  const DataColumn(label: Text('Действие')),
-                ],
-                rows: sortedCards
-                    .map((card) => _buildDataRow(viewModel, card))
-                    .toList(),
-              ),
-            ),
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  columnSpacing: 20,
+                  sortColumnIndex: _sortColumnIndex,
+                  sortAscending: _ascending,
+                  columns: [
+                    const DataColumn(label: Text('Фото')),
+                    _sortableColumn('nmID', 1),
+                    _sortableColumn('subjectID', 2),
+                    _sortableColumn('Название предмета', 3),
+                    _sortableColumn('Код продавца', 4),
+                    _sortableColumn('Цена', 5),
+                    _sortableColumn('Рентабельность', 6),
+                    _sortableColumn('Чистая прибыль', 7),
+                    const DataColumn(label: Text('Длина (см)')),
+                    const DataColumn(label: Text('Ширина (см)')),
+                    const DataColumn(label: Text('Высота (см)')),
+                    const DataColumn(label: Text('Размеры валидны?')),
+                    const DataColumn(label: Text('Действие')),
+                  ],
+                  rows: sortedCards
+                      .map((card) => _buildDataRow(viewModel, card))
+                      .toList(),
+                )),
           ),
         ),
       ],
     );
   }
 
+// Изменение в методе _buildDataRow:
   DataRow _buildDataRow(ProductCardsViewModel viewModel, ProductCard card) {
     double? price = viewModel.goodsPrices[card.nmID];
     final costData = viewModel.productCosts[card.nmID];
@@ -197,36 +246,20 @@ class _ProductCardsScreenState extends State<ProductCardsScreen> {
         ? MaterialStateProperty.all(
             Theme.of(context).colorScheme.errorContainer)
         : null;
-    // Если нет цены или нет costData, либо нет тарифа — ставим прочерк.
     String marginText = "—";
+    String netProfitText = "—"; // Для новой колонки
 
-    // 1. Ищем тариф WB по subjectID (который в card.subjectID)
-    final wbTariff = viewModel.allTariffs
-            .where((t) => t.subjectID == card.subjectID)
-            .isNotEmpty
-        ? viewModel.allTariffs.firstWhere((t) => t.subjectID == card.subjectID)
-        : null;
-
-    // 2. Ищем тариф короба по warehouseName
-    // (который берём из costData.warehouseName)
-    // если costData == null — не сможем найти boxTariff
+    final wbTariff = viewModel.allTariffs.firstWhere(
+      (t) => t.subjectID == card.subjectID,
+    );
     WbBoxTariff? boxTariff;
     if (costData != null) {
-      boxTariff = viewModel.allBoxTariffs
-              .where((b) => b.warehouseName == costData.warehouseName)
-              .isNotEmpty
-          ? viewModel.allBoxTariffs
-              .firstWhere((b) => b.warehouseName == costData.warehouseName)
-          : null;
+      boxTariff = viewModel.allBoxTariffs.firstWhere(
+        (b) => b.warehouseName == costData.warehouseName,
+      );
     }
 
-    // Если всё необходимое есть
-    if (price != null &&
-        price > 0 &&
-        costData != null &&
-        wbTariff != null &&
-        boxTariff != null) {
-      // ----- Расчёт логистики -----
+    if (price != null && price > 0 && costData != null && boxTariff != null) {
       double volumeLiters = (card.length * card.width * card.height) / 1000.0;
       double logistics = volumeLiters < 1
           ? boxTariff.boxDeliveryBase
@@ -253,10 +286,12 @@ class _ProductCardsScreenState extends State<ProductCardsScreen> {
           costOfReturns +
           taxCost;
 
-      // ----- Рентабельность (%) -----
       double marginPercent = ((price - totalCosts) / price) * 100;
-
       marginText = "${marginPercent.toStringAsFixed(1)}%";
+
+      // Вычисляем чистую прибыль
+      double netProfit = price - totalCosts;
+      netProfitText = "${netProfit.toStringAsFixed(2)} ₽";
     }
 
     return DataRow(
@@ -285,20 +320,22 @@ class _ProductCardsScreenState extends State<ProductCardsScreen> {
         DataCell(Text(price != null ? "${price.toStringAsFixed(2)} ₽" : "—")),
         // (7) Рентабельность
         DataCell(Text(marginText)),
-        // (8) Длина (см)
+        // (8) Чистая прибыль (новая колонка)
+        DataCell(Text(netProfitText)),
+        // (9) Длина (см)
         DataCell(Text(card.length.toString())),
-        // (9) Ширина (см)
+        // (10) Ширина (см)
         DataCell(Text(card.width.toString())),
-        // (10) Высота (см)
+        // (11) Высота (см)
         DataCell(Text(card.height.toString())),
-        // (11) Размеры валидны?
+        // (12) Размеры валидны?
         DataCell(
           Icon(
             card.isValidDimensions ? Icons.check : Icons.close,
             color: card.isValidDimensions ? Colors.green : Colors.red,
           ),
         ),
-        // (12) Кнопка "Перейти"
+        // (13) Кнопка "Перейти"
         DataCell(
           ElevatedButton(
             onPressed: () => viewModel.navTo(card.imtID, card.nmID),
@@ -352,46 +389,35 @@ class _ProductCardsScreenState extends State<ProductCardsScreen> {
           return _ascending
               ? a.vendorCode.compareTo(b.vendorCode)
               : b.vendorCode.compareTo(a.vendorCode);
+        case 5: // Сортировка по цене
+          double priceA = viewModel.goodsPrices[a.nmID] ?? double.infinity;
+          double priceB = viewModel.goodsPrices[b.nmID] ?? double.infinity;
+          return _ascending
+              ? priceA.compareTo(priceB)
+              : priceB.compareTo(priceA);
         case 6: // Сортировка по рентабельности
           double? marginA = _calculateMargin(a, viewModel);
           double? marginB = _calculateMargin(b, viewModel);
           if (marginA == null && marginB == null) return 0;
-          if (marginA == null) return 1; // пустые значения в конце
+          if (marginA == null) return 1;
           if (marginB == null) return -1;
           return _ascending
               ? marginA.compareTo(marginB)
               : marginB.compareTo(marginA);
+        case 7: // Сортировка по чистой прибыли
+          double? profitA = _calculateProfit(a, viewModel);
+          double? profitB = _calculateProfit(b, viewModel);
+          if (profitA == null && profitB == null) return 0;
+          if (profitA == null) return 1;
+          if (profitB == null) return -1;
+          return _ascending
+              ? profitA.compareTo(profitB)
+              : profitB.compareTo(profitA);
         default:
           return 0;
       }
     });
   }
-
-  // DataRow _buildDataRow(ProductCardsViewModel viewModel, ProductCard card) {
-  //   return DataRow(cells: [
-  //     DataCell(
-  //       card.photoUrl.isNotEmpty
-  //           ? Image.network(card.photoUrl,
-  //               width: 50, height: 50, fit: BoxFit.cover)
-  //           : const Icon(Icons.image_not_supported),
-  //     ),
-  //     _copyableCell(card.nmID.toString()),
-  //     _copyableCell(card.subjectID.toString()),
-  //     _copyableCell(card.subjectName),
-  //     _copyableCell(card.vendorCode),
-  //     DataCell(Text(card.length.toString())),
-  //     DataCell(Text(card.width.toString())),
-  //     DataCell(Text(card.height.toString())),
-  //     DataCell(Icon(card.isValidDimensions ? Icons.check : Icons.close,
-  //         color: card.isValidDimensions ? Colors.green : Colors.red)),
-  //     DataCell(
-  //       ElevatedButton(
-  //         onPressed: () => viewModel.navTo(card.imtID, card.nmID),
-  //         child: const Text("Перейти"),
-  //       ),
-  //     ),
-  //   ]);
-  // }
 
   DataCell _copyableCell(String text) {
     return DataCell(

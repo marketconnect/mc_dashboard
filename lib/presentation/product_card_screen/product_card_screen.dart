@@ -581,6 +581,75 @@ class _ProductCardScreenState extends State<ProductCardScreen> {
                     },
                   ),
                   const Text("%"),
+                  SizedBox(
+                    width: 10,
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      final model = context.read<ProductCardViewModel>();
+                      final selectedMargin =
+                          double.tryParse(controller.text) ?? 30;
+                      final selectedResults = _calculateForMargin(
+                        selectedMargin,
+                        double.tryParse(_costController.text) ?? 0,
+                        double.tryParse(_deliveryController.text) ?? 0,
+                        double.tryParse(_packageController.text) ?? 0,
+                        double.tryParse(_paidAcceptanceController.text) ?? 0,
+                        _calculateReturnCost(
+                          _calculateLogistics(
+                            model.boxTariffs.firstWhere(
+                              (tariff) =>
+                                  tariff.warehouseName == _selectedWarehouse,
+                              orElse: () => WbBoxTariff(
+                                warehouseName: "Маркетплейс",
+                                boxDeliveryAndStorageExpr: 0.0,
+                                boxDeliveryBase: 0.0,
+                                boxDeliveryLiter: 0.0,
+                                boxStorageBase: 0.0,
+                                boxStorageLiter: 0.0,
+                                warehouseID: '',
+                              ),
+                            ),
+                            model.volumeLiters,
+                          ),
+                          double.tryParse(_returnRateController.text) ?? 10.0,
+                        ),
+                        _calculateLogistics(
+                          model.boxTariffs.firstWhere(
+                            (tariff) =>
+                                tariff.warehouseName == _selectedWarehouse,
+                            orElse: () => WbBoxTariff(
+                              warehouseName: "Маркетплейс",
+                              boxDeliveryAndStorageExpr: 0.0,
+                              boxDeliveryBase: 0.0,
+                              boxDeliveryLiter: 0.0,
+                              boxStorageBase: 0.0,
+                              boxStorageLiter: 0.0,
+                              warehouseID: '',
+                            ),
+                          ),
+                          model.volumeLiters,
+                        ),
+                        double.tryParse(_storageController.text) ?? 0,
+                        model.wbTariff?.kgvpMarketplace.toDouble() ?? 0,
+                        int.tryParse(_taxRateController.text) ?? 7,
+                      );
+
+                      final price = selectedResults["finalPrice"]!;
+
+                      final newPrice = price * 1.05;
+                      final newDiscount = 5;
+
+                      model.uploadProductPrices([
+                        {
+                          "nmID": model.nmID,
+                          "price": newPrice.round(),
+                          "discount": newDiscount,
+                        }
+                      ]);
+                    },
+                    child: const Text("Установить"),
+                  ),
                 ],
               ),
             ],
