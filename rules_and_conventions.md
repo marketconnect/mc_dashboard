@@ -69,6 +69,10 @@ Each layer operates within specific boundaries. **No layer** is allowed to viola
     - Each API client or repository **implements** an interface (abstract class) defined in `domain/services`.
     - The rest of the application only references these abstractions from `domain`, not the concrete classes in `infrastructure`.
     - If you add a new API client, you first create an abstract interface in `domain/services` (naming it appropriately). Then implement that interface here in `infrastructure/api`.
+    - **A new repository should only be created if**:
+      - It is necessary to store **user-related data** (e.g., `access_token`, user settings, cached user content).
+      - A new type of storage is required (e.g., integrating a database, secure storage, or a new caching mechanism).
+      - The task explicitly states that a new repository must be added.
 
 
  
