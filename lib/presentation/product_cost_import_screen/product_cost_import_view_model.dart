@@ -171,15 +171,6 @@ class ProductCostImportViewModel extends ViewModelBase {
 // Теперь получаем лист
     Sheet sheet = excel['Sheet 1'];
 
-// Можно вставить строку заголовка
-    // sheet.appendRow(<CellValue?>[
-    //   TextCellValue("nmID"),
-    //   TextCellValue("costPrice"),
-    //   TextCellValue("delivery"),
-    //   TextCellValue("packaging"),
-
-    // ]);
-
 // Заполняем
     for (var data in costDataList) {
       sheet.appendRow(<CellValue?>[
