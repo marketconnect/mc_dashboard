@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
+import 'package:mc_dashboard/.env.dart';
 import 'package:mc_dashboard/domain/entities/charc.dart';
 import 'package:mc_dashboard/domain/entities/product_card.dart';
 import 'package:mc_dashboard/domain/services/wb_api_content_service.dart';
@@ -11,7 +12,7 @@ import 'package:mc_dashboard/domain/services/wb_api_content_service.dart';
 class WbContentApiClient implements WbContentApiServiceApiClient {
   const WbContentApiClient();
 
-  static const baseUrl = 'https://content-api.wildberries.ru';
+  static const baseUrl = WbApi.contentBaseUrl;
   @override
   Future<List<ProductCard>> fetchProductCards({
     required String token,

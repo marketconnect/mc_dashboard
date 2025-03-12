@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:mc_dashboard/.env.dart';
 import 'package:mc_dashboard/domain/services/wb_price_service.dart';
 
 class WbPriceApiClient implements WbPriceApiServiceApiClient {
   const WbPriceApiClient();
-  static const baseUrl = 'https://discounts-prices-api.wildberries.ru';
+  static const baseUrl = WbApi.discountsBaseUrl;
 
   @override
   Future<Map<String, dynamic>> uploadPriceTask({
