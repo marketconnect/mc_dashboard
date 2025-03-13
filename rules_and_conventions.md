@@ -225,6 +225,73 @@ Each layer operates within specific boundaries. **No layer** is allowed to viola
   - When creating a new entity (whether it is a Service, Repository, API Client, ViewModel, or any other component), it is mandatory to follow the Single Responsibility Principle (SRP). Each class should have one clearly defined responsibility and should not perform tasks outside its designated scope. Services should only contain business logic and interact with repositories or API clients—not handle UI logic or state management. ViewModels should only manage UI state and interact with services—never with API clients or repositories directly. Repositories and API Clients should focus exclusively on data fetching and storage, without any business logic. UI Components (Screens, Widgets) should focus only on rendering and handling user interactions. If a class appears to be handling multiple concerns, consider splitting it into separate, more focused classes to improve maintainability and testability.
 
 
+13. UI/UX Guidelines for Responsive Design
+
+    Consistency Across Devices
+        The UI should look and function consistently across platforms (Web, iOS, Android).
+        Use adaptive components and MediaQuery to detect screen sizes.
+
+    Adaptive Layouts
+        Use Flex, Expanded, Wrap, and GridView instead of fixed dimensions.
+        Apply LayoutBuilder and MediaQuery to dynamically adjust elements.
+        Support both portrait and landscape orientations.
+
+    Breakpoints
+        Small Screens (≤600px, mobile) → Compact UI, primarily vertical layout.
+        Medium Screens (600px–1200px, tablets) → Combination of horizontal and vertical elements.
+        Large Screens (≥1200px, desktop) → Multi-column layout with optimized spacing.
+
+    Touch-Friendly Interactions
+        Minimum touch target size: 48x48 dp (Google Material Guidelines).
+        Use hover effects for Web and ripple effects for mobile.
+        Implement drag-and-drop interactions where necessary.
+
+    Keyboard & Navigation Accessibility
+        Support keyboard navigation using Tab/Arrow keys (Web).
+        Ensure the on-screen keyboard does not obstruct important UI elements on mobile.
+        Use FocusNode to manage keyboard interactions.
+
+    Performance Optimization
+        Implement lazy loading for images (CachedNetworkImage).
+        Use ListView.builder instead of ListView for long lists.
+        Minimize complex animations, especially on low-performance devices.
+
+    Dark & Light Theme
+        Support both light and dark themes using ThemeMode.system.
+        Ensure contrast meets WCAG 2.0 (AA) standards.
+
+    Progressive Enhancement
+        Implement PWA features (if the Web version should work like an app).
+        Handle scenarios where a feature is not supported on certain devices.
+
+    Offline & Loading States
+        Display skeletons (Shimmer) or CircularProgressIndicator for loading states.
+        Provide error handling mechanisms (SnackBar or Dialog) for offline scenarios.
+
+    Modal Bottom Sheets & Dialogs
+        On mobile, use BottomSheet instead of pop-up dialogs.
+        On Web, prefer dialogs (AlertDialog).
+
+    Animations & Microinteractions
+        Use Flutter animations (AnimatedContainer, Hero) for smooth transitions.
+        Avoid excessive animations on low-end devices.
+
+    Internationalization (i18n) & RTL Support
+        Use Intl and flutter_localizations.
+        Ensure support for Right-To-Left (RTL) languages like Arabic/Hebrew.
+
+    Form Validation & User Input Handling
+        Implement validation using Form & TextFormField.
+        Provide instant feedback instead of waiting for form submission.
+
+    Floating Action Buttons (FAB)
+        Use FAB only when appropriate (e.g., creating a new item).
+        For Web, prefer navigation bar icons over FAB.
+
+    Navigation Best Practices
+        Implement Adaptive Navigation (BottomNav for mobile, SideNav for Web).
+        Use GoRouter for deep linking and navigation control.
+
 ## Summary
 
 By adhering to these rules:
