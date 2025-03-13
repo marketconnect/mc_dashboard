@@ -103,16 +103,15 @@ Each layer operates within specific boundaries. **No layer** is allowed to viola
 ## 6. `presentation` Layer
 
 
-  - **Purpose**:
 
-    - Contains the **UI logic** and any classes that directly interact with the UI (e.g., ViewModels).
+  - **Purpose**:
+    - Contains the UI logic and any classes that directly interact with the UI (e.g., ViewModels).
 
   - **Rules**:
-
-    - **Screens** are the visual widgets the user interacts with. They do not contain business logic; they only pass user actions to the ViewModel.
-    - **ViewModels** communicate with **Services** (from `domain`) to execute business logic, fetch or update data, and store state.
-    - A ViewModel class typically extends the base ViewModel found in `core`, handling loading states, errors, and other lifecycle tasks.
-
+    - Screens are the visual widgets the user interacts with. They **do not contain business logic**; they only pass user actions to the ViewModel.
+    - ViewModels **must communicate only with Services** (from `domain`) to execute business logic, fetch or update data, and store state.
+    - A ViewModel **must extend** `ViewModelBase` from `core`, which handles loading states, errors, and other lifecycle tasks.
+    - ViewModels **must not interact directly with repositories or API clients**—only with domain services.
 
  
 
