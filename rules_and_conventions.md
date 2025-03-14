@@ -66,7 +66,10 @@ Each layer operates within specific boundaries. **No layer** is allowed to viola
 
   - **Rules**:
 
-    - Each API client or repository **implements** an interface (abstract class) defined in `domain/services`.
+    - API clients must implement an interface defined inside the service that uses them.
+    - Repositories must implement an interface defined inside the service that uses them.
+    - No abstract interfaces should be created in `infrastructure/api/` or `infrastructure/repositories/`.
+    - Services must interact with API clients only through these interfaces, ensuring that their implementation can be swapped if necessary.
     - The rest of the application only references these abstractions from `domain`, not the concrete classes in `infrastructure`.
     - If you add a new API client, you first create an abstract interface in `domain/services` (naming it appropriately). Then implement that interface here in `infrastructure/api`.
     - **A new repository should only be created if**:
@@ -93,7 +96,12 @@ Each layer operates within specific boundaries. **No layer** is allowed to viola
   - **Rules**:
 
     - Services in `domain` are typically written as interfaces (or abstract classes).
-    - If you must add a new “Service” or “API Client” interface, do it here. Then you implement it in the `infrastructure` layer.
+    - Services do not define their own interfaces in domain/services/. Instead:
+      - Each ViewModel defines interfaces for the services it uses.
+      - Each Service defines interfaces for the API clients and repositories it interacts with.
+      - API Clients and Repositories implement these interfaces.
+      - A single Service can implement multiple interfaces from different ViewModels.
+      - Services must never directly depend on API clients—they should always use an interface defined in their own file.
     - A domain service may use or combine data from multiple repositories or API clients, but it doesn’t tie itself to any specific implementation—only their interfaces.
 
 
@@ -111,8 +119,11 @@ Each layer operates within specific boundaries. **No layer** is allowed to viola
     - Screens are the visual widgets the user interacts with. They **do not contain business logic**; they only pass user actions to the ViewModel.
     - ViewModels **must communicate only with Services** (from `domain`) to execute business logic, fetch or update data, and store state.
     - A ViewModel **must extend** `ViewModelBase` from `core`, which handles loading states, errors, and other lifecycle tasks.
-    - ViewModels **must not interact directly with repositories or API clients**—only with domain services.
-
+    - ViewModel must define its own service interfaces inside its own file.
+      - If a ViewModel needs data from a service, it must define an abstract class inside its file (e.g., ProductCardsWbContentApi inside product_cards_view_model.dart).
+      - The actual service will later implement this interface.
+      - A single ViewModel can define multiple service interfaces if it depends on different services.
+      - ViewModels must not import or directly use any repositories or API clients—only services through their interfaces.
  
 
 
@@ -208,10 +219,11 @@ Each layer operates within specific boundaries. **No layer** is allowed to viola
 ## 11. Dependency Flow
 
 
-  1. **Screens** → **ViewModels**
-  2. **ViewModels** → **Services** (from `domain`)
-  3. **Services** → **Repositories / API Clients** (in `infrastructure`)
-  4. **Repositories / API Clients** → Implementation details for external data
+  1. Screens → ViewModels (each ViewModel defines its own service interfaces).
+  2. ViewModels → Services (services implement the interfaces defined in ViewModels).
+  3. Services → Repositories / API Clients (each service defines interfaces for the repositories and API clients it interacts with).
+  4. Repositories / API Clients → Implementations in infrastructure/api and infrastructure/repositories.
+  5. No direct interaction between ViewModels and repositories or API clients.
 
  
 
@@ -225,9 +237,12 @@ Each layer operates within specific boundaries. **No layer** is allowed to viola
   - Any external libraries or packages must be **web-compatible** and integrated according to the architecture (for example, networking libraries only in the `infrastructure/api` layer).
   - If you need a new data source (e.g., local database), create a new repository in `infrastructure/repository` implementing an appropriate interface in `domain/services`.
   - When creating a new entity (whether it is a Service, Repository, API Client, ViewModel, or any other component), it is mandatory to follow the Single Responsibility Principle (SRP). Each class should have one clearly defined responsibility and should not perform tasks outside its designated scope. Services should only contain business logic and interact with repositories or API clients—not handle UI logic or state management. ViewModels should only manage UI state and interact with services—never with API clients or repositories directly. Repositories and API Clients should focus exclusively on data fetching and storage, without any business logic. UI Components (Screens, Widgets) should focus only on rendering and handling user interactions. If a class appears to be handling multiple concerns, consider splitting it into separate, more focused classes to improve maintainability and testability.
+  - Where to define interfaces:
+    - Service interfaces must be defined inside the ViewModel that uses them.
+    - API client and repository interfaces must be defined inside the Service that uses them.
+    - There should be no "shared" interfaces in domain/services/.
 
-
-13. UI/UX Guidelines for Responsive Design
+1.  UI/UX Guidelines for Responsive Design
 
     Consistency Across Devices
         The UI should look and function consistently across platforms (Web, iOS, Android).
