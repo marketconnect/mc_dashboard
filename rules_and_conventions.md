@@ -131,7 +131,10 @@ Each layer operates within specific boundaries. **No layer** is allowed to viola
   - **Rules**:
 
     - The navigation logic constructs or requests new screens from a `ScreenFactory`.
-    - Each route name must be listed as a constant.
+    - Each new screen must have a corresponding route name registered in main_navigation_route_names.dart.
+      When adding a new screen, add its route name as a constant in `main_navigation_route_names.dart`.
+      Modify ScreenFactory to include a method for constructing the screen.
+      Register the new route in main_navigation.dart.
     - If you add a new screen, also create a method in your `ScreenFactory` for building that screen and register a route for it here.
 
 
