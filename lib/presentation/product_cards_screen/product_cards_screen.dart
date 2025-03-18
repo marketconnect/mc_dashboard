@@ -10,7 +10,9 @@ import 'package:mc_dashboard/presentation/widgets/progress_bar.dart';
 import 'package:provider/provider.dart';
 
 class ProductCardsScreen extends StatefulWidget {
-  const ProductCardsScreen({Key? key});
+  const ProductCardsScreen({
+    super.key,
+  });
 
   @override
   State<ProductCardsScreen> createState() => _ProductCardsScreenState();
@@ -289,12 +291,11 @@ class _ProductCardsScreenState extends State<ProductCardsScreen> {
                           style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                     _sortableColumn('nmID', 1),
-                    // _sortableColumn('subjectID', 2),
-                    _sortableColumn('Название предмета', 3),
-                    _sortableColumn('Код продавца', 4),
-                    _sortableColumn('Цена', 5),
-                    _sortableColumn('Рентабельность', 6),
-                    _sortableColumn('Чистая прибыль', 7),
+                    _sortableColumn('Название предмета', 2),
+                    _sortableColumn('Код продавца', 3),
+                    _sortableColumn('Цена', 4),
+                    _sortableColumn('Рентабельность', 5),
+                    _sortableColumn('Чистая прибыль', 6),
                     DataColumn(
                       label: const Text('Длина (см)',
                           style: TextStyle(fontWeight: FontWeight.bold)),
@@ -332,9 +333,9 @@ class _ProductCardsScreenState extends State<ProductCardsScreen> {
     double? price = viewModel.goodsPrices[card.nmID];
     final costData = viewModel.productCosts[card.nmID];
     final rowColor = costData == null || costData.costPrice == 0
-        ? MaterialStateProperty.all(
+        ? WidgetStateProperty.all(
             Theme.of(context).colorScheme.errorContainer.withOpacity(0.3))
-        : MaterialStateProperty.all(Theme.of(context).colorScheme.surface);
+        : WidgetStateProperty.all(Theme.of(context).colorScheme.surface);
     String marginText = "—";
     String netProfitText = "—";
 
@@ -486,25 +487,22 @@ class _ProductCardsScreenState extends State<ProductCardsScreen> {
           return _ascending
               ? a.nmID.compareTo(b.nmID)
               : b.nmID.compareTo(a.nmID);
-        // case 2:
-        //   return _ascending
-        //       ? a.subjectID.compareTo(b.subjectID)
-        //       : b.subjectID.compareTo(a.subjectID);
-        case 3:
+
+        case 2:
           return _ascending
               ? a.subjectName.compareTo(b.subjectName)
               : b.subjectName.compareTo(a.subjectName);
-        case 4:
+        case 3:
           return _ascending
               ? a.vendorCode.compareTo(b.vendorCode)
               : b.vendorCode.compareTo(a.vendorCode);
-        case 5:
+        case 4:
           double priceA = viewModel.goodsPrices[a.nmID] ?? double.infinity;
           double priceB = viewModel.goodsPrices[b.nmID] ?? double.infinity;
           return _ascending
               ? priceA.compareTo(priceB)
               : priceB.compareTo(priceA);
-        case 6:
+        case 5:
           double? marginA = _calculateMargin(a, viewModel);
           double? marginB = _calculateMargin(b, viewModel);
           if (marginA == null && marginB == null) return 0;
@@ -513,7 +511,7 @@ class _ProductCardsScreenState extends State<ProductCardsScreen> {
           return _ascending
               ? marginA.compareTo(marginB)
               : marginB.compareTo(marginA);
-        case 7:
+        case 6:
           double? profitA = _calculateProfit(a, viewModel);
           double? profitB = _calculateProfit(b, viewModel);
           if (profitA == null && profitB == null) return 0;
