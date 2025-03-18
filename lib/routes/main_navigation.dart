@@ -42,7 +42,7 @@ abstract class ScreenFactory {
 
   Widget makeLoginScreen();
 
-  // Widget makeApiKeysScreen();
+  Widget makeWbStatsKeywordsScreen();
 }
 
 class MainNavigation implements AppNavigation {
@@ -155,6 +155,10 @@ class MainNavigation implements AppNavigation {
       case MainNavigationRouteNames.productCostImportScreen:
         return MaterialPageRoute(
           builder: (context) => screenFactory.makeProductCostImportScreen(),
+        );
+      case MainNavigationRouteNames.wbStatsKeywordsScreen:
+        return MaterialPageRoute(
+          builder: (context) => screenFactory.makeWbStatsKeywordsScreen(),
         );
 
       default:

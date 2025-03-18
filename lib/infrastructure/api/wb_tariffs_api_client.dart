@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:mc_dashboard/domain/entities/wb_box_tariff.dart';
+import 'package:mc_dashboard/domain/entities/wb_pallet_tariff.dart';
 import 'package:mc_dashboard/domain/entities/wb_tariff.dart';
 import 'package:mc_dashboard/domain/services/wb_tariffs_service.dart';
 
@@ -58,6 +59,37 @@ class WbTariffsApiClient implements WbTariffsServiceApiClient {
             jsonResponse['response']['data']['warehouseList'] ?? [];
 
         return warehouseJson.map((json) => WbBoxTariff.fromJson(json)).toList();
+      } else {
+        throw Exception(
+            'Ошибка получения тарифов для коробов: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Ошибка сети при получении тарифов для коробов: $e');
+    }
+  }
+
+  @override
+  Future<List<WbPalletTariff>> fetchPalletTariffs(
+      {required String token, required String date}) async {
+    final url = Uri.parse('$_baseUrl/pallet?date=$date');
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(utf8.decode(response.bodyBytes));
+        final List<dynamic> warehouseJson =
+            jsonResponse['response']['data']['warehouseList'] ?? [];
+
+        return warehouseJson
+            .map((json) => WbPalletTariff.fromJson(json))
+            .toList();
       } else {
         throw Exception(
             'Ошибка получения тарифов для коробов: ${response.statusCode} ${response.body}');

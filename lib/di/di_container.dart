@@ -11,6 +11,7 @@ import 'package:mc_dashboard/domain/services/token_service.dart';
 import 'package:mc_dashboard/domain/services/wb_api_content_service.dart';
 import 'package:mc_dashboard/domain/services/wb_price_service.dart';
 import 'package:mc_dashboard/domain/services/wb_products_service.dart';
+import 'package:mc_dashboard/domain/services/wb_stats_keywords_service.dart';
 import 'package:mc_dashboard/domain/services/wb_tariffs_service.dart';
 
 import 'package:mc_dashboard/infrastructure/api/auth.dart';
@@ -44,6 +45,7 @@ import 'package:mc_dashboard/domain/services/warehouses_service.dart';
 import 'package:mc_dashboard/infrastructure/api/wb_content_api_client.dart';
 import 'package:mc_dashboard/infrastructure/api/wb_price_api_client.dart';
 import 'package:mc_dashboard/infrastructure/api/wb_products_api_client.dart';
+import 'package:mc_dashboard/infrastructure/api/wb_stats_keywords_api_client.dart';
 import 'package:mc_dashboard/infrastructure/repositories/card_source_repo.dart';
 import 'package:mc_dashboard/infrastructure/repositories/product_cost_repo.dart';
 import 'package:mc_dashboard/infrastructure/repositories/secure_token_storage_repo.dart';
@@ -85,6 +87,8 @@ import 'package:mc_dashboard/presentation/subscription_screen/subscription_view_
 import 'package:mc_dashboard/infrastructure/repositories/local_storage.dart';
 import 'package:mc_dashboard/presentation/tokens_screen/tokens_screen.dart';
 import 'package:mc_dashboard/presentation/tokens_screen/tokens_view_model.dart';
+import 'package:mc_dashboard/presentation/wb_stats_keywords_screen/wb_stats_keywords_screen.dart';
+import 'package:mc_dashboard/presentation/wb_stats_keywords_screen/wb_stats_keywords_view_model.dart';
 
 import 'package:mc_dashboard/routes/main_navigation.dart';
 import 'package:provider/provider.dart';
@@ -126,6 +130,9 @@ class _DIContainer {
 
   WbPriceApiServiceApiClient _makeWbPriceApiServiceApiClient() =>
       const WbPriceApiClient();
+
+  WbStatsKeywordsApiClient _makeWbStatsKeywordsApiClient() =>
+      const WbStatsKeywordsApiClient();
   // Services //////////////////////////////////////////////////////////////////
 
   DetailedOrdersService _makeDetailedOrdersService() =>
@@ -201,7 +208,10 @@ class _DIContainer {
         apiClient: _makeWbPriceApiServiceApiClient(),
         wbTokenRepo: secureTokenRepo,
       );
-
+  WbStatsKeywordsService get wbStatsKeywordsService => WbStatsKeywordsService(
+        apiClient: _makeWbStatsKeywordsApiClient(),
+        wbTokenRepo: secureTokenRepo,
+      );
   // ViewModels ////////////////////////////////////////////////////////////////
   ChoosingNicheViewModel _makeChoosingNicheViewModel(
           BuildContext context,
@@ -355,6 +365,13 @@ class _DIContainer {
       context: context,
     );
   }
+
+  WbStatsKeywordsViewModel _makeWbStatsKeywordsViewModel(BuildContext context) {
+    return WbStatsKeywordsViewModel(
+      wbStatsKeywordsService: wbStatsKeywordsService,
+      context: context,
+    );
+  }
 }
 
 class ScreenFactoryDefault implements ScreenFactory {
@@ -467,6 +484,15 @@ class ScreenFactoryDefault implements ScreenFactory {
     );
   }
 
+  @override
+  Widget makeWbStatsKeywordsScreen() {
+    return ChangeNotifierProvider(
+      create: (context) => _diContainer._makeWbStatsKeywordsViewModel(
+        context,
+      ),
+      child: const WbStatsKeywordsScreen(),
+    );
+  }
   // @override
   // Widget makeApiKeysScreen() {
   //   return ChangeNotifierProvider(

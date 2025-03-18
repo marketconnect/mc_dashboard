@@ -4,6 +4,7 @@ import 'package:mc_dashboard/domain/entities/good.dart';
 import 'package:mc_dashboard/domain/entities/product_card.dart';
 import 'package:mc_dashboard/domain/entities/product_cost_data.dart';
 import 'package:mc_dashboard/domain/entities/wb_box_tariff.dart';
+import 'package:mc_dashboard/domain/entities/wb_pallet_tariff.dart';
 import 'package:mc_dashboard/domain/entities/wb_tariff.dart';
 import 'package:mc_dashboard/routes/main_navigation_route_names.dart';
 
@@ -14,6 +15,7 @@ abstract class ProductCardsWbContentApi {
 abstract class ProductCardsWbTariffsService {
   Future<List<WbTariff>> fetchTariffs({String locale = 'ru'});
   Future<List<WbBoxTariff>> fetchBoxTariffs({required String date});
+  Future<List<WbPalletTariff>> fetchPalletTariffs({required String date});
 }
 
 abstract class ProductCardsWbProductCostService {
@@ -44,9 +46,9 @@ class ProductCardsViewModel extends ViewModelBase {
 
   Map<int, ProductCostData> productCosts = {};
 
-  @override
   List<WbTariff> allTariffs = [];
   List<WbBoxTariff> allBoxTariffs = [];
+  List<WbPalletTariff> allPalletTariffs = [];
 
   @override
   Future<void> asyncInit() async {
@@ -76,7 +78,8 @@ class ProductCardsViewModel extends ViewModelBase {
           "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
       allBoxTariffs =
           await wbTariffsService.fetchBoxTariffs(date: formattedDate);
-
+      allPalletTariffs =
+          await wbTariffsService.fetchPalletTariffs(date: formattedDate);
       errorMessage = null;
     } catch (e) {
       errorMessage = e.toString();
@@ -131,6 +134,17 @@ class ProductCardsViewModel extends ViewModelBase {
     Navigator.of(context).pushNamed(
       MainNavigationRouteNames.productCard,
       arguments: {'imtID': imtID, 'nmID': nmID},
+    );
+  }
+
+  void onNavigateToSubjectProductsScreen(
+      {required int selectedSubjectId, required String selectedSubjectName}) {
+    Navigator.of(context).pushNamed(
+      MainNavigationRouteNames.subjectProductsScreen,
+      arguments: {
+        'subjectId': selectedSubjectId,
+        'subjectName': selectedSubjectName
+      },
     );
   }
 }

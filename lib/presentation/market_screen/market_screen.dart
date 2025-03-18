@@ -74,9 +74,9 @@ class MarketScreen extends StatelessWidget {
                 ),
                 _buildNavigationCard(
                   context,
-                  title: "Настройки токенов",
-                  icon: Icons.security,
-                  route: MainNavigationRouteNames.tokensScreen,
+                  title: "Кампании",
+                  icon: Icons.business,
+                  route: MainNavigationRouteNames.wbStatsKeywordsScreen,
                 ),
               ],
             ),

@@ -1,4 +1,5 @@
 import 'package:mc_dashboard/domain/entities/wb_box_tariff.dart';
+import 'package:mc_dashboard/domain/entities/wb_pallet_tariff.dart';
 import 'package:mc_dashboard/domain/entities/wb_tariff.dart';
 import 'package:mc_dashboard/infrastructure/api/wb_tariffs_api_client.dart';
 import 'package:mc_dashboard/infrastructure/repositories/secure_token_storage_repo.dart';
@@ -12,6 +13,8 @@ abstract class WbTariffsServiceWbTokenRepo {
 abstract class WbTariffsServiceApiClient {
   Future<List<WbTariff>> fetchTariffs({required String token, String locale});
   Future<List<WbBoxTariff>> fetchBoxTariffs(
+      {required String token, required String date});
+  Future<List<WbPalletTariff>> fetchPalletTariffs(
       {required String token, required String date});
 }
 
@@ -32,6 +35,7 @@ class WbTariffsService
   // Кешированные тарифы
   List<WbTariff>? _cachedTariffs;
   final Map<String, List<WbBoxTariff>> _cachedBoxTariffs = {};
+  final Map<String, List<WbPalletTariff>> _cachedPalletTariffs = {};
 
   @override
   Future<List<WbTariff>> fetchTariffs({String locale = 'ru'}) async {
@@ -64,6 +68,21 @@ class WbTariffsService
     }
     final tariffs = await apiClient.fetchBoxTariffs(token: token, date: date);
     _cachedBoxTariffs[date] = tariffs;
+    return tariffs;
+  }
+
+  @override
+  Future<List<WbPalletTariff>> fetchPalletTariffs(
+      {required String date}) async {
+    print("Fetching pallet tariffs from API for date: $date");
+    // final token = Env.wbToken;
+    final token = await wbTokenRepo.getWbToken();
+    if (token == null) {
+      throw Exception("WB token is not set");
+    }
+    final tariffs =
+        await apiClient.fetchPalletTariffs(token: token, date: date);
+    _cachedPalletTariffs[date] = tariffs;
     return tariffs;
   }
 }

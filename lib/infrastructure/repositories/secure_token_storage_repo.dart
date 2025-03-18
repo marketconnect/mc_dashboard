@@ -9,6 +9,7 @@ import 'package:mc_dashboard/domain/services/goods_service.dart';
 import 'package:mc_dashboard/domain/services/token_service.dart';
 import 'package:mc_dashboard/domain/services/wb_api_content_service.dart';
 import 'package:mc_dashboard/domain/services/wb_price_service.dart';
+import 'package:mc_dashboard/domain/services/wb_stats_keywords_service.dart';
 import 'package:mc_dashboard/domain/services/wb_tariffs_service.dart';
 
 class SecureTokenStorageRepo
@@ -16,6 +17,7 @@ class SecureTokenStorageRepo
         WbGoodSeviceWbTokenRepo,
         TokenServiceStorage,
         WbPriceApiServiceWbTokenRepo,
+        WbStatsKeywordsWbTokenRepo,
         WbTariffsServiceWbTokenRepo,
         WbContentApiServiceWbTokenRepo {
   SecureTokenStorageRepo();

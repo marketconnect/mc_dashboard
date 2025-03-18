@@ -3,6 +3,7 @@ import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
 import 'package:mc_dashboard/domain/entities/product_card.dart';
 import 'package:mc_dashboard/domain/entities/product_cost_data.dart';
 import 'package:mc_dashboard/domain/entities/wb_box_tariff.dart';
+import 'package:mc_dashboard/domain/entities/wb_pallet_tariff.dart';
 import 'package:mc_dashboard/domain/entities/wb_tariff.dart';
 
 abstract class ProductCardWbContentApiService {
@@ -12,6 +13,7 @@ abstract class ProductCardWbContentApiService {
 abstract class ProductCardWbTariffsService {
   Future<List<WbTariff>> fetchTariffs({String locale = 'ru'});
   Future<List<WbBoxTariff>> fetchBoxTariffs({required String date});
+  Future<List<WbPalletTariff>> fetchPalletTariffs({required String date});
 }
 
 abstract class ProductCardWbProductCostService {
@@ -35,6 +37,7 @@ class ProductCardViewModel extends ViewModelBase {
   ProductCard? productCard;
   WbTariff? wbTariff;
   List<WbBoxTariff> boxTariffs = [];
+  List<WbPalletTariff> palletTariffs = [];
   double volumeLiters = 0.0;
   String? errorMessage;
   String? selectedWarehouse;
@@ -59,6 +62,7 @@ class ProductCardViewModel extends ViewModelBase {
       await fetchProductCard();
       await fetchTariffs();
       await fetchBoxTariffs();
+      await fetchPalletTariffs();
       await loadProductCost();
     } catch (e) {
       errorMessage = "Ошибка: ${e.toString()}";
@@ -127,6 +131,18 @@ class ProductCardViewModel extends ViewModelBase {
     }
   }
 
+  Future<void> fetchPalletTariffs() async {
+    try {
+      final today = DateTime.now();
+      final formattedDate =
+          "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+      palletTariffs =
+          await tariffsService.fetchPalletTariffs(date: formattedDate);
+    } catch (e) {
+      errorMessage = "Ошибка загрузки тарифов на короба: ${e.toString()}";
+    }
+  }
+
   Future<void> loadProductCost() async {
     try {
       productCostData = await productCostService.getProductCost(nmID);
@@ -143,6 +159,7 @@ class ProductCardViewModel extends ViewModelBase {
         desiredMargin2: 35.0,
         desiredMargin3: 40.0,
         warehouseName: "Маркетплейс",
+        isBox: true, // По умолчанию "Короб"
       );
 
       selectedWarehouse = productCostData?.warehouseName ?? "Маркетплейс";
@@ -182,15 +199,15 @@ class ProductCardViewModel extends ViewModelBase {
     double? desiredMargin1,
     double? desiredMargin2,
     double? desiredMargin3,
-    String? warehouseName, // Важно
+    String? warehouseName,
+    bool? isBox,
   }) {
     if (productCostData == null) return;
 
-    // Синхронизируем warehouseName и поля в productCostData
     if (warehouseName != null) {
       selectedWarehouse = warehouseName;
     }
-
+    print("updateProductCostData isBox: ${isBox ?? productCostData!.isBox}");
     productCostData = productCostData!.copyWith(
       costPrice: costPrice ?? productCostData!.costPrice,
       delivery: delivery ?? productCostData!.delivery,
@@ -202,6 +219,7 @@ class ProductCardViewModel extends ViewModelBase {
       desiredMargin2: desiredMargin2 ?? productCostData!.desiredMargin2,
       desiredMargin3: desiredMargin3 ?? productCostData!.desiredMargin3,
       warehouseName: warehouseName ?? productCostData!.warehouseName,
+      isBox: isBox ?? productCostData!.isBox,
     );
 
     notifyListeners();

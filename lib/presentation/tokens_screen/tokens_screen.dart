@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mc_dashboard/presentation/tokens_screen/tokens_view_model.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class TokensScreen extends StatefulWidget {
   const TokensScreen({super.key});
@@ -60,12 +61,8 @@ class _TokensScreenState extends State<TokensScreen> {
   Widget _buildTokensForm(TokensViewModel model) {
     return Center(
       child: Container(
-        width: 400,
+        width: 600,
         padding: const EdgeInsets.all(16.0),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceVariant,
-          borderRadius: BorderRadius.circular(12),
-        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -82,44 +79,53 @@ class _TokensScreenState extends State<TokensScreen> {
                 textAlign: TextAlign.center,
               ),
             const SizedBox(height: 16),
-            _buildTokenField(
-              "Токен WB",
-              _wbTokenController,
-              model.wbToken,
-              _wbTokenVisible,
-              () {
+            _buildTokenCard(
+              context: context,
+              icon: SvgPicture.asset('assets/images/wb_logo.svg',
+                  height: 24, width: 24),
+              label: " Token",
+              controller: _wbTokenController,
+              token: model.wbToken,
+              isVisible: _wbTokenVisible,
+              toggleVisibility: () {
                 setState(() {
                   _wbTokenVisible = !_wbTokenVisible;
                 });
               },
-              model.saveWbToken,
-              model.removeWbToken,
+              onSave: model.saveWbToken,
+              onDelete: model.removeWbToken,
             ),
-            _buildTokenField(
-              "Токен Ozon",
-              _ozonTokenController,
-              model.ozonToken,
-              _ozonTokenVisible,
-              () {
+            _buildTokenCard(
+              context: context,
+              icon: SvgPicture.asset('assets/images/ozon_logo.svg',
+                  height: 24, width: 24),
+              label: " Token",
+              controller: _ozonTokenController,
+              token: model.ozonToken,
+              isVisible: _ozonTokenVisible,
+              toggleVisibility: () {
                 setState(() {
                   _ozonTokenVisible = !_ozonTokenVisible;
                 });
               },
-              model.saveOzonToken,
-              model.removeOzonToken,
+              onSave: model.saveOzonToken,
+              onDelete: model.removeOzonToken,
             ),
-            _buildTokenField(
-              "Ozon Client ID",
-              _ozonIdController,
-              model.ozonId,
-              _ozonIdVisible,
-              () {
+            _buildTokenCard(
+              context: context,
+              icon: SvgPicture.asset('assets/images/ozon_logo.svg',
+                  height: 24, width: 24),
+              label: " Client ID",
+              controller: _ozonIdController,
+              token: model.ozonId,
+              isVisible: _ozonIdVisible,
+              toggleVisibility: () {
                 setState(() {
                   _ozonIdVisible = !_ozonIdVisible;
                 });
               },
-              model.saveOzonId,
-              model.removeOzonId,
+              onSave: model.saveOzonId,
+              onDelete: model.removeOzonId,
             ),
           ],
         ),
@@ -127,76 +133,97 @@ class _TokensScreenState extends State<TokensScreen> {
     );
   }
 
-  Widget _buildTokenField(
-    String label,
-    TextEditingController controller,
-    String? token,
-    bool isVisible,
-    VoidCallback toggleVisibility,
-    Function(String) onSave,
-    VoidCallback onDelete,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+  Widget _buildTokenCard({
+    required BuildContext context,
+    required Widget icon,
+    required String label,
+    required TextEditingController controller,
+    required String? token,
+    required bool isVisible,
+    required VoidCallback toggleVisibility,
+    required Function(String) onSave,
+    required VoidCallback onDelete,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface, // Use theme's surface color
+        borderRadius: BorderRadius.circular(8),
+        border:
+            Border.all(color: theme.dividerColor), // Use theme's divider color
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 4),
+          Row(
+            children: [
+              SizedBox(width: 32, height: 32, child: icon),
+              const SizedBox(width: 8),
+              Text(label,
+                  style: theme.textTheme.titleMedium), // Use theme's text style
+            ],
+          ),
+          const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
                 child: TextField(
                   controller: controller,
-                  obscureText: !isVisible, // только маска
+                  obscureText: !isVisible,
                   enableSuggestions: false,
                   autocorrect: false,
                   decoration: InputDecoration(
+                    hintText: 'Введите токен',
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(5),
+                      borderSide: BorderSide(
+                          color:
+                              theme.dividerColor), // Use theme's divider color
                     ),
-                    suffixIcon: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: Icon(
-                            isVisible ? Icons.visibility : Icons.visibility_off,
-                          ),
-                          onPressed:
-                              toggleVisibility, // только переключаем флаг
-                        ),
-                        if (token != null)
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () {
-                              onDelete();
-                              setState(() {
-                                controller.clear();
-                              });
-                            },
-                          ),
-                      ],
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(5),
+                      borderSide: BorderSide(color: theme.primaryColor),
                     ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
                   ),
                 ),
               ),
               const SizedBox(width: 8),
-              Icon(
-                token != null ? Icons.check_circle : Icons.error,
-                color: token != null ? Colors.green : Colors.red,
+              InkWell(
+                onTap: toggleVisibility,
+                child: Icon(
+                  isVisible ? Icons.visibility : Icons.visibility_off,
+                  color: theme.hintColor, // Use theme's hint color
+                ),
               ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: () => onSave(controller.text.trim()),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.surface,
+                  foregroundColor: theme.primaryColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  textStyle: const TextStyle(fontSize: 14),
+                  elevation: 0,
+                  side: BorderSide(color: theme.primaryColor),
+                ),
+                child: const Text("Сохранить"),
+              ),
+              if (token == null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8.0),
+                  child: Icon(Icons.error,
+                      color:
+                          theme.colorScheme.error), // Use theme's error color
+                ),
             ],
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: 200,
-            child: ElevatedButton(
-              onPressed: () => onSave(controller.text.trim()),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.onSecondary,
-              ),
-              child: const Text("Сохранить"),
-            ),
           ),
         ],
       ),

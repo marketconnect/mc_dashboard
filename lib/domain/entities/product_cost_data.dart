@@ -26,7 +26,7 @@ class ProductCostData extends HiveObject {
   double returnRate;
 
   @HiveField(7, defaultValue: 7)
-  int taxRate; // Хранение размера налога в целых числах
+  int taxRate;
 
   @HiveField(8, defaultValue: 30)
   double desiredMargin1;
@@ -46,12 +46,16 @@ class ProductCostData extends HiveObject {
   @HiveField(13, defaultValue: 0)
   double calculatedPrice3;
 
+  @HiveField(14, defaultValue: true)
+  bool isBox;
+
   ProductCostData({
     required this.nmID,
     required this.costPrice,
     required this.delivery,
     required this.packaging,
     required this.paidAcceptance,
+    this.isBox = true,
     String? warehouseName,
     this.returnRate = 10.0,
     this.taxRate = 7,
@@ -78,6 +82,7 @@ class ProductCostData extends HiveObject {
     double? calculatedPrice1,
     double? calculatedPrice2,
     double? calculatedPrice3,
+    bool? isBox,
   }) {
     return ProductCostData(
       nmID: nmID ?? this.nmID,
@@ -94,6 +99,7 @@ class ProductCostData extends HiveObject {
       calculatedPrice1: calculatedPrice1 ?? this.calculatedPrice1,
       calculatedPrice2: calculatedPrice2 ?? this.calculatedPrice2,
       calculatedPrice3: calculatedPrice3 ?? this.calculatedPrice3,
+      isBox: isBox ?? this.isBox,
     );
   }
 }

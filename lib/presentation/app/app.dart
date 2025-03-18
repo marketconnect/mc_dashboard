@@ -230,26 +230,26 @@ class _MainScreenState extends State<MainScreen> {
                   destinations: [
                     NavigationRailDestination(
                       icon: Icon(Icons.home),
-                      selectedIcon: Icon(Icons.home,
+                      selectedIcon: Icon(Icons.home_filled,
                           color: Theme.of(context).colorScheme.onPrimary),
                       label: Text('Главная'),
                     ),
                     NavigationRailDestination(
                       icon: Icon(Icons.leaderboard),
-                      selectedIcon: Icon(Icons.leaderboard,
+                      selectedIcon: Icon(Icons.leaderboard_outlined,
                           color: Theme.of(context).colorScheme.onPrimary),
                       label: Text(
                         'Обзор',
                       ),
                     ),
                     NavigationRailDestination(
-                      icon: Icon(Icons.card_travel),
+                      icon: Icon(Icons.card_travel_outlined),
                       selectedIcon: Icon(Icons.card_travel,
                           color: Theme.of(context).colorScheme.onPrimary),
                       label: Text('Подписка'),
                     ),
                     NavigationRailDestination(
-                      icon: Icon(Icons.security),
+                      icon: Icon(Icons.security_outlined),
                       selectedIcon: Icon(Icons.security,
                           color: Theme.of(context).colorScheme.onPrimary),
                       label: Text('Токены'),

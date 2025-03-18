@@ -2,6 +2,7 @@ class ProductCard {
   final int nmID;
   final int imtID;
   final int subjectID;
+  final String title;
   final String subjectName;
   final String vendorCode;
   final String photoUrl;
@@ -14,6 +15,7 @@ class ProductCard {
     required this.nmID,
     required this.imtID,
     required this.subjectID,
+    required this.title,
     required this.subjectName,
     required this.vendorCode,
     required this.photoUrl,
@@ -36,6 +38,7 @@ class ProductCard {
       nmID: json['nmID'] as int? ?? 0,
       imtID: json['imtID'] as int? ?? 0,
       subjectID: json['subjectID'] as int? ?? 0,
+      title: json['title'] as String? ?? '',
       subjectName: json['subjectName'] as String? ?? '',
       vendorCode: json['vendorCode'] as String? ?? '',
       photoUrl: photoUrl,

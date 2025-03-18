@@ -19,4 +19,5 @@ abstract class MainNavigationRouteNames {
 
   static const String home = '/';
   static const String login = '/login';
+  static const String wbStatsKeywordsScreen = '/wb-stats-keywords-screen';
 }
