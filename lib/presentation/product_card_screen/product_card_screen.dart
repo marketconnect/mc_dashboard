@@ -537,7 +537,7 @@ class _ProductCardScreenState extends State<ProductCardScreen> {
               inactiveFgColor: Colors.white,
               totalSwitches: 2,
               borderWidth: 1.0,
-              borderColor: [Theme.of(context).colorScheme.onPrimary],
+              borderColor: [Theme.of(context).colorScheme.primary],
               labels: ['Короб', 'Паллета'],
               fontSize: 14,
               onToggle: (index) {
