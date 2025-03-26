@@ -202,8 +202,8 @@ class ProductViewModel extends ViewModelBase {
   String _subjectName = "";
   String get subjectName => _subjectName;
 
-  int _supplierId = 0;
-  String _brand = "";
+  // int _supplierId = 0;
+  // String _brand = "";
 
   // images
   final List<String> _images = [];
@@ -337,7 +337,6 @@ class ProductViewModel extends ViewModelBase {
   // Methods ///////////////////////////////////////////////////////////////////
   @override
   Future<void> asyncInit() async {
-    print("Init product view model");
     // heightOfScreen = MediaQuery.of(context).size.height;
     _basketNum = getBasketNum(productId);
 
@@ -360,8 +359,8 @@ class ProductViewModel extends ViewModelBase {
     _subjectId = cardInfo.subjId;
 
     _subjectName = cardInfo.subjName;
-    _supplierId = cardInfo.supplierId;
-    _brand = cardInfo.brand;
+    // _supplierId = cardInfo.supplierId;
+    // _brand = cardInfo.brand;
 
     // token and sub info
     final tokenInfoOrEither = vals[1] as Either<AppErrorBase, TokenInfo>;

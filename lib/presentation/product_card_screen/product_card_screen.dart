@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import 'package:mc_dashboard/domain/entities/product_card.dart';
 import 'package:mc_dashboard/domain/entities/wb_box_tariff.dart';
 import 'package:mc_dashboard/domain/entities/wb_pallet_tariff.dart';
 import 'package:mc_dashboard/domain/entities/wb_tariff.dart';
 import 'package:mc_dashboard/presentation/product_card_screen/product_card_view_model.dart';
-import 'package:mc_dashboard/presentation/widgets/progress_bar.dart';
-import 'package:provider/provider.dart';
-import 'package:toggle_switch/toggle_switch.dart';
 
+import 'package:overlay_loader_with_app_icon/overlay_loader_with_app_icon.dart';
+import 'package:provider/provider.dart';
+
+// TODO Add current quantity and Inventory Threshold (quantity that triggers the notification (some kind of alarm -> AGENT ))
 class ProductCardScreen extends StatefulWidget {
-  const ProductCardScreen({Key? key}) : super(key: key);
+  const ProductCardScreen({super.key});
 
   @override
   State<ProductCardScreen> createState() => _ProductCardScreenState();
@@ -165,30 +169,125 @@ class _ProductCardScreenState extends State<ProductCardScreen> {
   Widget build(BuildContext context) {
     final model = context.watch<ProductCardViewModel>();
     final productCard = model.productCard;
-    final nmID = productCard?.nmID;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-            productCard?.title != null ? "${productCard?.title}" : "$nmID"),
+        title: Text(productCard?.title ?? "Loading..."),
         leading: IconButton(
-          // Добавлена кнопка "Назад"
           icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
+          onPressed: () => Navigator.of(context).pop(),
         ),
+        scrolledUnderElevation: 2,
+        shadowColor: Colors.black,
+        surfaceTintColor: Colors.transparent,
       ),
-      body: model.isLoading
-          ? Center(child: McProgressBar())
-          : model.errorMessage != null
-              ? Center(
-                  child: Text(
-                    model.errorMessage!,
-                    style: const TextStyle(color: Colors.red),
+      floatingActionButton: SpeedDial(
+        animatedIcon: AnimatedIcons.menu_close,
+        overlayColor: Colors.black,
+        overlayOpacity: 0.5,
+        tooltip: 'Меню',
+        heroTag: 'speed-dial-hero-tag',
+        backgroundColor: Color(0xFF9a41fe),
+        foregroundColor: Theme.of(context).colorScheme.surface,
+        visible: true,
+        curve: Curves.bounceIn,
+        children: [
+          SpeedDialChild(
+            label: 'Товары',
+            labelStyle: const TextStyle(fontSize: 16.0),
+            onTap: () => model
+                .openUrl('https://seller.wildberries.ru/new-goods/all-goods'),
+          ),
+          SpeedDialChild(
+            label: 'Цены',
+            labelStyle: const TextStyle(fontSize: 16.0),
+            onTap: () => model
+                .openUrl('https://seller.wildberries.ru/discount-and-prices'),
+          ),
+          SpeedDialChild(
+            label: 'Карточка',
+            labelStyle: const TextStyle(fontSize: 16.0),
+            onTap: () {
+              model.openUrl(
+                  'https://www.wildberries.ru/catalog/${model.nmID}/detail.aspx');
+            },
+          ),
+        ],
+        // onOpen: () => debugPrint('OPENING DIAL'),
+        // onClose: () => debugPrint('DIAL CLOSED'),
+      ),
+      body: OverlayLoaderWithAppIcon(
+        isLoading: model.isLoading,
+        overlayBackgroundColor: Colors.black,
+        circularProgressColor: Theme.of(context).colorScheme.onPrimary,
+        appIconSize: 70,
+        appIcon: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'M',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontFamily: GoogleFonts.alikeAngular().fontFamily,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    fontWeight: FontWeight.bold,
                   ),
-                )
-              : _buildProductCardDetails(model),
+                ),
+                Text(
+                  'ARKET',
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontFamily: GoogleFonts.waitingForTheSunrise().fontFamily,
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            Positioned(
+              top: 35,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 20),
+                child: Text(
+                  'CONNECT',
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontFamily: GoogleFonts.waitingForTheSunrise().fontFamily,
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        child: model.errorMessage != null
+            ? Center(
+                child: Text(
+                  model.errorMessage!,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              )
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1200),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildProductCardDetails(model),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+      ),
     );
   }
 
@@ -196,6 +295,7 @@ class _ProductCardScreenState extends State<ProductCardScreen> {
     if (model.productCard == null) {
       return const Center(child: Text("Карточка не найдена"));
     }
+    final double goodPrice = model.goodPrice ?? 0;
     final ProductCard productCard = model.productCard!;
     final WbTariff? wbTariff = model.wbTariff;
     final List<WbBoxTariff> boxTariffs = model.boxTariffs;
@@ -216,7 +316,7 @@ class _ProductCardScreenState extends State<ProductCardScreen> {
     double logistics;
     if (isBox) {
       WbBoxTariff selectedBoxTariff = boxTariffs.firstWhere(
-        (tariff) => tariff.warehouseName == _selectedWarehouse,
+        (tariff) => tariff.warehouseName == model.selectedWarehouse,
         orElse: () => WbBoxTariff(
           warehouseName: "Маркетплейс",
           boxDeliveryAndStorageExpr: 0.0,
@@ -230,7 +330,7 @@ class _ProductCardScreenState extends State<ProductCardScreen> {
       logistics = _calculateLogistics(selectedBoxTariff, model.volumeLiters);
     } else {
       WbPalletTariff selectedPalletTariff = model.palletTariffs.firstWhere(
-        (tariff) => tariff.warehouseName == _selectedWarehouse,
+        (tariff) => tariff.warehouseName == model.selectedWarehouse,
         orElse: () => WbPalletTariff(
           warehouseName: "Маркетплейс",
           palletDeliveryExpr: 0.0,
@@ -244,7 +344,6 @@ class _ProductCardScreenState extends State<ProductCardScreen> {
           _calculatePalletLogistics(selectedPalletTariff, model.volumeLiters);
     }
 
-    // Считываем введённые данные
     final double costPrice = double.tryParse(_costController.text) ?? 0;
     final double delivery = double.tryParse(_deliveryController.text) ?? 0;
     final double packaging = double.tryParse(_packageController.text) ?? 0;
@@ -255,14 +354,10 @@ class _ProductCardScreenState extends State<ProductCardScreen> {
         double.tryParse(_returnRateController.text) ?? 10.0;
     final double storage = double.tryParse(_storageController.text) ?? 0;
 
-    // Расчёт логистики и затрат на возвраты
-    // final double logistics =
-    //     _calculateLogistics(selectedBoxTariff, model.volumeLiters);
     final double totalReturnCost = _calculateReturnCost(logistics, returnRate);
     final double commissionPercent =
         (wbTariff?.kgvpMarketplace.ceil() ?? 0).toDouble();
 
-    // Определяем выбранную желаемую рентабельность по варианту
     double selectedMargin;
     if (_selectedVariant == 1) {
       selectedMargin = double.tryParse(_desiredMarginController1.text) ?? 30;
@@ -284,140 +379,113 @@ class _ProductCardScreenState extends State<ProductCardScreen> {
       commissionPercent,
       taxRate,
     );
-    final double finalPriceSelected = selectedResults["finalPrice"]!;
-    final double netProfitSelected = selectedResults["netProfit"]!;
-    final double breakEvenPriceSelected = selectedResults["breakEvenPrice"]!;
 
-    return _buildResponsiveLayout(
-      model: model,
-      productCard: productCard,
-      warehouses: warehouses,
-      costPrice: costPrice,
-      delivery: delivery,
-      packaging: packaging,
-      paidAcceptance: paidAcceptance,
-      returnRate: returnRate,
-      storage: storage,
-      logistics: logistics,
-      totalReturnCost: totalReturnCost,
-      commissionPercent: commissionPercent,
-      finalPrice: finalPriceSelected,
-      netProfit: netProfitSelected,
-      breakEvenPrice: breakEvenPriceSelected,
-    );
-  }
-
-  // Обновлённый вызов функции _buildCostCalculationSection в адаптивном макете:
-  Widget _buildResponsiveLayout({
-    required ProductCardViewModel model,
-    required ProductCard productCard,
-    required List<String> warehouses,
-    required double costPrice,
-    required double delivery,
-    required double packaging,
-    required double paidAcceptance,
-    required double returnRate,
-    required double storage,
-    required double logistics,
-    required double totalReturnCost,
-    required double commissionPercent,
-    required double finalPrice,
-    required double netProfit,
-    required double breakEvenPrice,
-  }) {
-    // Читаем ставку налога из контроллера
-    double taxRate = double.tryParse(_taxRateController.text) ?? 7.0;
-
-    // Пересчитываем налог
-    double taxCost = finalPrice * (taxRate / 100);
-
-    // Все затраты (доп. затраты + логистика + комиссия + налог)
-    double totalCosts = costPrice +
-        delivery +
-        packaging +
-        paidAcceptance +
-        totalReturnCost +
-        logistics;
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth >= 800) {
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    // Added SingleChildScrollView
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildInfoSection(productCard, model.volumeLiters),
-                        const SizedBox(height: 16),
-                        _buildCostsSection(warehouses),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: SingleChildScrollView(
-                    // Added SingleChildScrollView
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildCostCalculationSection(
-                          finalPrice,
-                          netProfit,
-                          breakEvenPrice,
-                          totalReturnCost,
-                          logistics,
-                          finalPrice * (commissionPercent / 100),
-                          taxCost, // Теперь налог динамический
-                          totalCosts +
-                              finalPrice * (commissionPercent / 100) +
-                              taxCost,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildProfitabilitySection(
-                          costPrice: costPrice,
-                          delivery: delivery,
-                          packaging: packaging,
-                          paidAcceptance: paidAcceptance,
-                          totalReturnCost: totalReturnCost,
-                          logistics: logistics,
-                          storage: storage,
-                          commissionPercent: commissionPercent,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        } else {
-          return SingleChildScrollView(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Product Info Card
+        Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildInfoSection(productCard, model.volumeLiters),
-                const SizedBox(height: 16),
-                _buildCostsSection(warehouses),
-                const SizedBox(height: 16),
+                _buildInfoSection(productCard, model.volumeLiters, goodPrice),
+                const Divider(height: 32),
+                _buildWarehouseSection(model, warehouses),
+                const Divider(height: 32),
+                _buildDeliveryTypeSection(model),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Costs Card
+        Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SectionTitle("Расходы"),
+                _buildNumberInputField("Себестоимость", _costController,
+                    suffix: "₽"),
+                _buildNumberInputField("Доставка", _deliveryController,
+                    suffix: "₽"),
+                _buildNumberInputField("Упаковка", _packageController,
+                    suffix: "₽"),
+                _buildNumberInputField(
+                    "Платная приемка", _paidAcceptanceController,
+                    suffix: "₽"),
+                _buildNumberInputField("Возвраты", _returnRateController,
+                    suffix: "%"),
+                _buildNumberInputField("Хранение", _storageController,
+                    suffix: "₽"),
+                _buildNumberInputField("Налог", _taxRateController,
+                    suffix: "%"),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Cost Calculation Card
+        Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 _buildCostCalculationSection(
-                  finalPrice,
-                  netProfit,
-                  breakEvenPrice,
+                  selectedResults["finalPrice"]!,
+                  selectedResults["netProfit"]!,
+                  selectedResults["breakEvenPrice"]!,
                   totalReturnCost,
                   logistics,
-                  finalPrice * (commissionPercent / 100),
-                  taxCost, // Теперь налог динамический
-                  totalCosts + finalPrice * (commissionPercent / 100) + taxCost,
+                  commissionPercent,
+                  selectedResults["finalPrice"]! * (commissionPercent / 100),
+                  selectedResults["finalPrice"]! * (taxRate / 100),
+                  costPrice +
+                      delivery +
+                      packaging +
+                      paidAcceptance +
+                      totalReturnCost +
+                      logistics +
+                      storage +
+                      selectedResults["finalPrice"]! *
+                          (commissionPercent / 100) +
+                      selectedResults["finalPrice"]! * (taxRate / 100),
                 ),
-                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Profitability Card
+        Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 _buildProfitabilitySection(
                   costPrice: costPrice,
                   delivery: delivery,
@@ -430,14 +498,108 @@ class _ProductCardScreenState extends State<ProductCardScreen> {
                 ),
               ],
             ),
-          );
-        }
-      },
+          ),
+        ),
+      ],
     );
   }
 
-  /// Секция "Фото и общая информация"
-  Widget _buildInfoSection(ProductCard productCard, double volumeLiters) {
+  Widget _buildWarehouseSection(
+      ProductCardViewModel model, List<String> warehouses) {
+    final bool isBox = model.productCostData?.isBox ?? true;
+    final bool tariffNotFound = isBox
+        ? !model.boxTariffs
+            .any((tariff) => tariff.warehouseName == model.selectedWarehouse)
+        : !model.palletTariffs
+            .any((tariff) => tariff.warehouseName == model.selectedWarehouse);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionTitle("Склад"),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            children: [
+              DropdownButtonFormField<String>(
+                value: model.selectedWarehouse,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                items: warehouses.map((String warehouse) {
+                  return DropdownMenuItem<String>(
+                    value: warehouse,
+                    child: Text(warehouse),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  if (newValue != null) {
+                    model.setSelectedWarehouse(newValue);
+                  }
+                },
+              ),
+              if (tariffNotFound) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    "Внимание! Для выбранного склада отсутствуют тарифы для ${isBox ? "коробов" : "паллет"}. Логистика рассчитана неверно.",
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDeliveryTypeSection(ProductCardViewModel model) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionTitle("Тип поставки"),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text("Короб",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              Switch(
+                value: !(model.productCostData?.isBox ?? true),
+                onChanged: (bool value) {
+                  model.updateProductCostData(isBox: !value);
+                },
+              ),
+              const Text("Паллета",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoSection(
+      ProductCard productCard, double volumeLiters, double goodPrice) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -473,80 +635,11 @@ class _ProductCardScreenState extends State<ProductCardScreen> {
           ),
         ),
         const SizedBox(height: 16),
+        _buildInfoRow("Цена WB", goodPrice.toStringAsFixed(2)),
         _buildInfoRow("nmID", productCard.nmID.toString()),
         _buildInfoRow("Название", productCard.subjectName),
         _buildInfoRow("Код продавца", productCard.vendorCode),
         _buildInfoRow("Объем (л)", volumeLiters.toStringAsFixed(2)),
-      ],
-    );
-  }
-
-// В методе _buildCostsSection, например:
-  Widget _buildCostsSection(List<String> warehouses) {
-    final model = context.watch<ProductCardViewModel>();
-    final bool isBox = model.productCostData?.isBox ?? true;
-    final sel;
-    // Проверяем наличие тарифов для выбранного склада
-    final bool tariffNotFound = isBox
-        ? !model.boxTariffs
-            .any((tariff) => tariff.warehouseName == _selectedWarehouse)
-        : !model.palletTariffs
-            .any((tariff) => tariff.warehouseName == _selectedWarehouse);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildNumberInputField("Себестоимость", _costController, suffix: "₽"),
-        _buildNumberInputField("Доставка", _deliveryController, suffix: "₽"),
-        _buildNumberInputField("Упаковка", _packageController, suffix: "₽"),
-        _buildNumberInputField("Платная приемка", _paidAcceptanceController,
-            suffix: "₽"),
-        _buildNumberInputField("Возвраты", _returnRateController, suffix: "%"),
-        _buildNumberInputField("Хранение", _storageController, suffix: "₽"),
-        _buildNumberInputField("Налог", _taxRateController, suffix: "%"),
-        const SizedBox(height: 10),
-        SectionTitle("Выбор склада"),
-        _buildWarehouseDropdown(warehouses),
-        const SizedBox(height: 10),
-        if (tariffNotFound)
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.redAccent,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              "Внимание! Для выбранного склада отсутствуют тарифы для ${isBox ? "коробов" : "паллет"}. Логистика рассчитана неверно.",
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        const SizedBox(height: 10),
-        SectionTitle("Тип поставки"),
-        Row(
-          children: [
-            ToggleSwitch(
-              minWidth: 80.0,
-              cornerRadius: 10.0,
-              activeBgColors: [
-                [Theme.of(context).colorScheme.onPrimary],
-                [Theme.of(context).colorScheme.onPrimary],
-              ],
-              initialLabelIndex: isBox ? 0 : 1,
-              activeFgColor: Colors.white,
-              inactiveBgColor: Theme.of(context).colorScheme.secondaryContainer,
-              inactiveFgColor: Colors.white,
-              totalSwitches: 2,
-              borderWidth: 1.0,
-              borderColor: [Theme.of(context).colorScheme.primary],
-              labels: ['Короб', 'Паллета'],
-              fontSize: 14,
-              onToggle: (index) {
-                final model = context.read<ProductCardViewModel>();
-                model.updateProductCostData(isBox: index == 0);
-              },
-            ),
-          ],
-        ),
       ],
     );
   }
@@ -557,6 +650,7 @@ class _ProductCardScreenState extends State<ProductCardScreen> {
     double breakEvenPrice,
     double totalReturnCost,
     double logistics,
+    double commissionPercent,
     double commissionAmount,
     double taxCost,
     double totalCosts,
@@ -569,7 +663,8 @@ class _ProductCardScreenState extends State<ProductCardScreen> {
             "Затраты на возвраты:", "${totalReturnCost.toStringAsFixed(2)} ₽"),
         CalculationRow("Логистика:", "${logistics.toStringAsFixed(2)} ₽"),
         CalculationRow(
-            "Комиссия WB:", "${commissionAmount.toStringAsFixed(2)} ₽"),
+            "Комиссия WB (${commissionPercent.toStringAsFixed(1)}%):",
+            "${commissionAmount.toStringAsFixed(2)} ₽"),
         CalculationRow("Налог (${_taxRateController.text}% от цены):",
             "${taxCost.toStringAsFixed(2)} ₽"),
         CalculationRow("Все затраты (без учета рентабельности):",
@@ -811,32 +906,6 @@ class _ProductCardScreenState extends State<ProductCardScreen> {
     );
   }
 
-  Widget _buildWarehouseDropdown(List<String> warehouses) {
-    return DropdownButtonFormField<String>(
-      decoration: const InputDecoration(
-        border: OutlineInputBorder(),
-        labelText: "Склад",
-      ),
-      value: _selectedWarehouse,
-      isExpanded: true,
-      onChanged: (String? newValue) {
-        if (newValue != null) {
-          setState(() {
-            _selectedWarehouse = newValue;
-          });
-          final model = context.read<ProductCardViewModel>();
-          model.updateProductCostData(warehouseName: newValue);
-        }
-      },
-      items: warehouses.map<DropdownMenuItem<String>>((String value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(value),
-        );
-      }).toList(),
-    );
-  }
-
   double _calculateLogistics(WbBoxTariff tariff, double volume) {
     return volume < 1
         ? tariff.boxDeliveryBase
@@ -911,7 +980,7 @@ class _ProductCardScreenState extends State<ProductCardScreen> {
 class SectionTitle extends StatelessWidget {
   final String title;
 
-  const SectionTitle(this.title, {Key? key}) : super(key: key);
+  const SectionTitle(this.title, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -928,8 +997,8 @@ class CalculationRow extends StatelessWidget {
   final String value;
   final bool isBold;
 
-  const CalculationRow(this.label, this.value, {Key? key, this.isBold = false})
-      : super(key: key);
+  const CalculationRow(this.label, this.value,
+      {super.key, this.isBold = false});
 
   @override
   Widget build(BuildContext context) {

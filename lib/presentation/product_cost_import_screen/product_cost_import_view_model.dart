@@ -1,5 +1,7 @@
 import 'dart:io' show File; // Используем только для Desktop/Mobile
 import 'dart:typed_data'; // Для хранения байт в web
+import 'package:mc_dashboard/domain/entities/ozon_product.dart';
+import 'package:mc_dashboard/domain/entities/product_card.dart';
 import 'package:universal_html/html.dart' as html;
 
 import 'package:excel/excel.dart';
@@ -11,24 +13,46 @@ import 'package:mc_dashboard/domain/entities/product_cost_data.dart';
 
 abstract class ProductCostImportProductCostService {
   Future<void> saveProductCost(ProductCostData costData);
-  Future<ProductCostData?> getProductCost(int nmID);
-  Future<List<ProductCostData>> getAllCostData();
+  Future<ProductCostData?> getWbProductCost(int nmID);
+  Future<List<ProductCostData>> getAllCostWbData();
+
+  Future<List<ProductCostData>> getAllCostOzonData();
+  Future<ProductCostData?> getOzonProductCost(int nmID);
+}
+
+abstract class ProductCostImportProductCardsService {
+  Future<List<ProductCard>> fetchAllProductCards();
+}
+
+abstract class ProductCostImportOzonProductsService {
+  Future<OzonProductsResponse> fetchProducts({
+    List<String>? offerIds,
+    List<int>? productIds,
+    String? visibility,
+    String? lastId,
+    int? limit,
+  });
 }
 
 class ProductCostImportViewModel extends ViewModelBase {
   final ProductCostImportProductCostService productCostService;
-
-  /// Путь к файлу (для Desktop/Mobile), или имя файла (для Web)
+  final ProductCostImportProductCardsService productCardsService;
+  final ProductCostImportOzonProductsService ozonProductsService;
   String? selectedFilePath;
-
-  /// Временное поле для хранения байт файла (нужно только для Web)
-  Uint8List? _excelBytesForWeb;
 
   String? errorMessage;
   int updatedCount = 0;
+  bool _wbDataLoaded = false;
+  bool _ozonDataLoaded = false;
+
+  bool get wbDataLoaded => _wbDataLoaded;
+  bool get ozonDataLoaded => _ozonDataLoaded;
+  bool get allDataLoaded => _wbDataLoaded && _ozonDataLoaded;
 
   ProductCostImportViewModel({
     required this.productCostService,
+    required this.productCardsService,
+    required this.ozonProductsService,
     required super.context,
   });
 
@@ -43,9 +67,8 @@ class ProductCostImportViewModel extends ViewModelBase {
 
       if (result != null && result.files.isNotEmpty) {
         if (kIsWeb) {
-          // В Web нет реального пути – используем имя файла для отображения
           selectedFilePath = result.files.single.name;
-          _excelBytesForWeb = result.files.single.bytes;
+          // _excelBytesForWeb = result.files.single.bytes;
         } else {
           selectedFilePath = result.files.single.path;
         }
@@ -57,7 +80,7 @@ class ProductCostImportViewModel extends ViewModelBase {
     }
   }
 
-  Future<void> importData() async {
+  Future<void> importData(String mpType) async {
     try {
       setLoading();
       errorMessage = null;
@@ -90,7 +113,7 @@ class ProductCostImportViewModel extends ViewModelBase {
         final sheet = excel.tables[table];
         if (sheet == null ||
             sheet.rows.isEmpty ||
-            sheet.rows.first.length < 5) {
+            sheet.rows.first.length < 2) {
           throw Exception(
               "Ошибка: Неверный формат таблицы. ${sheet == null} ${sheet == null || sheet.rows.isEmpty} ${sheet == null || sheet.rows.first.length < 5}");
         }
@@ -98,21 +121,21 @@ class ProductCostImportViewModel extends ViewModelBase {
         for (var i = 1; i < sheet.rows.length; i++) {
           final row = sheet.rows[i];
 
-          if (row.length < 5 ||
-              row[0] == null ||
-              row[1] == null ||
-              row[2] == null ||
-              row[3] == null ||
-              row[4] == null) {
+          if (row.length < 2 || row[0] == null || row[1] == null) {
             continue;
           }
 
           final nmID = int.tryParse(row[0]?.value.toString() ?? "");
           final costPrice = double.tryParse(row[1]?.value.toString() ?? "");
-          final delivery = double.tryParse(row[2]?.value.toString() ?? "");
-          final packaging = double.tryParse(row[3]?.value.toString() ?? "");
-          final paidAcceptance =
-              double.tryParse(row[4]?.value.toString() ?? "");
+          final delivery = row.length >= 3
+              ? double.tryParse(row[2]?.value.toString() ?? "")
+              : 0.0;
+          final packaging = row.length >= 4
+              ? double.tryParse(row[3]?.value.toString() ?? "")
+              : 0.0;
+          final paidAcceptance = row.length >= 5
+              ? double.tryParse(row[4]?.value.toString() ?? "")
+              : 0.0;
           final returnRate = row.length >= 6
               ? double.tryParse(row[5]?.value.toString() ?? "")
               : 15.0;
@@ -124,7 +147,7 @@ class ProductCostImportViewModel extends ViewModelBase {
               paidAcceptance != null &&
               returnRate != null) {
             final existingCostData =
-                await productCostService.getProductCost(nmID);
+                await productCostService.getWbProductCost(nmID);
 
             final costData = ProductCostData(
               nmID: nmID,
@@ -137,6 +160,7 @@ class ProductCostImportViewModel extends ViewModelBase {
               desiredMargin1: existingCostData?.desiredMargin1 ?? 30,
               desiredMargin2: existingCostData?.desiredMargin2 ?? 35,
               desiredMargin3: existingCostData?.desiredMargin3 ?? 40,
+              mpType: mpType,
               returnRate: returnRate,
             );
 
@@ -147,6 +171,11 @@ class ProductCostImportViewModel extends ViewModelBase {
       }
 
       updatedCount = count;
+      if (mpType == 'wb') {
+        _wbDataLoaded = true;
+      } else if (mpType == 'ozon') {
+        _ozonDataLoaded = true;
+      }
     } catch (e) {
       errorMessage = "Ошибка при обработке файла: ${e.toString()}";
     } finally {
@@ -155,36 +184,70 @@ class ProductCostImportViewModel extends ViewModelBase {
     }
   }
 
-  Future<void> exportCostDataToExcelWeb() async {
+  Future<void> exportCostDataToExcelWeb(String mpType) async {
     // 1) Создаём Excel-файл в памяти
-    final List<ProductCostData> costDataList =
-        await productCostService.getAllCostData();
-    var excel = Excel.createExcel();
-    print('{ProductCostData} count: ${costDataList.length}');
+    List<ProductCostData> costDataList = [];
+    if (mpType == 'wb') {
+      costDataList = await productCostService.getAllCostWbData();
+    } else if (mpType == 'ozon') {
+      costDataList = await productCostService.getAllCostOzonData();
+    }
 
-// "Sheet1" -- это лист, который библиотека создала автоматически
+    var excel = Excel.createExcel();
+
     excel.rename('Sheet1', 'Sheet 1');
 
-// Делаем "Sheet 1" активным листом
+    // Делаем "Sheet 1" активным листом
     excel.setDefaultSheet('Sheet 1');
 
-// Теперь получаем лист
+    // Теперь получаем лист
     Sheet sheet = excel['Sheet 1'];
 
-// Заполняем
+    // Fetch all product cards for filtering
+    List<ProductCard> wbProductCards =
+        await productCardsService.fetchAllProductCards();
+    final OzonProductsResponse ozonProductCardsResponse =
+        await ozonProductsService.fetchProducts();
+
+    // Заполняем
     for (var data in costDataList) {
+      if (data.mpType != mpType) {
+        continue;
+      }
+
+      String identifier;
+      if (mpType == 'wb') {
+        // Find the corresponding ProductCard by nmID
+        final productCard = wbProductCards.where(
+          (card) => card.nmID == data.nmID,
+        );
+        if (productCard.isEmpty) {
+          identifier = 'N/A';
+        }
+        identifier = productCard.first.vendorCode;
+      } else {
+        // Find the corresponding OzonProduct by nmID
+        final ozonProduct = ozonProductCardsResponse.items.where(
+          (product) => product.productId == data.nmID,
+        );
+        if (ozonProduct.isEmpty) {
+          identifier = 'N/A';
+        }
+        identifier = ozonProduct.first.offerId;
+      }
+
       sheet.appendRow(<CellValue?>[
         IntCellValue(data.nmID),
         DoubleCellValue(data.costPrice),
         DoubleCellValue(data.delivery),
         DoubleCellValue(data.packaging),
         DoubleCellValue(data.paidAcceptance),
+        TextCellValue(identifier), // Add the identifier as the fifth column
       ]);
     }
 
     List<int>? fileBytes = excel.encode();
     if (fileBytes == null) {
-      print("Ошибка при кодировании Excel файла.");
       return;
     }
 
@@ -209,4 +272,108 @@ class ProductCostImportViewModel extends ViewModelBase {
 
   @override
   Future<void> asyncInit() async {}
+
+  Future<void> repeatForOzonProducts() async {
+    try {
+      final wbProductCards = await productCardsService.fetchAllProductCards();
+      final ozonProductCards = await ozonProductsService.fetchProducts();
+      int processedCount = 0;
+
+      // Compare products
+      for (var wbProductCard in wbProductCards) {
+        try {
+          // Find matching Ozon product, skip if not found
+          final matchingOzonProducts = ozonProductCards.items.where(
+            (ozonProductCard) =>
+                ozonProductCard.offerId == wbProductCard.vendorCode,
+          );
+
+          if (matchingOzonProducts.isEmpty) {
+            continue; // Skip if no matching product found
+          }
+
+          final ozonProductCard = matchingOzonProducts.first;
+          final wbProductCost =
+              await productCostService.getWbProductCost(wbProductCard.nmID);
+
+          if (wbProductCost == null) {
+            continue; // Skip if no WB cost data
+          }
+
+          final ozonProductCost = wbProductCost.copyWith(
+            nmID: ozonProductCard.productId,
+            mpType: 'ozon',
+          );
+
+          await productCostService.saveProductCost(ozonProductCost);
+          processedCount++;
+        } catch (e) {
+          continue; // Skip problematic products
+        }
+      }
+
+      if (processedCount > 0) {
+        updatedCount = processedCount;
+      } else {
+        errorMessage =
+            "Не найдено соответствующих товаров для копирования данных";
+      }
+      notifyListeners();
+    } catch (e) {
+      errorMessage = "Ошибка при сохранении: ${e.toString()}";
+      notifyListeners();
+    }
+  }
+
+  Future<void> repeatForWbProducts() async {
+    try {
+      final ozonProductCards = await ozonProductsService.fetchProducts();
+      final wbProductCards = await productCardsService.fetchAllProductCards();
+      int processedCount = 0;
+
+      // Compare products
+      for (var ozonProductCard in ozonProductCards.items) {
+        try {
+          // Find matching WB product, skip if not found
+          final matchingWbProducts = wbProductCards.where(
+            (wbProductCard) =>
+                wbProductCard.vendorCode == ozonProductCard.offerId,
+          );
+
+          if (matchingWbProducts.isEmpty) {
+            continue; // Skip if no matching product found
+          }
+
+          final wbProductCard = matchingWbProducts.first;
+          final ozonProductCost = await productCostService
+              .getOzonProductCost(ozonProductCard.productId);
+
+          if (ozonProductCost == null) {
+            continue; // Skip if no Ozon cost data
+          }
+
+          final wbProductCost = ozonProductCost.copyWith(
+            nmID: wbProductCard.nmID,
+            mpType: 'wb',
+          );
+
+          await productCostService.saveProductCost(wbProductCost);
+          processedCount++;
+        } catch (e) {
+          continue; // Skip problematic products
+        }
+      }
+
+      if (processedCount > 0) {
+        updatedCount = processedCount;
+      } else {
+        errorMessage =
+            "Не найдено соответствующих товаров для копирования данных";
+      }
+      notifyListeners();
+    } catch (e) {
+      errorMessage = "Ошибка при сохранении: ${e.toString()}";
+      notifyListeners();
+    }
+  }
 }

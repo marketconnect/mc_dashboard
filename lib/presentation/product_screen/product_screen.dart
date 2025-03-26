@@ -1,5 +1,4 @@
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
+import 'package:web/web.dart' as web;
 
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -1344,7 +1343,7 @@ class ImageCarousel extends StatelessWidget {
   }
 
   void _downloadImage(String imageUrl) {
-    html.window.open(imageUrl, '_blank');
+    web.window.open(imageUrl, '_blank');
   }
 }
 

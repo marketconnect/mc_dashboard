@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mc_dashboard/infrastructure/api/orders.dart';
 
@@ -10,7 +9,7 @@ import 'package:mc_dashboard/presentation/product_screen/product_view_model.dart
 class OrderService implements ProductViewModelOrderService {
   final OrdersApiClient ordersApiClient;
 
-  OrderService({required this.ordersApiClient});
+  const OrderService({required this.ordersApiClient});
 
   @override
   Future<Either<AppErrorBase, List<OrderWb>>> getOneMonthOrders({
@@ -32,39 +31,8 @@ class OrderService implements ProductViewModelOrderService {
       );
 
       return Right(result.orders);
-    } on DioException catch (e, stackTrace) {
-      // Обработка 404 ошибки: возвращаем пустой список
-      if (e.response?.statusCode == 404) {
-        return const Right([]);
-      }
-
-      // Обработка остальных ошибок
-      final responseMessage = e.response?.data?['message'] ?? e.message;
-      final error = AppErrorBase(
-        'DioException: $responseMessage',
-        name: 'getOneMonthOrders',
-        sendTo: true,
-        source: 'OrderService',
-        args: [
-          'productId: $productId',
-        ],
-        stackTrace: stackTrace.toString(),
-      );
-      AppLogger.log(error);
-      return Left(error);
-    } catch (e, stackTrace) {
-      final error = AppErrorBase(
-        'Unexpected error: $e',
-        name: 'getOneMonthOrders',
-        sendTo: true,
-        source: 'OrderService',
-        args: [
-          'productId: $productId',
-        ],
-        stackTrace: stackTrace.toString(),
-      );
-      AppLogger.log(error);
-      return Left(error);
+    } catch (e) {
+      return const Right([]);
     }
   }
 }

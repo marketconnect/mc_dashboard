@@ -11,11 +11,10 @@ class CacheEntry<T> {
 }
 
 class DetailedOrdersApiClient {
-  final String baseUrl;
+  final String baseUrl = ApiSettings.baseUrl;
   final Map<String, CacheEntry<DetailedOrdersResponse>> _cache = {};
 
-  DetailedOrdersApiClient({String? baseUrl})
-      : baseUrl = baseUrl ?? ApiSettings.baseUrl;
+  static final DetailedOrdersApiClient instance = DetailedOrdersApiClient();
 
   Future<DetailedOrdersResponse> getDetailedOrders({
     int? subjectId,
@@ -25,7 +24,6 @@ class DetailedOrdersApiClient {
   }) async {
     final cacheKey = 'detailed-orders-$subjectId-$productId-$isFbs-$pageSize';
 
-    // Проверяем кеш
     final now = DateTime.now();
     final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59);
     final cachedEntry = _cache[cacheKey];

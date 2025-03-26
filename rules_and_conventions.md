@@ -66,6 +66,14 @@ Each layer operates within specific boundaries. **No layer** is allowed to viola
 
   - **Rules**:
 
+    - Any interaction with the API should be carried out through the ApiClient.
+    - In our project, we use HTTP packets and do not use other libraries such as Dio, and so on.
+    - All methods must use try-catch blocks and handle all server responses other than 200 as exceptions.
+    - Status codes should be described in the task before creating the API client.
+    - The API client must not include any dependencies except for the import of the abstract class that this API client - implements, constants such as URLs for methods, and the HTTP package itself.
+    - The API client must not create any new classes other than the API client itself. Only standard Dart data types or classes and data types defined in the domain/entities folder should be used within the API client.
+    - The API client must not create any new classes other than the API client itself. Only standard Dart data types or classes and data types defined in the domain/entities folder should be used within the API client.
+    - The API client provides an interface for interacting with the API. It does not depend on the implementation of any other layers of the project.
     - API clients must implement an interface defined inside the service that uses them.
     - Repositories must implement an interface defined inside the service that uses them.
     - No abstract interfaces should be created in `infrastructure/api/` or `infrastructure/repositories/`.
@@ -94,8 +102,8 @@ Each layer operates within specific boundaries. **No layer** is allowed to viola
     b. `services`: Abstract classes (interfaces) that define the behaviors needed by higher layers.
 
   - **Rules**:
-
     - Services in `domain` are typically written as interfaces (or abstract classes).
+    - One service cannot use any layer except the `infrastructure` layer. It cannot use another `service` also.
     - Services do not define their own interfaces in domain/services/. Instead:
       - Each ViewModel defines interfaces for the services it uses.
       - Each Service defines interfaces for the API clients and repositories it interacts with.

@@ -40,10 +40,8 @@ class WbTariffsService
   @override
   Future<List<WbTariff>> fetchTariffs({String locale = 'ru'}) async {
     if (_cachedTariffs != null) {
-      print("Returning cached tariffs");
       return _cachedTariffs!;
     }
-    print("Fetching tariffs from API");
     // final token = Env.wbToken;
     final token = await wbTokenRepo.getWbToken();
     if (token == null) {
@@ -56,11 +54,9 @@ class WbTariffsService
   @override
   Future<List<WbBoxTariff>> fetchBoxTariffs({required String date}) async {
     if (_cachedBoxTariffs.containsKey(date)) {
-      print("Returning cached box tariffs for date: $date");
       return _cachedBoxTariffs[date]!;
     }
 
-    print("Fetching box tariffs from API for date: $date");
     // final token = Env.wbToken;
     final token = await wbTokenRepo.getWbToken();
     if (token == null) {
@@ -74,7 +70,6 @@ class WbTariffsService
   @override
   Future<List<WbPalletTariff>> fetchPalletTariffs(
       {required String date}) async {
-    print("Fetching pallet tariffs from API for date: $date");
     // final token = Env.wbToken;
     final token = await wbTokenRepo.getWbToken();
     if (token == null) {

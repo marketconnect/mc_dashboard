@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mc_dashboard/infrastructure/api/detailed_orders.dart';
 
@@ -13,7 +12,7 @@ class DetailedOrdersService
         ProductViewModelDetailedOrdersService {
   final DetailedOrdersApiClient detailedOrdersApiClient;
 
-  DetailedOrdersService({required this.detailedOrdersApiClient});
+  const DetailedOrdersService({required this.detailedOrdersApiClient});
   @override
   Future<Either<AppErrorBase, List<DetailedOrderItem>>> fetchDetailedOrders({
     int? subjectId,
@@ -30,11 +29,9 @@ class DetailedOrdersService
       );
 
       return Right(result.detailedOrders);
-    } on DioException catch (e, stackTrace) {
-      // Подробная обработка ошибок Dio
-      final responseMessage = e.response?.data?['message'] ?? e.message;
+    } catch (e, stackTrace) {
       final error = AppErrorBase(
-        'DioException: $responseMessage',
+        'Exception: $e',
         name: 'fetchDetailedOrders',
         sendTo: true,
         source: 'DetailedOrdersService',
@@ -45,21 +42,6 @@ class DetailedOrdersService
         stackTrace: stackTrace.toString(),
       );
       AppLogger.log(error); // Логируйте ошибку
-      return Left(error);
-    } catch (e, stackTrace) {
-      // Обработка всех других ошибок
-      final error = AppErrorBase(
-        'Unexpected error: $e',
-        name: 'fetchDetailedOrders',
-        sendTo: true,
-        source: 'DetailedOrdersService',
-        args: [
-          'subjectId: $subjectId',
-          'productId: $productId',
-        ],
-        stackTrace: stackTrace.toString(),
-      );
-      AppLogger.log(error);
       return Left(error);
     }
   }

@@ -17,7 +17,6 @@ class WbProductsServiceImpl implements WbProductsService {
       List<int> nmIds) async {
     try {
       final products = await apiClient.fetchProducts(nmIds);
-      print("fetchProducts: ${products.length}");
       return right(products);
     } catch (e) {
       return left(AppErrorBase(

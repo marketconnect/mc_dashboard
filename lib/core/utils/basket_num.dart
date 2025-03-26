@@ -1,7 +1,8 @@
-import 'package:dio/dio.dart';
-
 import 'package:mc_dashboard/domain/entities/card_info.dart';
 import 'package:mc_dashboard/domain/entities/feedback_info.dart';
+// ignore: depend_on_referenced_packages
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 String? getBasketNum(int productId) {
   if (productId >= 2088 && productId <= 14399999) {
@@ -61,23 +62,29 @@ String calculateCardUrl(String? imageUrl) {
 
 Future<CardInfo> fetchCardInfo(String cardUrl) async {
   try {
-    final response = await Dio().get(cardUrl);
-    return CardInfo.fromJson(response.data);
+    final response = await http.get(Uri.parse(cardUrl));
+
+    if (response.statusCode == 200) {
+      return CardInfo.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to fetch card info: ${response.statusCode}');
+    }
   } catch (e) {
     return CardInfo(
-        imtName: "",
-        imtId: 0,
-        photoCount: 0,
-        subjId: 0,
-        subjName: "",
-        description: "",
-        characteristicFull: "",
-        brand: "",
-        supplierId: 0,
-        characteristicValues: "",
-        packageLength: "",
-        packageHeight: "",
-        packageWidth: "");
+      imtName: "",
+      imtId: 0,
+      photoCount: 0,
+      subjId: 0,
+      subjName: "",
+      description: "",
+      characteristicFull: "",
+      brand: "",
+      supplierId: 0,
+      characteristicValues: "",
+      packageLength: "",
+      packageHeight: "",
+      packageWidth: "",
+    );
   }
 }
 
@@ -85,13 +92,17 @@ Future<FeedbackInfo> fetchFeedbacks(int imtId) async {
   final url = 'https://feedbacks2.wb.ru/feedbacks/v2/$imtId';
 
   try {
-    final response = await Dio().get(url);
-    if (response.data['valuationDistributionPercent'] == null) {
-      final url = 'https://feedbacks1.wb.ru/feedbacks/v2/$imtId';
-      final response = await Dio().get(url);
-      return FeedbackInfo.fromJson(response.data);
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      if (response.body.contains('valuationDistributionPercent') == false) {
+        final url = 'https://feedbacks1.wb.ru/feedbacks/v2/$imtId';
+        final response = await http.get(Uri.parse(url));
+        return FeedbackInfo.fromJson(jsonDecode(response.body));
+      }
+      return FeedbackInfo.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to fetch feedbacks: ${response.statusCode}');
     }
-    return FeedbackInfo.fromJson(response.data);
   } catch (e) {
     return FeedbackInfo(
       valuationDistributionPercent: {

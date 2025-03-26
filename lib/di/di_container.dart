@@ -3,6 +3,7 @@ import 'package:mc_dashboard/domain/entities/product.dart';
 import 'package:mc_dashboard/domain/services/api_products_service.dart';
 import 'package:mc_dashboard/domain/services/card_info_service.dart';
 import 'package:mc_dashboard/domain/services/goods_service.dart';
+import 'package:mc_dashboard/domain/services/ozon_product_info_service.dart';
 import 'package:mc_dashboard/domain/services/product_cost_service.dart';
 import 'package:mc_dashboard/domain/services/product_service.dart';
 
@@ -11,8 +12,11 @@ import 'package:mc_dashboard/domain/services/token_service.dart';
 import 'package:mc_dashboard/domain/services/wb_api_content_service.dart';
 import 'package:mc_dashboard/domain/services/wb_price_service.dart';
 import 'package:mc_dashboard/domain/services/wb_products_service.dart';
+import 'package:mc_dashboard/domain/services/wb_seller_warehouses_service.dart';
 import 'package:mc_dashboard/domain/services/wb_stats_keywords_service.dart';
+import 'package:mc_dashboard/domain/services/wb_stocks_service.dart';
 import 'package:mc_dashboard/domain/services/wb_tariffs_service.dart';
+import 'package:mc_dashboard/domain/services/wb_warehouse_stocks_service.dart';
 
 import 'package:mc_dashboard/infrastructure/api/auth.dart';
 import 'package:mc_dashboard/infrastructure/api/card_info_api_client.dart';
@@ -22,6 +26,7 @@ import 'package:mc_dashboard/infrastructure/api/kw_lemmas.dart';
 import 'package:mc_dashboard/infrastructure/api/lemmatize.dart';
 import 'package:mc_dashboard/infrastructure/api/normqueries.dart';
 import 'package:mc_dashboard/infrastructure/api/orders.dart';
+import 'package:mc_dashboard/infrastructure/api/ozon_product_info_api_client.dart';
 import 'package:mc_dashboard/infrastructure/api/products_api_client.dart';
 
 import 'package:mc_dashboard/infrastructure/api/stocks.dart';
@@ -45,7 +50,10 @@ import 'package:mc_dashboard/domain/services/warehouses_service.dart';
 import 'package:mc_dashboard/infrastructure/api/wb_content_api_client.dart';
 import 'package:mc_dashboard/infrastructure/api/wb_price_api_client.dart';
 import 'package:mc_dashboard/infrastructure/api/wb_products_api_client.dart';
+import 'package:mc_dashboard/infrastructure/api/wb_seller_warehouses_api_client.dart';
 import 'package:mc_dashboard/infrastructure/api/wb_stats_keywords_api_client.dart';
+import 'package:mc_dashboard/infrastructure/api/wb_stocks_api_client.dart';
+import 'package:mc_dashboard/infrastructure/api/wb_warehouse_stocks_api_client.dart';
 import 'package:mc_dashboard/infrastructure/repositories/card_source_repo.dart';
 import 'package:mc_dashboard/infrastructure/repositories/product_cost_repo.dart';
 import 'package:mc_dashboard/infrastructure/repositories/secure_token_storage_repo.dart';
@@ -65,9 +73,11 @@ import 'package:mc_dashboard/presentation/login_screen/login_screen.dart';
 import 'package:mc_dashboard/presentation/login_screen/login_view_model.dart';
 import 'package:mc_dashboard/presentation/market_screen/market_screen.dart';
 import 'package:mc_dashboard/presentation/market_screen/market_view_model.dart';
+import 'package:mc_dashboard/presentation/ozon_product_card_screen/ozon_product_card_screen.dart';
+import 'package:mc_dashboard/presentation/ozon_product_card_screen/ozon_product_card_view_model.dart';
 import 'package:mc_dashboard/presentation/product_card_screen/product_card_screen.dart';
 import 'package:mc_dashboard/presentation/product_card_screen/product_card_view_model.dart';
-import 'package:mc_dashboard/presentation/product_cards_screen/product_cards_screen.dart';
+
 import 'package:mc_dashboard/presentation/product_cards_screen/product_cards_view_model.dart';
 import 'package:mc_dashboard/presentation/product_cost_import_screen/product_cost_import_screen.dart';
 import 'package:mc_dashboard/presentation/product_cost_import_screen/product_cost_import_view_model.dart';
@@ -92,6 +102,16 @@ import 'package:mc_dashboard/presentation/wb_stats_keywords_screen/wb_stats_keyw
 
 import 'package:mc_dashboard/routes/main_navigation.dart';
 import 'package:provider/provider.dart';
+import 'package:mc_dashboard/presentation/product_cards_screen/product_cards_container_screen.dart';
+import 'package:mc_dashboard/domain/services/ozon_products_service.dart';
+import 'package:mc_dashboard/infrastructure/api/ozon_products_api_client.dart';
+import 'package:mc_dashboard/presentation/ozon_product_cards_screen/ozon_product_cards_view_model.dart';
+import 'package:mc_dashboard/domain/services/ozon_prices_service.dart';
+import 'package:mc_dashboard/infrastructure/api/ozon_prices_api_client.dart';
+import 'package:mc_dashboard/domain/services/ozon_fbo_stocks_service.dart';
+import 'package:mc_dashboard/infrastructure/api/ozon_fbo_stocks_api_client.dart';
+import 'package:mc_dashboard/domain/services/ozon_fbs_stocks_service.dart';
+import 'package:mc_dashboard/infrastructure/api/ozon_fbs_stocks_api_client.dart';
 
 AppFactory makeAppFactory() => _AppFactoryDefault();
 
@@ -112,45 +132,60 @@ class _DIContainer {
   ScreenFactory _makeScreenFactory() => ScreenFactoryDefault(this);
 
   // Repositories //////////////////////////////////////////////////////////////
-  // CookiesRepo _makeCookiesRepo() => const CookiesRepo();
-  ProductCostRepository get productCostRepo => const ProductCostRepository();
+  ProductCostRepository _makeProductCostRepo() => const ProductCostRepository();
   McAuthRepo _makeLocalStorageRepo() => McAuthRepo();
-  CardSourceRepo get cardSourceRepo => const CardSourceRepo();
-  // WbTokenRepo _makeApiKeyRepo() => WbTokenRepo();
-  SecureTokenStorageRepo get secureTokenRepo => SecureTokenStorageRepo();
+  CardSourceRepo _makeCardSourceRepo() => const CardSourceRepo();
+  SecureTokenStorageRepo _makeSecureTokenRepo() => SecureTokenStorageRepo();
+
   // Api clients ///////////////////////////////////////////////////////////////
-  AuthApiClient _makeAuthApiClient() => const AuthApiClient();
-  ProductsApiClient get productSource => const ProductsApiClient();
-  // TariffsApiClient _makeTariffsApiClient() => TariffsApiClient();
+  // Singleton instance since we need to cache data
   TariffsApiClient tariffsApiClient = TariffsApiClient.instance;
+  WbProductsApiClient productsApiClient = WbProductsApiClient.instance;
+  WarehousesApiClient whApiClient = WarehousesApiClient.instance;
+  DetailedOrdersApiClient detailedOrdersApiClient =
+      DetailedOrdersApiClient.instance;
+  StocksApiClient stocksApiClient = StocksApiClient.instance;
+  OrdersApiClient ordersApiClient = OrdersApiClient.instance;
 
-  WbProductsApiClient _makeWbProductsApiClient() => WbProductsApiClient();
-
+  AuthApiClient _makeAuthApiClient() => const AuthApiClient();
+  ProductsApiClient _makeProductSource() => const ProductsApiClient();
   WbGoodsApiClient _makeWbGoodsApiClient() => const WbGoodsApiClient();
-
   WbPriceApiServiceApiClient _makeWbPriceApiServiceApiClient() =>
       const WbPriceApiClient();
-
   WbStatsKeywordsApiClient _makeWbStatsKeywordsApiClient() =>
       const WbStatsKeywordsApiClient();
+  WbSellerWarehousesApiClient _makeWbSellerWarehousesApiClient() =>
+      const WbSellerWarehousesApiClient();
+  WbStocksApiClient _makeWbStocksApiClient() => const WbStocksApiClient();
+  OzonProductsApiClient _makeOzonProductsApiClient() =>
+      const OzonProductsApiClient();
+  OzonPricesApiClient _makeOzonPricesApiClient() => const OzonPricesApiClient();
+  OzonFboStocksApiClient _makeOzonFboStocksApiClient() =>
+      const OzonFboStocksApiClient();
+  OzonFbsStocksApiClient _makeOzonFbsStocksApiClient() =>
+      const OzonFbsStocksApiClient();
+
+  WbWarehouseStocksApiClient _makeWbWarehouseStocksApiClient() =>
+      const WbWarehouseStocksApiClient();
+
+  OzonProductInfoApiClient _makeOzonProductInfoApiClient() =>
+      const OzonProductInfoApiClient();
   // Services //////////////////////////////////////////////////////////////////
-
-  DetailedOrdersService _makeDetailedOrdersService() =>
-      DetailedOrdersService(detailedOrdersApiClient: DetailedOrdersApiClient());
-
   // Why singleton? This is a workaround . Because we need to fetch subjects summary only once
   // despite it is used in multiple screens simultaneously when app is loading
   // (choose niche, subject products, empty subjects)
   final SubjectsSummaryService _makeSubjectsSummaryService =
       SubjectsSummaryService.instance;
+  DetailedOrdersService _makeDetailedOrdersService() =>
+      DetailedOrdersService(detailedOrdersApiClient: detailedOrdersApiClient);
 
   StocksService _makeStocksService() =>
-      StocksService(stocksApiClient: StocksApiClient());
+      StocksService(stocksApiClient: stocksApiClient);
 
   OrderService _makeOrdersService() =>
-      OrderService(ordersApiClient: OrdersApiClient());
+      OrderService(ordersApiClient: ordersApiClient);
 
-  WhService _makeWhService() => WhService(whApiClient: WarehousesApiClient());
+  WhService _makeWhService() => WhService(whApiClient: whApiClient);
 
   AuthService _makeAuthService() => AuthService(
         apiClient: _makeAuthApiClient(),
@@ -166,8 +201,15 @@ class _DIContainer {
         apiClient: LemmatizeApiClient(),
       );
 
-  // WbTokenService _makeApiKeyService() =>
-  //     WbTokenService(storage: _makeApiKeyRepo());
+  WbStocksService _makeWbStocksService() => WbStocksService(
+        apiClient: _makeWbStocksApiClient(),
+        wbTokenRepo: _makeSecureTokenRepo(),
+      );
+
+  OzonProductInfoService _makeOzonProductInfoService() =>
+      OzonProductInfoService(
+          apiClient: _makeOzonProductInfoApiClient(),
+          tokenRepo: _makeSecureTokenRepo());
 
   TinkoffPaymentService _makeTinkoffPaymentService() => TinkoffPaymentService();
 
@@ -175,43 +217,62 @@ class _DIContainer {
       TariffsServiceImpl(apiClient: tariffsApiClient);
 
   WbProductsServiceImpl _makeWbProductsService() =>
-      WbProductsServiceImpl(apiClient: _makeWbProductsApiClient());
-  TokenService get tokenService => TokenService(tokenStorage: secureTokenRepo);
+      WbProductsServiceImpl(apiClient: productsApiClient);
+  TokenService _makeTokenService() =>
+      TokenService(tokenStorage: _makeSecureTokenRepo());
 
-  ProductCostService get productCostService => ProductCostService(
-        storage: productCostRepo,
+  ProductCostService _makeProductCostService() => ProductCostService(
+        storage: _makeProductCostRepo(),
       );
 
   final wbTariffsService = WbTariffsService();
-  WbApiContentService get wbApiContentService => WbApiContentService(
+  WbApiContentService _makeWbApiContentService() => WbApiContentService(
         apiClient: WbContentApiClient(),
-        wbTokenRepo: secureTokenRepo,
+        wbTokenRepo: _makeSecureTokenRepo(),
       );
 
-  ApiProductService get apiProductService => ApiProductService(
-        productsApiClient: productSource,
+  ApiProductService _makeApiProductService() => ApiProductService(
+        productsApiClient: _makeProductSource(),
       );
 
-  CardInfoService get cardInfoService => CardInfoService(
+  CardInfoService _makeCardInfoService() => CardInfoService(
         apiClient: CardInfoApiClient(),
       );
 
-  ProductService get productService =>
-      ProductService(productSource: cardSourceRepo);
+  ProductService _makeProductService() =>
+      ProductService(productSource: _makeCardSourceRepo());
 
-  WbGoodsService get wbGoodsService => WbGoodsService(
+  WbGoodsService _makeWbGoodsService() => WbGoodsService(
         apiClient: _makeWbGoodsApiClient(),
-        wbTokenRepo: secureTokenRepo,
+        wbTokenRepo: _makeSecureTokenRepo(),
       );
 
-  WbApiPriceService get wbPriceService => WbApiPriceService(
+  WbApiPriceService _makeWbPriceService() => WbApiPriceService(
         apiClient: _makeWbPriceApiServiceApiClient(),
-        wbTokenRepo: secureTokenRepo,
+        wbTokenRepo: _makeSecureTokenRepo(),
       );
-  WbStatsKeywordsService get wbStatsKeywordsService => WbStatsKeywordsService(
+  WbStatsKeywordsService _makeWbStatsKeywordsService() =>
+      WbStatsKeywordsService(
         apiClient: _makeWbStatsKeywordsApiClient(),
-        wbTokenRepo: secureTokenRepo,
+        wbTokenRepo: _makeSecureTokenRepo(),
       );
+
+  WbWarehouseStocksService _makeWbWarehouseStocksService() =>
+      WbWarehouseStocksService(
+          apiClient: _makeWbWarehouseStocksApiClient(),
+          wbTokenRepo: _makeSecureTokenRepo());
+
+  WbSellerWarehousesService _makeWbSellerWarehousesService() =>
+      WbSellerWarehousesService(
+        apiClient: _makeWbSellerWarehousesApiClient(),
+        wbTokenRepo: _makeSecureTokenRepo(),
+      );
+
+  OzonProductsService _makeOzonProductsService() => OzonProductsService(
+        apiClient: _makeOzonProductsApiClient(),
+        tokenRepo: _makeSecureTokenRepo(),
+      );
+
   // ViewModels ////////////////////////////////////////////////////////////////
   ChoosingNicheViewModel _makeChoosingNicheViewModel(
           BuildContext context,
@@ -276,7 +337,7 @@ class _DIContainer {
         wbProductsService: _makeWbProductsService(),
         productPrice: productPrice,
         tariffsService: _makeTariffsService(),
-        apiKeyService: tokenService,
+        apiKeyService: _makeTokenService(),
       );
 
   SeoRequestsExtendViewModel _makeSeoRequestsExtendViewModel(
@@ -308,25 +369,28 @@ class _DIContainer {
   //     );
 
   AddCardsViewModel _makeAddCardsViewModel(BuildContext context) =>
-      AddCardsViewModel(cardsService: productService, context: context);
+      AddCardsViewModel(cardsService: _makeProductService(), context: context);
 
   ProductDetailViewModel _makeProductDetailViewModel(
       BuildContext context, Product product) {
     return ProductDetailViewModel(
-      wbApiContentService: wbApiContentService,
+      wbApiContentService: _makeWbApiContentService(),
       product: product,
-      productSource: apiProductService,
-      cardInfoService: cardInfoService,
+      productSource: _makeApiProductService(),
+      cardInfoService: _makeCardInfoService(),
       context: context,
     );
   }
 
   ProductCardsViewModel _makeProductCardsViewModel(BuildContext context) {
     return ProductCardsViewModel(
-      wbApiContentService: wbApiContentService,
-      wbProductCostService: productCostService,
+      wbApiContentService: _makeWbApiContentService(),
+      wbProductCostService: _makeProductCostService(),
       wbTariffsService: wbTariffsService,
-      goodsService: wbGoodsService,
+      warehouseStocksService: _makeWbWarehouseStocksService(),
+      goodsService: _makeWbGoodsService(),
+      sellerWarehousesService: _makeWbSellerWarehousesService(),
+      wbStocksService: _makeWbStocksService(),
       context: context,
     );
   }
@@ -334,11 +398,12 @@ class _DIContainer {
   ProductCardViewModel _makeProductCardViewModel(
       BuildContext context, int imtID, int nmID) {
     return ProductCardViewModel(
-      contentApiService: wbApiContentService,
+      contentApiService: _makeWbApiContentService(),
       tariffsService: wbTariffsService,
       imtID: imtID,
-      productCostService: productCostService,
-      wbPriceService: wbPriceService,
+      productCostService: _makeProductCostService(),
+      wbPriceService: _makeWbPriceService(),
+      goodsService: _makeWbGoodsService(),
       nmID: nmID,
       context: context,
     );
@@ -347,29 +412,66 @@ class _DIContainer {
   ProductCostImportViewModel _makeProductCostImportViewModel(
       BuildContext context) {
     return ProductCostImportViewModel(
-      productCostService: productCostService,
+      productCostService: _makeProductCostService(),
+      productCardsService: _makeWbApiContentService(),
+      ozonProductsService: _makeOzonProductsService(),
       context: context,
     );
   }
 
   TokensViewModel _makeTokensViewModel(BuildContext context) {
     return TokensViewModel(
-      tokensService: tokenService,
+      tokensService: _makeTokenService(),
       context: context,
     );
   }
 
   MarketViewModel _makeMarketViewModel(BuildContext context) {
     return MarketViewModel(
-      tokensService: tokenService,
+      tokensService: _makeTokenService(),
       context: context,
     );
   }
 
   WbStatsKeywordsViewModel _makeWbStatsKeywordsViewModel(BuildContext context) {
     return WbStatsKeywordsViewModel(
-      wbStatsKeywordsService: wbStatsKeywordsService,
+      wbStatsKeywordsService: _makeWbStatsKeywordsService(),
       context: context,
+    );
+  }
+
+  OzonProductCardsViewModel _makeOzonProductCardsViewModel(
+      BuildContext context) {
+    return OzonProductCardsViewModel(
+      productsService: _makeOzonProductsService(),
+      pricesService: OzonPricesServiceImpl(
+          apiClient: _makeOzonPricesApiClient(),
+          tokenRepo: _makeSecureTokenRepo()),
+      fboStocksService: OzonFboStocksService(
+          apiClient: _makeOzonFboStocksApiClient(),
+          tokenRepo: _makeSecureTokenRepo()),
+      fbsStocksService: OzonFbsStocksServiceImpl(
+          apiClient: _makeOzonFbsStocksApiClient(),
+          tokenRepo: _makeSecureTokenRepo()),
+      productInfoService: _makeOzonProductInfoService(),
+      productCostService: _makeProductCostService(),
+      wbViewModel: _makeProductCardsViewModel(context),
+      context: context,
+    );
+  }
+
+  OzonProductCardViewModel _makeOzonProductCardViewModel(
+      BuildContext context, int productId, String offerId) {
+    return OzonProductCardViewModel(
+      context: context,
+      productsService: _makeOzonProductsService(),
+      pricesService: OzonPricesServiceImpl(
+          apiClient: _makeOzonPricesApiClient(),
+          tokenRepo: _makeSecureTokenRepo()),
+      productInfoService: _makeOzonProductInfoService(),
+      productCostService: _makeProductCostService(),
+      offerId: offerId,
+      productId: productId,
     );
   }
 }
@@ -514,7 +616,6 @@ class ScreenFactoryDefault implements ScreenFactory {
 
   @override
   Widget makeAddCardsScreen() {
-    print("makeAddCardsScreen");
     return ChangeNotifierProvider(
       create: (context) => _diContainer._makeAddCardsViewModel(context),
       child: const AddCardsScreen(),
@@ -522,12 +623,12 @@ class ScreenFactoryDefault implements ScreenFactory {
   }
 
   @override
-  Widget makeProductCardsScreen() {
-    return ChangeNotifierProvider(
-      create: (context) => _diContainer._makeProductCardsViewModel(context),
-      child: const ProductCardsScreen(),
-    );
-  }
+  // Widget makeProductCardsScreen() {
+  //   return ChangeNotifierProvider(
+  //     create: (context) => _diContainer._makeProductCardsViewModel(context),
+  //     child: const ProductCardsScreen(),
+  //   );
+  // }
 
   @override
   Widget makeProductCardScreen({required int imtID, required int nmID}) {
@@ -552,6 +653,37 @@ class ScreenFactoryDefault implements ScreenFactory {
     return ChangeNotifierProvider(
       create: (context) => _diContainer._makeTokensViewModel(context),
       child: const TokensScreen(),
+    );
+  }
+
+  @override
+  Widget makeProductCardsContainerScreen() {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (context) => _diContainer._makeProductCardsViewModel(context),
+        ),
+        ChangeNotifierProvider(
+          create: (context) =>
+              _diContainer._makeOzonProductCardsViewModel(context),
+        ),
+      ],
+      child: const ProductCardsContainerScreen(),
+    );
+  }
+
+  @override
+  Widget makeOzonProductCardScreen({
+    required int productId,
+    required String offerId,
+  }) {
+    return ChangeNotifierProvider(
+      create: (context) => _diContainer._makeOzonProductCardViewModel(
+        context,
+        productId,
+        offerId,
+      ),
+      child: const OzonProductCardScreen(),
     );
   }
 }

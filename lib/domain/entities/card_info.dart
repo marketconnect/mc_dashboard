@@ -121,9 +121,6 @@ class CardInfo {
   }
 
   double calculateVolumeInLiters() {
-    print("packageLength: $packageLength");
-    print("packageHeight: $packageHeight");
-    print("packageWidth: $packageWidth");
     try {
       final length =
           double.parse(packageLength.replaceAll(RegExp(r'[^0-9.]'), ''));

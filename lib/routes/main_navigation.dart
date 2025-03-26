@@ -12,7 +12,7 @@ abstract class ScreenFactory {
   Widget makeProductDetailScreen({required Product product});
   Widget makeAddCardsScreen();
 
-  Widget makeProductCardsScreen();
+  Widget makeProductCardsContainerScreen();
   Widget makeProductCardScreen({required int imtID, required int nmID});
   Widget makeProductCostImportScreen();
   Widget makeTokensScreen();
@@ -43,6 +43,11 @@ abstract class ScreenFactory {
   Widget makeLoginScreen();
 
   Widget makeWbStatsKeywordsScreen();
+
+  Widget makeOzonProductCardScreen({
+    required int productId,
+    required String offerId,
+  });
 }
 
 class MainNavigation implements AppNavigation {
@@ -137,9 +142,9 @@ class MainNavigation implements AppNavigation {
           builder: (context) => screenFactory.makeAddCardsScreen(),
         );
 
-      case MainNavigationRouteNames.productCards:
+      case MainNavigationRouteNames.productCardsContainer:
         return MaterialPageRoute(
-          builder: (context) => screenFactory.makeProductCardsScreen(),
+          builder: (context) => screenFactory.makeProductCardsContainerScreen(),
         );
 
       case MainNavigationRouteNames.productCard:
@@ -161,6 +166,14 @@ class MainNavigation implements AppNavigation {
           builder: (context) => screenFactory.makeWbStatsKeywordsScreen(),
         );
 
+      case MainNavigationRouteNames.ozonProductCardScreen:
+        final args = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          builder: (context) => screenFactory.makeOzonProductCardScreen(
+            productId: args['productId'] as int,
+            offerId: args['offerId'] as String,
+          ),
+        );
       default:
         return MaterialPageRoute(
           builder: (context) => MainScreen(

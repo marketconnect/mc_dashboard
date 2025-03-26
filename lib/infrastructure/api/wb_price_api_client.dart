@@ -1,4 +1,5 @@
 import 'dart:convert';
+// ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
 import 'package:mc_dashboard/.env.dart';
 import 'package:mc_dashboard/domain/services/wb_price_service.dart';

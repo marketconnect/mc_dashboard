@@ -1,12 +1,16 @@
 import 'dart:convert';
+// ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
 import 'package:mc_dashboard/.env.dart';
 import 'package:mc_dashboard/domain/entities/wb_product.dart';
 import 'package:mc_dashboard/domain/services/wb_products_service.dart';
 
 class WbProductsApiClient implements WbProductsServiceApiClient {
+  WbProductsApiClient();
   static const String _baseUrl = ApiSettings.wbDetailsProxy;
   final Map<String, CacheEntry<List<WbProduct>>> _cache = {};
+  // Singleton instance
+  static final WbProductsApiClient instance = WbProductsApiClient();
 
   @override
   Future<List<WbProduct>> fetchProducts(List<int> nmIds) async {

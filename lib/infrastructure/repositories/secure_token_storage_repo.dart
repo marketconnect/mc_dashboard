@@ -5,12 +5,16 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:mc_dashboard/core/constants/hive_boxes.dart';
 import 'package:mc_dashboard/core/constants/token_names.dart';
 import 'package:mc_dashboard/domain/services/goods_service.dart';
+import 'package:mc_dashboard/domain/services/ozon_product_info_service.dart';
 
 import 'package:mc_dashboard/domain/services/token_service.dart';
 import 'package:mc_dashboard/domain/services/wb_api_content_service.dart';
 import 'package:mc_dashboard/domain/services/wb_price_service.dart';
+import 'package:mc_dashboard/domain/services/wb_seller_warehouses_service.dart';
 import 'package:mc_dashboard/domain/services/wb_stats_keywords_service.dart';
+import 'package:mc_dashboard/domain/services/wb_stocks_service.dart';
 import 'package:mc_dashboard/domain/services/wb_tariffs_service.dart';
+import 'package:mc_dashboard/domain/services/wb_warehouse_stocks_service.dart';
 
 class SecureTokenStorageRepo
     implements
@@ -18,7 +22,11 @@ class SecureTokenStorageRepo
         TokenServiceStorage,
         WbPriceApiServiceWbTokenRepo,
         WbStatsKeywordsWbTokenRepo,
+        WbWarehouseStocksServiceWbTokenRepo,
         WbTariffsServiceWbTokenRepo,
+        OzonProductInfoSecureTokenStorageRepo,
+        WbSellerWarehousesServiceWbTokenRepo,
+        WbStocksServiceWbTokenRepo,
         WbContentApiServiceWbTokenRepo {
   SecureTokenStorageRepo();
 

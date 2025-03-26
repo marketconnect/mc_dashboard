@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:fpdart/fpdart.dart';
 
 import 'package:mc_dashboard/infrastructure/api/lemmatize.dart';
@@ -20,23 +19,9 @@ class LemmatizeService implements ProductViewModelLemmatizeService {
       final result = await apiClient.lemmatize(req);
 
       return Right(result);
-    } on DioException catch (e, stackTrace) {
-      // final responseMessage = e.response?.data?['message'] ?? e.message;
-      final error = AppErrorBase(
-        'DioException: $e',
-        name: 'get',
-        sendTo: true,
-        source: 'LemmatizeService',
-        args: [
-          'req: $req',
-        ],
-        stackTrace: stackTrace.toString(),
-      );
-      AppLogger.log(error);
-      return Left(error);
     } catch (e, stackTrace) {
       final error = AppErrorBase(
-        'Unexpected error: $e',
+        'Exception: $e',
         name: 'get',
         sendTo: true,
         source: 'LemmatizeService',

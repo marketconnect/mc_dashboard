@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mc_dashboard/infrastructure/api/normqueries.dart';
 import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
@@ -25,37 +24,10 @@ class NormqueryService
       final result = await apiClient.getNormqueriesProducts(ids: ids);
 
       return Right(result.normqueriesWithProducts);
-    } on DioException catch (e, stackTrace) {
-      if (e.response?.statusCode == 404) {
-        return const Right([]);
-      }
+    } catch (e) {
+      return const Right([]);
 
       // final responseMessage = e.response?.data?['message'] ?? e.message;
-      final error = AppErrorBase(
-        'DioException: $e',
-        name: 'get',
-        sendTo: true,
-        source: 'NormqueryService',
-        args: [
-          'ids: $ids',
-        ],
-        stackTrace: stackTrace.toString(),
-      );
-      AppLogger.log(error);
-      return Left(error);
-    } catch (e, stackTrace) {
-      final error = AppErrorBase(
-        'Unexpected error: $e',
-        name: 'get',
-        sendTo: true,
-        source: 'NormqueryService',
-        args: [
-          'productId: $ids',
-        ],
-        stackTrace: stackTrace.toString(),
-      );
-      AppLogger.log(error);
-      return Left(error);
     }
   }
 
@@ -69,33 +41,8 @@ class NormqueryService
       final result = await apiClient.getUniqueNormqueries(ids: ids);
 
       return Right(result.uniqueNormqueries);
-    } on DioException catch (e, stackTrace) {
-      // final responseMessage = e.response?.data?['message'] ?? e.message;
-      final error = AppErrorBase(
-        'DioException: $e',
-        name: 'getUniqueNormqueries',
-        sendTo: true,
-        source: 'NormqueryService',
-        args: [
-          'ids: $ids',
-        ],
-        stackTrace: stackTrace.toString(),
-      );
-      AppLogger.log(error);
-      return Left(error);
-    } catch (e, stackTrace) {
-      final error = AppErrorBase(
-        'Unexpected error: $e',
-        name: 'getUniqueNormqueries',
-        sendTo: true,
-        source: 'NormqueryService',
-        args: [
-          'ids: $ids',
-        ],
-        stackTrace: stackTrace.toString(),
-      );
-      AppLogger.log(error);
-      return Left(error);
+    } catch (e) {
+      return const Right([]);
     }
   }
 }

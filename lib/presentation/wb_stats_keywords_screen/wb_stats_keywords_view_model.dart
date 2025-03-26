@@ -25,13 +25,11 @@ class WbStatsKeywordsViewModel extends ViewModelBase {
 
   @override
   Future<void> asyncInit() async {
-    print("Init wb stats keywords view model");
     await _fetchStatsKeywords();
     _startAutoRefresh();
   }
 
   Future<void> _fetchStatsKeywords() async {
-    print("Fetching wb stats keywords");
     try {
       final result = await wbStatsKeywordsService.getStatsKeywords(
         advertId: 24009375,

@@ -1,4 +1,5 @@
 import 'package:mc_dashboard/domain/entities/good.dart';
+import 'package:mc_dashboard/presentation/product_card_screen/product_card_view_model.dart';
 import 'package:mc_dashboard/presentation/product_cards_screen/product_cards_view_model.dart';
 
 abstract class WbGoodsServiceApiClient {
@@ -12,7 +13,8 @@ abstract class WbGoodSeviceWbTokenRepo {
   Future<String?> getWbToken();
 }
 
-class WbGoodsService implements ProductCardsGoodsService {
+class WbGoodsService
+    implements ProductCardsGoodsService, ProductCardGoodsService {
   final WbGoodsServiceApiClient apiClient;
   final WbGoodSeviceWbTokenRepo wbTokenRepo;
 

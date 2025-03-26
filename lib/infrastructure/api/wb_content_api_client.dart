@@ -1,8 +1,9 @@
 // lib/infrastructure/api/charcs_api_client.dart
 
 import 'dart:convert';
-import 'dart:io';
+
 import 'dart:typed_data';
+// ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
 import 'package:mc_dashboard/.env.dart';
 import 'package:mc_dashboard/domain/entities/charc.dart';

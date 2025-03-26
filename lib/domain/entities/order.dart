@@ -49,20 +49,18 @@ List<Map<String, dynamic>> aggregateOrdersByDay(List<OrderWb> orders) {
     aggregatedOrders[date] = (aggregatedOrders[date] ?? 0) + order.orders;
   }
 
-  // TODO DROP ME
-  List<int> values = aggregatedOrders.values.toList();
-  if (values.isNotEmpty) {
-    values.sort();
-    final q1 = values[(values.length * 0.25).toInt()];
-    final q3 = values[(values.length * 0.75).toInt()];
-    final iqr = q3 - q1;
-    // final lowerBound = q1 - (1.5 * iqr);
-    final upperBound = q3 + (1.5 * iqr);
+  // List<int> values = aggregatedOrders.values.toList();
+  // if (values.isNotEmpty) {
+  //   values.sort();
+  //   final q1 = values[(values.length * 0.25).toInt()];
+  //   final q3 = values[(values.length * 0.75).toInt()];
+  //   final iqr = q3 - q1;
+  //   // final lowerBound = q1 - (1.5 * iqr);
+  //   final upperBound = q3 + (1.5 * iqr);
 
-    aggregatedOrders
-        .removeWhere((_, totalOrders) => totalOrders > (upperBound * 5));
-  }
-  // TODO DROP ME ABOBE
+  //   aggregatedOrders
+  //       .removeWhere((_, totalOrders) => totalOrders > (upperBound * 5));
+  // }
 
   return aggregatedOrders.entries.map((entry) {
     return {

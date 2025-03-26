@@ -16,7 +16,6 @@ class WbStatsKeywordsApiClient
     required String from,
     required String to,
   }) async {
-    print("getStatsKeywords");
     final url = Uri.parse('$baseUrl?advert_id=$advertId&from=$from&to=$to');
 
     try {
@@ -29,7 +28,6 @@ class WbStatsKeywordsApiClient
       );
       if (response.statusCode == 200) {
         final body = jsonDecode(utf8.decode(response.bodyBytes));
-        print("Response status code: ${body}");
         if (body.containsKey('keywords')) {
           final List<WbStatsKeywords> stats = [];
 

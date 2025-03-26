@@ -1,3 +1,5 @@
+import 'package:mc_dashboard/domain/entities/size.dart';
+
 class ProductCard {
   final int nmID;
   final int imtID;
@@ -10,6 +12,7 @@ class ProductCard {
   final int width;
   final int height;
   final bool isValidDimensions;
+  final List<WbProductSize> sizes;
 
   ProductCard({
     required this.nmID,
@@ -23,6 +26,7 @@ class ProductCard {
     required this.width,
     required this.height,
     required this.isValidDimensions,
+    required this.sizes,
   });
 
   factory ProductCard.fromJson(Map<String, dynamic> json) {
@@ -33,6 +37,11 @@ class ProductCard {
     if (photos.isNotEmpty) {
       photoUrl = photos.first['big'] ?? '';
     }
+
+    final sizesList = (json['sizes'] as List<dynamic>?)
+            ?.map((sizeJson) => WbProductSize.fromJson(sizeJson))
+            .toList() ??
+        [];
 
     return ProductCard(
       nmID: json['nmID'] as int? ?? 0,
@@ -46,6 +55,7 @@ class ProductCard {
       width: dimensions['width'] as int? ?? 0,
       height: dimensions['height'] as int? ?? 0,
       isValidDimensions: dimensions['isValid'] as bool? ?? false,
+      sizes: sizesList,
     );
   }
 }

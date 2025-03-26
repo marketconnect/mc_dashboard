@@ -5,6 +5,8 @@ import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class McProgressBar extends StatelessWidget {
   static const double kSize = 30;
+
+  const McProgressBar({super.key});
   @override
   Widget build(BuildContext context) {
     final randomIntFrom0to4 = Random().nextInt(5);
@@ -27,7 +29,7 @@ class McProgressBar extends StatelessWidget {
       );
     } else if (randomIntFrom0to4 == 3) {
       return LoadingAnimationWidget.discreteCircle(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.onPrimary,
           size: kSize,
           secondRingColor: Theme.of(context).colorScheme.primary,
           thirdRingColor: Theme.of(context).colorScheme.onPrimary);

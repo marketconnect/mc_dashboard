@@ -20,7 +20,7 @@ class MarketScreen extends StatelessWidget {
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceVariant,
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
@@ -37,7 +37,7 @@ class MarketScreen extends StatelessWidget {
                       color: Theme.of(context)
                           .colorScheme
                           .errorContainer
-                          .withOpacity(0.2),
+                          .withAlpha(51),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Text(
@@ -64,7 +64,7 @@ class MarketScreen extends StatelessWidget {
                   context,
                   title: "Карточки товаров",
                   icon: Icons.shopping_cart,
-                  route: MainNavigationRouteNames.productCards,
+                  route: MainNavigationRouteNames.productCardsContainer,
                 ),
                 _buildNavigationCard(
                   context,

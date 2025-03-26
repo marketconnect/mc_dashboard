@@ -49,6 +49,9 @@ class ProductCostData extends HiveObject {
   @HiveField(14, defaultValue: true)
   bool isBox;
 
+  @HiveField(15, defaultValue: 'wb')
+  String mpType;
+
   ProductCostData({
     required this.nmID,
     required this.costPrice,
@@ -56,6 +59,7 @@ class ProductCostData extends HiveObject {
     required this.packaging,
     required this.paidAcceptance,
     this.isBox = true,
+    this.mpType = 'wb',
     String? warehouseName,
     this.returnRate = 10.0,
     this.taxRate = 7,
@@ -83,6 +87,7 @@ class ProductCostData extends HiveObject {
     double? calculatedPrice2,
     double? calculatedPrice3,
     bool? isBox,
+    String? mpType,
   }) {
     return ProductCostData(
       nmID: nmID ?? this.nmID,
@@ -100,6 +105,7 @@ class ProductCostData extends HiveObject {
       calculatedPrice2: calculatedPrice2 ?? this.calculatedPrice2,
       calculatedPrice3: calculatedPrice3 ?? this.calculatedPrice3,
       isBox: isBox ?? this.isBox,
+      mpType: mpType ?? this.mpType,
     );
   }
 }

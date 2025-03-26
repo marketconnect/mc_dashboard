@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mc_dashboard/infrastructure/api/kw_lemmas.dart';
 
@@ -21,37 +20,8 @@ class KwLemmaService implements ProductViewModelKwLemmaService {
       final result = await apiClient.getKwLemmas(ids: ids);
 
       return Right(result.kwLemmas);
-    } on DioException catch (e, stackTrace) {
-      if (e.response?.statusCode == 404) {
-        return const Right([]);
-      }
-
-      // final responseMessage = e.response?.data?['message'] ?? e.message;
-      final error = AppErrorBase(
-        'DioException: $e',
-        name: 'get',
-        sendTo: true,
-        source: 'KwLemmaService',
-        args: [
-          'ids: $ids',
-        ],
-        stackTrace: stackTrace.toString(),
-      );
-      AppLogger.log(error);
-      return Left(error);
-    } catch (e, stackTrace) {
-      final error = AppErrorBase(
-        'Unexpected error: $e',
-        name: 'get',
-        sendTo: true,
-        source: 'KwLemmaService',
-        args: [
-          'productId: $ids',
-        ],
-        stackTrace: stackTrace.toString(),
-      );
-      AppLogger.log(error);
-      return Left(error);
+    } catch (e) {
+      return const Right([]);
     }
   }
 }

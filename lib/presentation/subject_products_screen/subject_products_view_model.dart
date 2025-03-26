@@ -84,7 +84,7 @@ class SubjectProductsViewModel extends ViewModelBase {
   int _totalRevenue = 0;
   int get totalRevenue => _totalRevenue;
 
-  Map<int, String> _productCharactiristics = {};
+  final Map<int, String> _productCharactiristics = {};
 
   // Setters
   void addProductImage(int productId, String imageUrl, String productName) {
@@ -95,7 +95,7 @@ class SubjectProductsViewModel extends ViewModelBase {
     _productCharactiristics[productId] = characteristics;
   }
 
-  String? _token;
+  // String? _token;
 
   // Methods ///////////////////////////////////////////////////////////////////
 
@@ -124,7 +124,7 @@ class SubjectProductsViewModel extends ViewModelBase {
       return;
     }
 
-    _token = _tokenInfo!.token;
+    // _token = _tokenInfo!.token;
     // Detailed Orders
     final result = await detailedOrdersService.fetchDetailedOrders(
         subjectId: subjectId, isFbs: 0);
@@ -428,7 +428,6 @@ class SubjectProductsViewModel extends ViewModelBase {
   }
 
   void onNavigateToProductScreen(int productId, int productPrice) {
-    print("Navigate to product screen $productId $productPrice");
     Navigator.of(context).pushNamed(
       MainNavigationRouteNames.productScreen,
       arguments: {"productId": productId, "productPrice": productPrice},

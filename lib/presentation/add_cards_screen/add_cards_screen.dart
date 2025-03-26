@@ -11,7 +11,6 @@ class AddCardsScreen extends StatelessWidget {
     final products = model.products;
     final routeToProductDetail = model.routeToProductDetail;
     final errorMessage = model.error;
-    print("products: $products");
     return Scaffold(
       appBar: AppBar(title: const Text("Добавить карточки товаров")),
       body: Column(

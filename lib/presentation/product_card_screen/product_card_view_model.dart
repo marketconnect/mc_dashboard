@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
+import 'package:mc_dashboard/domain/entities/good.dart';
 import 'package:mc_dashboard/domain/entities/product_card.dart';
 import 'package:mc_dashboard/domain/entities/product_cost_data.dart';
 import 'package:mc_dashboard/domain/entities/wb_box_tariff.dart';
 import 'package:mc_dashboard/domain/entities/wb_pallet_tariff.dart';
 import 'package:mc_dashboard/domain/entities/wb_tariff.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 abstract class ProductCardWbContentApiService {
   Future<ProductCard> fetchProductCard({required int imtID, required int nmID});
@@ -17,7 +19,7 @@ abstract class ProductCardWbTariffsService {
 }
 
 abstract class ProductCardWbProductCostService {
-  Future<ProductCostData?> getProductCost(int nmID);
+  Future<ProductCostData?> getWbProductCost(int nmID);
   Future<void> saveProductCost(ProductCostData costData);
 }
 
@@ -26,11 +28,18 @@ abstract class ProductCardWbPriceService {
       List<Map<String, dynamic>> priceData);
 }
 
+abstract class ProductCardGoodsService {
+  Future<List<Good>> getGoods({
+    int? filterNmID,
+  });
+}
+
 class ProductCardViewModel extends ViewModelBase {
   final ProductCardWbContentApiService contentApiService;
   final ProductCardWbTariffsService tariffsService;
   final ProductCardWbProductCostService productCostService;
   final ProductCardWbPriceService wbPriceService;
+  final ProductCardGoodsService goodsService;
   final int imtID;
   final int nmID;
 
@@ -42,13 +51,15 @@ class ProductCardViewModel extends ViewModelBase {
   String? errorMessage;
   String? selectedWarehouse;
 
-  // Данные о стоимости
   ProductCostData? productCostData;
+
+  double? goodPrice;
 
   ProductCardViewModel({
     required this.contentApiService,
     required this.tariffsService,
     required this.productCostService,
+    required this.goodsService,
     required this.imtID,
     required this.nmID,
     required this.wbPriceService,
@@ -64,10 +75,18 @@ class ProductCardViewModel extends ViewModelBase {
       await fetchBoxTariffs();
       await fetchPalletTariffs();
       await loadProductCost();
+      await fetchGoodPrice();
     } catch (e) {
       errorMessage = "Ошибка: ${e.toString()}";
     }
     setLoaded();
+  }
+
+  Future<void> fetchGoodPrice() async {
+    final goods = await goodsService.getGoods(
+      filterNmID: nmID,
+    );
+    goodPrice = goods.first.sizes.first.clubDiscountedPrice;
   }
 
   Future<void> fetchProductCard() async {
@@ -77,7 +96,6 @@ class ProductCardViewModel extends ViewModelBase {
       productCard = card;
 
       volumeLiters = _calculateVolumeLiters();
-      print("Volume liters: $volumeLiters");
     } catch (e) {
       errorMessage = "Ошибка загрузки карточки товара: ${e.toString()}";
     }
@@ -145,7 +163,7 @@ class ProductCardViewModel extends ViewModelBase {
 
   Future<void> loadProductCost() async {
     try {
-      productCostData = await productCostService.getProductCost(nmID);
+      productCostData = await productCostService.getWbProductCost(nmID);
 
       productCostData ??= ProductCostData(
         nmID: nmID,
@@ -172,8 +190,6 @@ class ProductCardViewModel extends ViewModelBase {
 
   Future<void> saveProductCost(ProductCostData costData) async {
     try {
-      print(
-          "Save product cost: ${costData.desiredMargin1} ${costData.costPrice} ${costData.desiredMargin3}");
       await productCostService.saveProductCost(costData.copyWith(
         warehouseName: selectedWarehouse,
       ));
@@ -207,7 +223,6 @@ class ProductCardViewModel extends ViewModelBase {
     if (warehouseName != null) {
       selectedWarehouse = warehouseName;
     }
-    print("updateProductCostData isBox: ${isBox ?? productCostData!.isBox}");
     productCostData = productCostData!.copyWith(
       costPrice: costPrice ?? productCostData!.costPrice,
       delivery: delivery ?? productCostData!.delivery,
@@ -222,6 +237,21 @@ class ProductCardViewModel extends ViewModelBase {
       isBox: isBox ?? productCostData!.isBox,
     );
 
+    notifyListeners();
+  }
+
+  Future<void> openUrl(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      throw Exception('Не удалось открыть $url');
+    }
+  }
+
+  void setSelectedWarehouse(String warehouse) {
+    selectedWarehouse = warehouse;
+    updateProductCostData(warehouseName: warehouse);
     notifyListeners();
   }
 

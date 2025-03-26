@@ -216,6 +216,24 @@ class _TokensScreenState extends State<TokensScreen> {
                 ),
                 child: const Text("Сохранить"),
               ),
+              const SizedBox(width: 8),
+              if (token != null)
+                ElevatedButton(
+                  onPressed: onDelete,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.surface,
+                    foregroundColor: theme.colorScheme.error,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    textStyle: const TextStyle(fontSize: 14),
+                    elevation: 0,
+                    side: BorderSide(color: theme.colorScheme.error),
+                  ),
+                  child: const Text("Удалить"),
+                ),
               if (token == null)
                 Padding(
                   padding: const EdgeInsets.only(left: 8.0),

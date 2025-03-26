@@ -208,8 +208,11 @@ class LoginScreen extends StatelessWidget {
             ),
             ElevatedButton(
               onPressed: () async {
+                final navigator = Navigator.of(context);
                 await viewModel.resetPassword(emailController.text.trim());
-                Navigator.of(context).pop();
+                if (context.mounted) {
+                  navigator.pop();
+                }
               },
               child: const Text('Отправить'),
             ),

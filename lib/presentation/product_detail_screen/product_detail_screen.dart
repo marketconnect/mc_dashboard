@@ -414,6 +414,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         if (_isProductCreated && _extractedImages.isNotEmpty)
           ElevatedButton(
             onPressed: () async {
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
               // Запрашиваем nmId через всплывающее окно
               final nmId = await showDialog<String>(
                 context: context,
@@ -447,11 +448,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     .toList();
                 await viewModel.uploadProductImages(selectedImages, nmId);
               } else {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('nmId не может быть пустым')),
-                  );
-                }
+                scaffoldMessenger.showSnackBar(
+                  const SnackBar(content: Text('nmId не может быть пустым')),
+                );
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
@@ -520,6 +519,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               return;
             }
 
+            final scaffoldMessenger = ScaffoldMessenger.of(context);
             final nmId = await showDialog<String>(
               context: context,
               builder: (context) {
@@ -557,11 +557,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 _selectedImageIndices.clear();
               });
 
-              ScaffoldMessenger.of(context).showSnackBar(
+              scaffoldMessenger.showSnackBar(
                 const SnackBar(content: Text('Изображения успешно загружены')),
               );
             } else {
-              ScaffoldMessenger.of(context).showSnackBar(
+              scaffoldMessenger.showSnackBar(
                 const SnackBar(content: Text('nmId не может быть пустым')),
               );
             }

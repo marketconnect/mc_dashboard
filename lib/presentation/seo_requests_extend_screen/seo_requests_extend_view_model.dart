@@ -5,7 +5,7 @@ import 'package:mc_dashboard/core/base_classes/app_error_base_class.dart';
 import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
 import 'package:mc_dashboard/domain/entities/normquery.dart';
 import 'package:mc_dashboard/domain/entities/token_info.dart';
-import 'package:mc_dashboard/routes/main_navigation_route_names.dart';
+
 import 'package:url_launcher/url_launcher.dart';
 
 abstract class SeoRequestsExtendNormqueryService {

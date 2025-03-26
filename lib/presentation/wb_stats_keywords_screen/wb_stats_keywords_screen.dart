@@ -4,7 +4,7 @@ import 'package:mc_dashboard/presentation/wb_stats_keywords_screen/wb_stats_keyw
 import 'package:provider/provider.dart';
 
 class WbStatsKeywordsScreen extends StatefulWidget {
-  const WbStatsKeywordsScreen({Key? key});
+  const WbStatsKeywordsScreen({super.key});
 
   @override
   State<WbStatsKeywordsScreen> createState() => _WbStatsKeywordsScreenState();
@@ -108,7 +108,7 @@ class _WbStatsKeywordsScreenState extends State<WbStatsKeywordsScreen> {
       child: DataTable(
         headingRowColor: WidgetStateProperty.all(
             const Color(0xFFF7F7F7)), // Subtle grey header
-        dataRowHeight: 50,
+        dataRowMinHeight: 50,
         dividerThickness: 1.0,
         columns: const [
           DataColumn(

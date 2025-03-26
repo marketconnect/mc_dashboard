@@ -23,6 +23,7 @@ class ProductCostDataAdapter extends TypeAdapter<ProductCostData> {
       packaging: fields[3] as double,
       paidAcceptance: fields[4] as double,
       isBox: fields[14] == null ? true : fields[14] as bool,
+      mpType: fields[15] == null ? 'wb' : fields[15] as String,
       warehouseName: fields[5] as String?,
       returnRate: fields[6] == null ? 10.0 : fields[6] as double,
       taxRate: fields[7] == null ? 7 : fields[7] as int,
@@ -38,7 +39,7 @@ class ProductCostDataAdapter extends TypeAdapter<ProductCostData> {
   @override
   void write(BinaryWriter writer, ProductCostData obj) {
     writer
-      ..writeByte(15)
+      ..writeByte(16)
       ..writeByte(0)
       ..write(obj.nmID)
       ..writeByte(1)
@@ -68,7 +69,9 @@ class ProductCostDataAdapter extends TypeAdapter<ProductCostData> {
       ..writeByte(13)
       ..write(obj.calculatedPrice3)
       ..writeByte(14)
-      ..write(obj.isBox);
+      ..write(obj.isBox)
+      ..writeByte(15)
+      ..write(obj.mpType);
   }
 
   @override

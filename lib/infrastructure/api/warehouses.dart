@@ -11,6 +11,7 @@ class CacheEntry<T> {
 }
 
 class WarehousesApiClient {
+  static final WarehousesApiClient instance = WarehousesApiClient();
   final String baseUrl;
   final Map<String, CacheEntry<WarehousesResponse>> _cache = {};
 

@@ -4,10 +4,10 @@ import 'package:mc_dashboard/.env.dart';
 import 'package:mc_dashboard/domain/entities/order.dart';
 
 class OrdersApiClient {
-  final String baseUrl;
+  final String baseUrl = ApiSettings.baseUrl;
   final Map<String, CacheEntry<OrdersResponse>> _cache = {};
 
-  OrdersApiClient({String? baseUrl}) : baseUrl = baseUrl ?? ApiSettings.baseUrl;
+  static final OrdersApiClient instance = OrdersApiClient();
 
   Future<OrdersResponse> getOrders({
     int? productId,

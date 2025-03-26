@@ -216,40 +216,40 @@ class SubscriptionScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBenefitItem(
-      BuildContext context, String title, String description) {
-    final theme = Theme.of(context);
+  // Widget _buildBenefitItem(
+  //     BuildContext context, String title, String description) {
+  //   final theme = Theme.of(context);
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(
-            Icons.check,
-            color: Colors.green,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: RichText(
-              text: TextSpan(
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontSize: 16,
-                  height: 1.5,
-                  color: theme.colorScheme.onSurface,
-                ),
-                children: [
-                  TextSpan(
-                    text: '$title: ',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  TextSpan(text: description),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  //   return Padding(
+  //     padding: const EdgeInsets.only(bottom: 8.0),
+  //     child: Row(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         const Icon(
+  //           Icons.check,
+  //           color: Colors.green,
+  //         ),
+  //         const SizedBox(width: 8),
+  //         Expanded(
+  //           child: RichText(
+  //             text: TextSpan(
+  //               style: theme.textTheme.bodyMedium?.copyWith(
+  //                 fontSize: 16,
+  //                 height: 1.5,
+  //                 color: theme.colorScheme.onSurface,
+  //               ),
+  //               children: [
+  //                 TextSpan(
+  //                   text: '$title: ',
+  //                   style: const TextStyle(fontWeight: FontWeight.bold),
+  //                 ),
+  //                 TextSpan(text: description),
+  //               ],
+  //             ),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 }

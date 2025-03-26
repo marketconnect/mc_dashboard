@@ -11,7 +11,7 @@ abstract class MainNavigationRouteNames {
   static const String emptyProductScreen = '/empty-product-screen';
 
   static const String productCard = '/product-card';
-  static const productCards = '/product-cards';
+  static const String productCardsContainer = '/product-cards-container';
   static const String addCards = '/add-cards';
   static const String productDetail = '/product-detail';
   static const String tokensScreen = '/tokens-screen';
@@ -20,4 +20,5 @@ abstract class MainNavigationRouteNames {
   static const String home = '/';
   static const String login = '/login';
   static const String wbStatsKeywordsScreen = '/wb-stats-keywords-screen';
+  static const String ozonProductCardScreen = '/ozon-product-card-screen';
 }

@@ -1,4 +1,4 @@
-// ignore: avoid_web_libraries_in_flutter
+// ignore: avoid_web_libraries_in_flutter, deprecated_member_use
 import 'dart:html' as html;
 
 import 'package:excel/excel.dart' as exc;
@@ -442,7 +442,7 @@ class _NormqueryTableWidgetState extends State<_NormqueryTableWidget> {
 }
 
 class _CharacteristicsTabView extends StatelessWidget {
-  const _CharacteristicsTabView({Key? key}) : super(key: key);
+  const _CharacteristicsTabView();
 
   @override
   Widget build(BuildContext context) {
@@ -500,8 +500,8 @@ class _CharacteristicsTabView extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             // Подсветка при клике/hover, если нужно:
-            hoverColor: Colors.blue.withOpacity(0.1),
-            splashColor: Colors.blue.withOpacity(0.2),
+            hoverColor: Colors.blue.withAlpha(51),
+            splashColor: Colors.blue.withAlpha(51),
 
             // Задаём поведение при долгом тапе (долгом нажатии):
             onTap: () {

@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-import 'package:http/http.dart' as http;
 
 import 'package:flutter/material.dart';
 import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';

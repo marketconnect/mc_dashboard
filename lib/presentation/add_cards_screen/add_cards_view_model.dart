@@ -35,7 +35,6 @@ class AddCardsViewModel extends ViewModelBase {
 
   // Navigation
   Future<void> routeToProductDetail(Product product) async {
-    print("routesxdcfdsf to ${product}");
     await Navigator.of(context)
         .pushNamed(MainNavigationRouteNames.productDetail, arguments: product);
   }

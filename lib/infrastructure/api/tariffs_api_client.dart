@@ -44,11 +44,9 @@ class TariffsApiClient implements TariffsServiceApiClient {
 
     if (_tariffsCache.containsKey(cacheKey) &&
         _tariffsCache[cacheKey]!.item1 == today) {
-      print("✅ [CACHE] Returning tariffs from cache");
       return _tariffsCache[cacheKey]!.item2;
     }
 
-    print("🔄 [API] Fetching tariffs...");
     await _rateLimit(); // Вызываем только если нет кеша
 
     final response = await http.get(
@@ -71,7 +69,6 @@ class TariffsApiClient implements TariffsServiceApiClient {
     // Кешируем ответ с датой
     _tariffsCache[cacheKey] = Tuple2(today, tariffs);
 
-    print("✅ [API] Tariffs fetched and cached");
     return tariffs;
   }
 
@@ -84,11 +81,8 @@ class TariffsApiClient implements TariffsServiceApiClient {
 
     if (_boxTariffsCache.containsKey(cacheKey) &&
         _boxTariffsCache[cacheKey]!.item1 == date) {
-      print("✅ [CACHE] Returning box tariffs from cache");
       return _boxTariffsCache[cacheKey]!.item2;
     }
-
-    print("🔄 [API] Fetching box tariffs...");
 
     final response = await http.get(
       Uri.parse("$baseUrl/box").replace(queryParameters: {'date': date}),
@@ -107,7 +101,6 @@ class TariffsApiClient implements TariffsServiceApiClient {
     final contentType = response.headers['content-type'];
     if (contentType != null && contentType.contains("charset=windows-1251")) {
       // Сервер вернул Windows-1251, нужно перекодировать
-      print("⚠️ Server returned Windows-1251 encoding. Converting...");
       final decodedBody = latin1.decode(response.bodyBytes);
       return _parseBoxTariffs(decodedBody);
     }

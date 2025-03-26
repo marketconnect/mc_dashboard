@@ -4,10 +4,9 @@ import 'package:mc_dashboard/.env.dart';
 import 'package:mc_dashboard/domain/entities/stock.dart';
 
 class StocksApiClient {
-  final String baseUrl;
+  static final StocksApiClient instance = StocksApiClient();
+  final String baseUrl = ApiSettings.baseUrl;
   final Map<String, CacheEntry<StocksResponse>> _cache = {};
-
-  StocksApiClient({String? baseUrl}) : baseUrl = baseUrl ?? ApiSettings.baseUrl;
 
   Future<StocksResponse> getStocks({
     int? productId,

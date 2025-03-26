@@ -1,10 +1,10 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:mc_dashboard/domain/entities/charc.dart';
 import 'package:mc_dashboard/domain/entities/product_card.dart';
 import 'package:mc_dashboard/presentation/product_card_screen/product_card_view_model.dart';
 import 'package:mc_dashboard/presentation/product_cards_screen/product_cards_view_model.dart';
+import 'package:mc_dashboard/presentation/product_cost_import_screen/product_cost_import_view_model.dart';
 import 'package:mc_dashboard/presentation/product_detail_screen/product_detail_view_model.dart';
 
 abstract class WbContentApiServiceWbTokenRepo {
@@ -37,6 +37,7 @@ class WbApiContentService
     implements
         ProductDetailWbContentApi,
         ProductCardsWbContentApi,
+        ProductCostImportProductCardsService,
         ProductCardWbContentApiService {
   final WbContentApiServiceApiClient apiClient;
   final WbContentApiServiceWbTokenRepo wbTokenRepo;
@@ -105,17 +106,10 @@ class WbApiContentService
   @override
   Future<List<ProductCard>> fetchAllProductCards() async {
     final token = await wbTokenRepo.getWbToken();
-    debugToken("Fetching product cards from API $token");
+
     if (token == null) {
       throw Exception("Для получения данных нужно добавить токен Wildberries");
     }
     return await apiClient.fetchAllProductCards(token: token);
   }
-}
-
-void debugToken(String token) {
-  const maxLength = 100;
-  final short =
-      token.length > maxLength ? token.substring(0, maxLength) : token;
-  print("Token: $short");
 }
