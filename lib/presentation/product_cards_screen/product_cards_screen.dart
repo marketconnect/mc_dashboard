@@ -172,6 +172,24 @@ class _ProductCardsScreenState extends State<ProductCardsScreen> {
         if (value == 'clear') {
           setState(() {
             _columnFilters.remove(columnIndex);
+            // Очищаем значение контроллера
+            switch (columnIndex) {
+              case 1:
+                _subjectFilterController.clear();
+                break;
+              case 4:
+                _marginFilterController.clear();
+                break;
+              case 5:
+                _profitFilterController.clear();
+                break;
+              case 6:
+                _stocksFilterController.clear();
+                break;
+              case 7:
+                _stocksWBFilterController.clear();
+                break;
+            }
           });
           _debouncedProcessData();
         } else if (value == 'filter') {
@@ -187,27 +205,27 @@ class _ProductCardsScreenState extends State<ProductCardsScreen> {
     FilterOperator defaultOperator;
 
     switch (columnIndex) {
-      case 2: // Название предмета
+      case 1: // Название предмета
         title = 'Фильтр по названию предмета';
         controller = _subjectFilterController;
         defaultOperator = FilterOperator.contains;
         break;
-      case 5: // Рентабельность
+      case 4: // Рентабельность
         title = 'Фильтр по рентабельности';
         controller = _marginFilterController;
         defaultOperator = FilterOperator.equals;
         break;
-      case 6: // Чистая прибыль
+      case 5: // Чистая прибыль
         title = 'Фильтр по чистой прибыли';
         controller = _profitFilterController;
         defaultOperator = FilterOperator.equals;
         break;
-      case 7: // Остатки
+      case 6: // Остатки
         title = 'Фильтр по остаткам';
         controller = _stocksFilterController;
         defaultOperator = FilterOperator.equals;
         break;
-      case 8: // Остатки WB
+      case 7: // Остатки WB
         title = 'Фильтр по остаткам WB';
         controller = _stocksWBFilterController;
         defaultOperator = FilterOperator.equals;
@@ -216,7 +234,7 @@ class _ProductCardsScreenState extends State<ProductCardsScreen> {
         return;
     }
 
-    if (columnIndex == 2) {
+    if (columnIndex == 1) {
       // Get unique subject names
       final viewModel = context.read<ProductCardsViewModel>();
       final uniqueSubjects = viewModel.productCards
@@ -439,69 +457,6 @@ class _ProductCardsScreenState extends State<ProductCardsScreen> {
 
         return Scaffold(
             backgroundColor: Theme.of(context).colorScheme.surface,
-            // appBar: PreferredSize(
-            //   preferredSize: const Size.fromHeight(110),
-            //   child:
-            //   AppBar(
-            //     automaticallyImplyLeading: false,
-            //     scrolledUnderElevation: 2,
-            //     shadowColor: Colors.black,
-            //     surfaceTintColor: Colors.transparent,
-            //     title: PreferredSize(
-            //       preferredSize: const Size.fromHeight(50),
-            //       child: Padding(
-            //         padding: const EdgeInsets.all(8.0),
-            //         child: Row(
-            //           mainAxisAlignment: MainAxisAlignment.start,
-            //           children: [
-            //             SizedBox(
-            //               width: 400,
-            //               child: TextField(
-            //                 controller: _searchController,
-            //                 decoration: InputDecoration(
-            //                   hintText: "Поиск по nmID или коду продавца...",
-            //                   hintStyle: const TextStyle(color: Colors.grey),
-            //                   prefixIcon:
-            //                       const Icon(Icons.search, color: Colors.grey),
-            //                   suffixIcon: _searchController.text.isNotEmpty
-            //                       ? IconButton(
-            //                           icon: const Icon(Icons.clear,
-            //                               color: Colors.grey),
-            //                           onPressed: () {
-            //                             setState(() {
-            //                               _searchController.clear();
-            //                               _searchQuery = "";
-            //                             });
-            //                             _debouncedProcessData();
-            //                           },
-            //                         )
-            //                       : null,
-            //                   border: OutlineInputBorder(
-            //                     borderRadius: BorderRadius.circular(8.0),
-            //                     borderSide: BorderSide.none,
-            //                   ),
-            //                   contentPadding: const EdgeInsets.symmetric(
-            //                     vertical: 8.0,
-            //                     horizontal: 12.0,
-            //                   ),
-            //                   filled: true,
-            //                   fillColor: Colors.grey[50],
-            //                 ),
-            //                 onChanged: (value) {
-            //                   setState(() {
-            //                     _searchQuery = value.trim().toLowerCase();
-            //                   });
-            //                   _debouncedProcessData();
-            //                 },
-            //                 style: const TextStyle(color: Colors.black),
-            //               ),
-            //             ),
-            //           ],
-            //         ),
-            //       ),
-            //     ),
-            //   ),
-            // ),
             body: OverlayLoaderWithAppIcon(
               isLoading: viewModel.isLoading || _isProcessing,
               overlayBackgroundColor: Colors.black,
@@ -634,14 +589,14 @@ class _ProductCardsScreenState extends State<ProductCardsScreen> {
                                     Theme.of(context).colorScheme.onSurface)),
                       ),
                     ),
-                    _sortableColumn('nmID', 1),
-                    _sortableColumn('Название предмета', 2),
-                    _sortableColumn('Код продавца', 3),
-                    _sortableColumn('Цена', 4),
-                    _sortableColumn('Рентабельность', 5),
-                    _sortableColumn('Чистая прибыль', 6),
-                    _sortableColumn('Склад продавца', 7),
-                    _sortableColumn('Склад WB', 8),
+                    _sortableColumn('Название предмета', 1),
+                    _sortableColumn('Код продавца', 2),
+                    _sortableColumn('Цена', 3),
+                    _sortableColumn('Рентабельность', 4),
+                    _sortableColumn('Чистая прибыль', 5),
+                    _sortableColumn('Склад продавца', 6),
+                    _sortableColumn('Склад WB', 7),
+                    _sortableColumn('Оборот (дни)', 8),
                     DataColumn(
                       label: Text('Действие',
                           style: TextStyle(
@@ -680,7 +635,18 @@ class _ProductCardsScreenState extends State<ProductCardsScreen> {
         ? WidgetStateProperty.all(
             Theme.of(context).colorScheme.errorContainer.withAlpha(51))
         : WidgetStateProperty.all(Theme.of(context).colorScheme.surface);
-
+    final turnoverText = viewModel
+                .stocksReportByNmId[card.nmID]?.metrics.avgStockTurnover.days !=
+            null
+        ? viewModel.stocksReportByNmId[card.nmID]?.metrics.avgStockTurnover.days
+            .toStringAsFixed(0)
+        : viewModel.stocksReportByNmId[card.nmID]?.metrics.avgStockTurnover
+                    .hours !=
+                null
+            ? viewModel
+                .stocksReportByNmId[card.nmID]?.metrics.avgStockTurnover.hours
+                .toStringAsFixed(0)
+            : "—";
     return DataRow(
       color: rowColor,
       cells: [
@@ -694,7 +660,6 @@ class _ProductCardsScreenState extends State<ProductCardsScreen> {
                 )
               : const Icon(Icons.image_not_supported, color: Colors.grey),
         ),
-        _copyableCell(card.nmID.toString()),
         _categoryCell(
           card.subjectName,
           card.subjectID,
@@ -740,6 +705,15 @@ class _ProductCardsScreenState extends State<ProductCardsScreen> {
           ),
         ),
         DataCell(
+          Tooltip(
+            message: "Оборачиваемость текущих остатков на складах WB в днях",
+            child: Text(
+              turnoverText ?? "—",
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+            ),
+          ),
+        ),
+        DataCell(
           ElevatedButton(
             style: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xFF9a41fe),
@@ -762,7 +736,7 @@ class _ProductCardsScreenState extends State<ProductCardsScreen> {
               style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Theme.of(context).colorScheme.onSurface)),
-          if ([2, 5, 6, 7, 8].contains(index)) ...[
+          if ([1, 4, 5, 6, 7].contains(index)) ...[
             const SizedBox(width: 4),
             _buildFilterPopup(context, index),
           ],
@@ -859,7 +833,7 @@ Future<List<ProductCard>> _processCardsInIsolate(
 
     filteredCards = filteredCards.where((card) {
       switch (columnIndex) {
-        case 2: // Название предмета
+        case 1: // Название предмета
           switch (filter.operator) {
             case FilterOperator.contains:
               return card.subjectName.toLowerCase().contains(value);
@@ -870,7 +844,7 @@ Future<List<ProductCard>> _processCardsInIsolate(
             default:
               return true;
           }
-        case 5: // Рентабельность
+        case 4: // Рентабельность
           final margin = _calculateMarginInIsolate(card, viewModel);
           if (margin == null) return false;
           final filterValue = double.tryParse(value);
@@ -885,7 +859,7 @@ Future<List<ProductCard>> _processCardsInIsolate(
             default:
               return true;
           }
-        case 6: // Чистая прибыль
+        case 5: // Чистая прибыль
           final profit = _calculateProfitInIsolate(card, viewModel);
           if (profit == null) return false;
           final filterValue = double.tryParse(value);
@@ -900,7 +874,7 @@ Future<List<ProductCard>> _processCardsInIsolate(
             default:
               return true;
           }
-        case 7: // Остатки
+        case 6: // Остатки
           final stocks = viewModel.totalStocksByNmId[card.nmID] ?? 0;
           final filterValue = int.tryParse(value);
           if (filterValue == null) return false;
@@ -914,7 +888,7 @@ Future<List<ProductCard>> _processCardsInIsolate(
             default:
               return true;
           }
-        case 8: // Остатки WB
+        case 7: // Остатки WB
           final stocks = viewModel.totalStocksWBByNmId[card.nmID] ?? 0;
           final filterValue = int.tryParse(value);
           if (filterValue == null) return false;
@@ -938,20 +912,18 @@ Future<List<ProductCard>> _processCardsInIsolate(
   filteredCards.sort((a, b) {
     switch (sortColumnIndex) {
       case 1:
-        return ascending ? a.nmID.compareTo(b.nmID) : b.nmID.compareTo(a.nmID);
-      case 2:
         return ascending
             ? a.subjectName.compareTo(b.subjectName)
             : b.subjectName.compareTo(a.subjectName);
-      case 3:
+      case 2:
         return ascending
             ? a.vendorCode.compareTo(b.vendorCode)
             : b.vendorCode.compareTo(a.vendorCode);
-      case 4:
+      case 3:
         double priceA = viewModel.goodsPrices[a.nmID] ?? double.infinity;
         double priceB = viewModel.goodsPrices[b.nmID] ?? double.infinity;
         return ascending ? priceA.compareTo(priceB) : priceB.compareTo(priceA);
-      case 5:
+      case 4:
         double? marginA = _calculateMarginInIsolate(a, viewModel);
         double? marginB = _calculateMarginInIsolate(b, viewModel);
         if (marginA == null && marginB == null) return 0;
@@ -960,7 +932,7 @@ Future<List<ProductCard>> _processCardsInIsolate(
         return ascending
             ? marginA.compareTo(marginB)
             : marginB.compareTo(marginA);
-      case 6:
+      case 5:
         double? profitA = _calculateProfitInIsolate(a, viewModel);
         double? profitB = _calculateProfitInIsolate(b, viewModel);
         if (profitA == null && profitB == null) return 0;
@@ -969,18 +941,28 @@ Future<List<ProductCard>> _processCardsInIsolate(
         return ascending
             ? profitA.compareTo(profitB)
             : profitB.compareTo(profitA);
-      case 7:
+      case 6:
         int stocksA = viewModel.totalStocksByNmId[a.nmID] ?? 0;
         int stocksB = viewModel.totalStocksByNmId[b.nmID] ?? 0;
         return ascending
             ? stocksA.compareTo(stocksB)
             : stocksB.compareTo(stocksA);
-      case 8:
+      case 7:
         int stocksWB = viewModel.totalStocksWBByNmId[a.nmID] ?? 0;
         int stocksWB2 = viewModel.totalStocksWBByNmId[b.nmID] ?? 0;
         return ascending
             ? stocksWB.compareTo(stocksWB2)
             : stocksWB2.compareTo(stocksWB);
+      case 8:
+        int turnoverA = viewModel
+                .stocksReportByNmId[a.nmID]?.metrics.avgStockTurnover.days ??
+            0;
+        int turnoverB = viewModel
+                .stocksReportByNmId[b.nmID]?.metrics.avgStockTurnover.days ??
+            0;
+        return ascending
+            ? turnoverA.compareTo(turnoverB)
+            : turnoverB.compareTo(turnoverA);
       default:
         return 0;
     }

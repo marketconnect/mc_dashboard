@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:mc_dashboard/core/utils/open_url.dart';
 
 import 'package:mc_dashboard/domain/entities/product_card.dart';
 import 'package:mc_dashboard/domain/entities/wb_box_tariff.dart';
@@ -172,7 +173,19 @@ class _ProductCardScreenState extends State<ProductCardScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(productCard?.title ?? "Loading..."),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(productCard?.title ?? "Loading..."),
+            Text(
+              'WB',
+              style: TextStyle(
+                color: Color(0xFF9a41fe),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
@@ -195,20 +208,20 @@ class _ProductCardScreenState extends State<ProductCardScreen> {
           SpeedDialChild(
             label: 'Товары',
             labelStyle: const TextStyle(fontSize: 16.0),
-            onTap: () => model
-                .openUrl('https://seller.wildberries.ru/new-goods/all-goods'),
+            onTap: () =>
+                openUrl('https://seller.wildberries.ru/new-goods/all-goods'),
           ),
           SpeedDialChild(
             label: 'Цены',
             labelStyle: const TextStyle(fontSize: 16.0),
-            onTap: () => model
-                .openUrl('https://seller.wildberries.ru/discount-and-prices'),
+            onTap: () =>
+                openUrl('https://seller.wildberries.ru/discount-and-prices'),
           ),
           SpeedDialChild(
             label: 'Карточка',
             labelStyle: const TextStyle(fontSize: 16.0),
             onTap: () {
-              model.openUrl(
+              openUrl(
                   'https://www.wildberries.ru/catalog/${model.nmID}/detail.aspx');
             },
           ),

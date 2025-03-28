@@ -6,11 +6,30 @@ import 'package:mc_dashboard/domain/entities/product_cost_data.dart';
 import 'package:mc_dashboard/domain/entities/wb_box_tariff.dart';
 import 'package:mc_dashboard/domain/entities/wb_pallet_tariff.dart';
 import 'package:mc_dashboard/domain/entities/wb_stock.dart';
+import 'package:mc_dashboard/domain/entities/wb_stocks_report.dart';
 import 'package:mc_dashboard/domain/entities/wb_tariff.dart';
 import 'package:mc_dashboard/domain/entities/wb_warehouse_stock.dart';
 import 'package:mc_dashboard/routes/main_navigation_route_names.dart';
 
 import 'package:mc_dashboard/domain/entities/wb_seller_warehouse.dart';
+
+abstract class ProductCardsWbStocksReportsService {
+  Future<WbStocksReport> fetchStocksReport({
+    List<int>? nmIDs,
+    List<int>? subjectIDs,
+    List<String>? brandNames,
+    List<int>? tagIDs,
+    required DateTime startDate,
+    required DateTime endDate,
+    String? stockType,
+    required bool skipDeletedNm,
+    required List<String> availabilityFilters,
+    required String orderByField,
+    required String orderByMode,
+    int limit = 100,
+    required int offset,
+  });
+}
 
 abstract class ProductCardsWbContentApi {
   Future<List<ProductCard>> fetchAllProductCards();
@@ -55,6 +74,7 @@ class ProductCardsViewModel extends ViewModelBase {
   final ProductCardsWbWarehouseStocksService warehouseStocksService;
   final ProductCardsWbSellerWarehousesService sellerWarehousesService;
   final ProductCardsWbStocksService wbStocksService;
+  final ProductCardsWbStocksReportsService wbStocksReportsService;
 
   List<ProductCard> productCards = [];
   String? errorMessage;
@@ -67,6 +87,7 @@ class ProductCardsViewModel extends ViewModelBase {
       required this.warehouseStocksService,
       required this.sellerWarehousesService,
       required this.wbStocksService,
+      required this.wbStocksReportsService,
       required super.context});
 
   Map<int, ProductCostData> productCosts = {};
@@ -94,6 +115,9 @@ class ProductCardsViewModel extends ViewModelBase {
   // For tooltip
   final Map<int, Map<String, int>> wbStocksByWarehouseAndNmId = {};
 
+  // Map для хранения данных отчета по остаткам
+  final Map<int, WbStocksItem> stocksReportByNmId = {};
+
   @override
   Future<void> asyncInit() async {
     setLoading();
@@ -101,9 +125,25 @@ class ProductCardsViewModel extends ViewModelBase {
     notifyListeners();
 
     try {
-      productCards = await wbApiContentService.fetchAllProductCards();
+      final today = DateTime.now();
+      final formattedDate =
+          "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
 
-      final goods = await goodsService.getGoods();
+      final productData = await Future.wait([
+        wbApiContentService.fetchAllProductCards(),
+        goodsService.getGoods(),
+        wbProductCostService.getAllCostWbData(),
+        wbTariffsService.fetchTariffs(),
+        wbTariffsService.fetchBoxTariffs(date: formattedDate),
+        wbTariffsService.fetchPalletTariffs(date: formattedDate),
+      ]);
+
+      productCards = productData[0] as List<ProductCard>;
+      final goods = productData[1] as List<Good>;
+      final costDataList = productData[2] as List<ProductCostData>;
+      allTariffs = productData[3] as List<WbTariff>;
+      allBoxTariffs = productData[4] as List<WbBoxTariff>;
+      allPalletTariffs = productData[5] as List<WbPalletTariff>;
 
       for (var g in goods) {
         if (g.sizes.isNotEmpty) {
@@ -111,27 +151,12 @@ class ProductCardsViewModel extends ViewModelBase {
         }
       }
 
-      final costDataList = await wbProductCostService.getAllCostWbData();
-
       for (var c in costDataList) {
         productCosts[c.nmID] = c;
       }
 
-      allTariffs = await wbTariffsService.fetchTariffs();
-
-      final today = DateTime.now();
-      final formattedDate =
-          "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
-      allBoxTariffs =
-          await wbTariffsService.fetchBoxTariffs(date: formattedDate);
-
-      allPalletTariffs =
-          await wbTariffsService.fetchPalletTariffs(date: formattedDate);
-
       subjectIdToTariff = {for (var t in allTariffs) t.subjectID: t};
-
       warehouseToBoxTariff = {for (var b in allBoxTariffs) b.warehouseName: b};
-
       warehouseToPalletTariff = {
         for (var p in allPalletTariffs) p.warehouseName: p
       };
@@ -173,7 +198,10 @@ class ProductCardsViewModel extends ViewModelBase {
         marginByNmId[card.nmID] = margin;
       }
 
-      await fetchAllStocks();
+      await Future.wait([
+        fetchAllStocks(),
+        fetchStocksReport(),
+      ]);
 
       errorMessage = null;
     } catch (e) {
@@ -369,6 +397,38 @@ class ProductCardsViewModel extends ViewModelBase {
       notifyListeners();
     } catch (e) {
       errorMessage = 'Error fetching stocks: $e';
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchStocksReport() async {
+    try {
+      final uniqueNmIds =
+          productCards.map((card) => card.nmID).toSet().toList();
+
+      // Получаем отчет по остаткам
+      final report = await wbStocksReportsService.fetchStocksReport(
+        nmIDs: uniqueNmIds,
+        startDate: DateTime.now().subtract(const Duration(days: 30)),
+        endDate: DateTime.now(),
+        skipDeletedNm: true,
+        availabilityFilters: ["actual", "balanced", "deficient"],
+        orderByField: "stockCount",
+        orderByMode: "desc",
+        limit: 1000,
+        offset: 0,
+      );
+
+      stocksReportByNmId.clear();
+      for (var group in report.groups) {
+        for (var item in group.items) {
+          stocksReportByNmId[item.nmID] = item;
+        }
+      }
+
+      notifyListeners();
+    } catch (e) {
+      errorMessage = 'Error fetching stocks report: $e';
       notifyListeners();
     }
   }

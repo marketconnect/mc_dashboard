@@ -6,7 +6,6 @@ import 'package:mc_dashboard/domain/entities/product_cost_data.dart';
 import 'package:mc_dashboard/domain/entities/wb_box_tariff.dart';
 import 'package:mc_dashboard/domain/entities/wb_pallet_tariff.dart';
 import 'package:mc_dashboard/domain/entities/wb_tariff.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 abstract class ProductCardWbContentApiService {
   Future<ProductCard> fetchProductCard({required int imtID, required int nmID});
@@ -238,15 +237,6 @@ class ProductCardViewModel extends ViewModelBase {
     );
 
     notifyListeners();
-  }
-
-  Future<void> openUrl(String url) async {
-    final Uri uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      throw Exception('Не удалось открыть $url');
-    }
   }
 
   void setSelectedWarehouse(String warehouse) {

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
+import 'package:mc_dashboard/core/utils/open_url.dart';
 
 import 'package:mc_dashboard/domain/entities/ozon_product.dart';
 import 'package:mc_dashboard/domain/entities/ozon_product_info.dart';
@@ -33,7 +35,7 @@ class _OzonProductCardScreenState extends State<OzonProductCardScreen> {
   final TextEditingController _desiredMarginController3 =
       TextEditingController();
 
-  int _selectedVariant = 1; // выбранный вариант рентабельности
+  int _selectedVariant = 1;
 
   @override
   void initState() {
@@ -70,6 +72,9 @@ class _OzonProductCardScreenState extends State<OzonProductCardScreen> {
   void _onInputChanged() {
     final model = context.read<OzonProductCardViewModel>();
     _updateProductCostData(model);
+    if (model.productCostData != null) {
+      model.saveProductCost(model.productCostData!);
+    }
   }
 
   void _onMarginChanged() {
@@ -153,13 +158,62 @@ class _OzonProductCardScreenState extends State<OzonProductCardScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(model.productInfo?.offerId ?? "Loading..."),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(model.productInfo?.offerId ?? ""),
+            Text(
+              'Ozon',
+              style: TextStyle(
+                color: Color(0xFF005bff),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
             Navigator.of(context).pop();
           },
         ),
+        scrolledUnderElevation: 2,
+        shadowColor: Colors.black,
+        surfaceTintColor: Colors.transparent,
+      ),
+      floatingActionButton: SpeedDial(
+        animatedIcon: AnimatedIcons.menu_close,
+        overlayColor: Colors.black,
+        overlayOpacity: 0.5,
+        tooltip: 'Меню',
+        heroTag: 'speed-dial-hero-tag',
+        backgroundColor: Color(0xFF005bff),
+        foregroundColor: Theme.of(context).colorScheme.surface,
+        visible: true,
+        curve: Curves.bounceIn,
+        children: [
+          SpeedDialChild(
+            label: 'Товары',
+            labelStyle: const TextStyle(fontSize: 16.0),
+            onTap: () => openUrl(
+                'https://seller.ozon.ru/app/products?search=${model.sku}'),
+          ),
+          SpeedDialChild(
+            label: 'Цены',
+            labelStyle: const TextStyle(fontSize: 16.0),
+            onTap: () => openUrl(
+                'https://seller.ozon.ru/app/prices/control?search=${model.sku}'),
+          ),
+          SpeedDialChild(
+            label: 'Карточка',
+            labelStyle: const TextStyle(fontSize: 16.0),
+            onTap: () {
+              openUrl('https://ozon.ru/product/${model.sku}');
+            },
+          ),
+        ],
+        // onOpen: () => debugPrint('OPENING DIAL'),
+        // onClose: () => debugPrint('DIAL CLOSED'),
       ),
       body: model.isLoading
           ? const Center(child: McProgressBar())
@@ -287,7 +341,13 @@ class _OzonProductCardScreenState extends State<OzonProductCardScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildInfoSection(model.productInfo!),
+                      _buildInfoSection(
+                        productCard: model.productInfo!,
+                        price:
+                            model.price != null ? model.price!.price.price : 0,
+                        productId: model.productId,
+                        sku: model.sku,
+                      ),
                       const Divider(height: 32),
                       _buildDeliveryTypeSection(model),
                     ],
@@ -421,7 +481,7 @@ class _OzonProductCardScreenState extends State<OzonProductCardScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("FBO",
+              const Text("FBS",
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               Switch(
                 value: model.isFBO,
@@ -429,7 +489,7 @@ class _OzonProductCardScreenState extends State<OzonProductCardScreen> {
                   model.setDeliveryType(value);
                 },
               ),
-              const Text("FBS",
+              const Text("FBO",
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ],
           ),
@@ -506,7 +566,12 @@ class _OzonProductCardScreenState extends State<OzonProductCardScreen> {
     );
   }
 
-  Widget _buildInfoSection(OzonProductInfo productCard) {
+  Widget _buildInfoSection({
+    required OzonProductInfo productCard,
+    required double price,
+    required int productId,
+    required int sku,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -548,7 +613,9 @@ class _OzonProductCardScreenState extends State<OzonProductCardScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        _buildInfoRow("nmID", productCard.productId.toString()),
+        _buildInfoRow("Цена", price.toString()),
+        _buildInfoRow("SKU", sku.toString()),
+        _buildInfoRow("productID", productId.toString()),
         _buildInfoRow("Код продавца", productCard.offerId),
       ],
     );
@@ -568,7 +635,8 @@ class _OzonProductCardScreenState extends State<OzonProductCardScreen> {
     final commissionValues = model.getCurrentCommissionValues();
     final String deliveryType = model.isFBO ? "FBO" : "FBS";
     final double commissionPercent = commissionValues["commissionPercent"] ?? 0;
-    final double returnCost = commissionValues["returnCost"] ?? 0;
+    final double returnCost =
+        model.isFBO ? model.returnCostFbo : model.returnCostFbs;
     final double deliveryCost = commissionValues["deliveryCost"] ?? 0;
 
     final double totalOzonFees =
@@ -763,32 +831,44 @@ class _OzonProductCardScreenState extends State<OzonProductCardScreen> {
 
   void _uploadPrices(TextEditingController controller) {
     final model = context.read<OzonProductCardViewModel>();
-    final selectedMargin = double.tryParse(controller.text) ?? 30;
+    final double costPrice = double.tryParse(_costController.text) ?? 0;
+    final double delivery = double.tryParse(_deliveryController.text) ?? 0;
+    final double packaging = double.tryParse(_packageController.text) ?? 0;
+    final int taxRate = int.tryParse(_taxRateController.text) ?? 7;
+    final double paidAcceptance =
+        double.tryParse(_paidAcceptanceController.text) ?? 0;
+    final double storage = double.tryParse(_storageController.text) ?? 0;
+
+    final commissionValues = model.getCurrentCommissionValues();
+    final double totalReturnCost = commissionValues["returnCost"] ?? 0;
+    final double commissionPercent = commissionValues["commissionPercent"] ?? 0;
+    final double logistics = commissionValues["deliveryCost"] ?? 0;
+
+    double selectedMargin;
+    if (_selectedVariant == 1) {
+      selectedMargin = double.tryParse(_desiredMarginController1.text) ?? 30;
+    } else if (_selectedVariant == 2) {
+      selectedMargin = double.tryParse(_desiredMarginController2.text) ?? 35;
+    } else {
+      selectedMargin = double.tryParse(_desiredMarginController3.text) ?? 40;
+    }
+
     final selectedResults = model.calculateForMargin(
       desiredMargin: selectedMargin,
-      costPrice: double.tryParse(_costController.text) ?? 0,
-      delivery: double.tryParse(_deliveryController.text) ?? 0,
-      packaging: double.tryParse(_packageController.text) ?? 0,
-      paidAcceptance: double.tryParse(_paidAcceptanceController.text) ?? 0,
-      totalReturnCost: model.productCostData?.returnRate ?? 0,
-      logistics: model.price?.commissions.fboDelivToCustomerAmount ?? 0,
-      storage: double.tryParse(_storageController.text) ?? 0,
-      commissionPercent: model.price?.commissions.salesPercentFbo ?? 0,
-      taxRate: int.tryParse(_taxRateController.text) ?? 7,
+      costPrice: costPrice,
+      delivery: delivery,
+      packaging: packaging,
+      paidAcceptance: paidAcceptance,
+      totalReturnCost: totalReturnCost,
+      logistics: logistics,
+      storage: storage,
+      commissionPercent: commissionPercent,
+      taxRate: taxRate,
     );
-
     final price = selectedResults["finalPrice"]!;
+    print(price);
 
-    final newPrice = price * 1.05;
-
-    print(newPrice);
-    // model.uploadProductPrices([
-    //   {
-    //     "nmID": model.nmID,
-    //     "price": newPrice.round(),
-    //     "discount": newDiscount,
-    //   }
-    // ]);
+    model.updatePrice(price);
   }
 
   Widget _buildInfoRow(String label, String value) {

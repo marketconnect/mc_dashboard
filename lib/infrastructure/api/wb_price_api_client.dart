@@ -15,16 +15,6 @@ class WbPriceApiClient implements WbPriceApiServiceApiClient {
   }) async {
     final url = Uri.parse('$baseUrl/api/v2/upload/task');
 
-    // Формируем тело запроса по спецификации:
-    // {
-    //   "data": [
-    //     {
-    //       "nmID": 123,
-    //       "price": 999,
-    //       "discount": 30
-    //     }
-    //   ]
-    // }
     final Map<String, dynamic> requestBody = {
       'data': priceData,
     };

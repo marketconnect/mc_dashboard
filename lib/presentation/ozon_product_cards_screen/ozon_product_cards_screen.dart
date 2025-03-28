@@ -509,27 +509,16 @@ class _OzonProductCardsScreenState extends State<OzonProductCardsScreen> {
             ),
           ),
         ),
-        // DataCell(
-        //   costData != null
-        //       ? Text('${costData.costPrice} ₽')
-        //       : suggestion != null
-        //           ? Tooltip(
-        //               message: suggestion,
-        //               child: Text('—',
-        //                   style: TextStyle(
-        //                       color: Colors.orange,
-        //                       decoration: TextDecoration.underline)),
-        //             )
-        //           : Text('—'),
-        // ),
         DataCell(
           ElevatedButton(
             style: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xFF005bff),
                 textStyle:
                     TextStyle(color: Theme.of(context).colorScheme.surface)),
-            onPressed: () =>
-                navToOzonProductCardScreen(product.productId, product.offerId),
+            onPressed: () => navToOzonProductCardScreen(
+              product.productId,
+              product.offerId,
+            ),
             child: const Text("Перейти", style: TextStyle(color: Colors.white)),
           ),
         ),

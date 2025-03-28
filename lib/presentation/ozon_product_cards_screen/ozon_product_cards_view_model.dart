@@ -325,9 +325,9 @@ class OzonProductCardsViewModel extends ViewModelBase {
         costOfReturns: costOfReturns,
         returnRate: percentOfReturns);
     // Налог
-    double taxCost = price * (costData.taxRate / 100);
+    final double taxCost = price * (costData.taxRate / 100);
 
-    double costs = costData.costPrice +
+    final double costs = costData.costPrice +
         costData.delivery +
         costData.packaging +
         costData.paidAcceptance;
@@ -369,9 +369,9 @@ class OzonProductCardsViewModel extends ViewModelBase {
         costOfReturns: costOfReturns,
         returnRate: percentOfReturns);
     // Налог
-    double taxCost = price * (costData.taxRate / 100);
+    final double taxCost = price * (costData.taxRate / 100);
 
-    double costs = costData.costPrice +
+    final double costs = costData.costPrice +
         costData.delivery +
         costData.packaging +
         costData.paidAcceptance;
@@ -414,8 +414,24 @@ class OzonProductCardsViewModel extends ViewModelBase {
     return (logistics + costOfReturns) * (returnRate / (100 - returnRate));
   }
 
+  int getSku(String offerId) {
+    final fboStock = _fboStocks[offerId];
+    if (fboStock != null) {
+      return fboStock.sku;
+    }
+    final fbsStock = _fbsStocks[offerId];
+    if (fbsStock != null) {
+      return fbsStock.sku;
+    }
+    return 0;
+  }
+
   void navToOzonProductCardScreen(int productId, String offerId) {
     Navigator.pushNamed(context, MainNavigationRouteNames.ozonProductCardScreen,
-        arguments: {'productId': productId, 'offerId': offerId});
+        arguments: {
+          'productId': productId,
+          'offerId': offerId,
+          'sku': getSku(offerId),
+        });
   }
 }

@@ -3,6 +3,7 @@ import 'package:mc_dashboard/domain/entities/product.dart';
 import 'package:mc_dashboard/domain/services/api_products_service.dart';
 import 'package:mc_dashboard/domain/services/card_info_service.dart';
 import 'package:mc_dashboard/domain/services/goods_service.dart';
+import 'package:mc_dashboard/domain/services/ozon_price_service.dart';
 import 'package:mc_dashboard/domain/services/ozon_product_info_service.dart';
 import 'package:mc_dashboard/domain/services/product_cost_service.dart';
 import 'package:mc_dashboard/domain/services/product_service.dart';
@@ -26,6 +27,7 @@ import 'package:mc_dashboard/infrastructure/api/kw_lemmas.dart';
 import 'package:mc_dashboard/infrastructure/api/lemmatize.dart';
 import 'package:mc_dashboard/infrastructure/api/normqueries.dart';
 import 'package:mc_dashboard/infrastructure/api/orders.dart';
+import 'package:mc_dashboard/infrastructure/api/ozon_price_api_client.dart';
 import 'package:mc_dashboard/infrastructure/api/ozon_product_info_api_client.dart';
 import 'package:mc_dashboard/infrastructure/api/products_api_client.dart';
 
@@ -102,7 +104,7 @@ import 'package:mc_dashboard/presentation/wb_stats_keywords_screen/wb_stats_keyw
 
 import 'package:mc_dashboard/routes/main_navigation.dart';
 import 'package:provider/provider.dart';
-import 'package:mc_dashboard/presentation/product_cards_screen/product_cards_container_screen.dart';
+import 'package:mc_dashboard/presentation/product_cards_container/product_cards_container_screen.dart';
 import 'package:mc_dashboard/domain/services/ozon_products_service.dart';
 import 'package:mc_dashboard/infrastructure/api/ozon_products_api_client.dart';
 import 'package:mc_dashboard/presentation/ozon_product_cards_screen/ozon_product_cards_view_model.dart';
@@ -112,6 +114,9 @@ import 'package:mc_dashboard/domain/services/ozon_fbo_stocks_service.dart';
 import 'package:mc_dashboard/infrastructure/api/ozon_fbo_stocks_api_client.dart';
 import 'package:mc_dashboard/domain/services/ozon_fbs_stocks_service.dart';
 import 'package:mc_dashboard/infrastructure/api/ozon_fbs_stocks_api_client.dart';
+
+import 'package:mc_dashboard/domain/services/wb_stocks_reports_service.dart';
+import 'package:mc_dashboard/infrastructure/api/wb_stocks_reports_api_client.dart';
 
 AppFactory makeAppFactory() => _AppFactoryDefault();
 
@@ -170,6 +175,11 @@ class _DIContainer {
 
   OzonProductInfoApiClient _makeOzonProductInfoApiClient() =>
       const OzonProductInfoApiClient();
+
+  WbStocksReportsApiClient _makeWbStocksReportsApiClient() =>
+      const WbStocksReportsApiClient();
+
+  OzonPriceApiClient _makeOzonPriceApiClient() => const OzonPriceApiClient();
   // Services //////////////////////////////////////////////////////////////////
   // Why singleton? This is a workaround . Because we need to fetch subjects summary only once
   // despite it is used in multiple screens simultaneously when app is loading
@@ -271,6 +281,17 @@ class _DIContainer {
   OzonProductsService _makeOzonProductsService() => OzonProductsService(
         apiClient: _makeOzonProductsApiClient(),
         tokenRepo: _makeSecureTokenRepo(),
+      );
+
+  WbStocksReportsService _makeWbStocksReportsService() =>
+      WbStocksReportsService(
+        apiClient: _makeWbStocksReportsApiClient(),
+        wbTokenRepo: _makeSecureTokenRepo(),
+      );
+
+  OzonPriceService _makeOzonPriceService() => OzonPriceService(
+        apiClient: _makeOzonPriceApiClient(),
+        tokenRepository: _makeSecureTokenRepo(),
       );
 
   // ViewModels ////////////////////////////////////////////////////////////////
@@ -391,6 +412,7 @@ class _DIContainer {
       goodsService: _makeWbGoodsService(),
       sellerWarehousesService: _makeWbSellerWarehousesService(),
       wbStocksService: _makeWbStocksService(),
+      wbStocksReportsService: _makeWbStocksReportsService(),
       context: context,
     );
   }
@@ -461,7 +483,7 @@ class _DIContainer {
   }
 
   OzonProductCardViewModel _makeOzonProductCardViewModel(
-      BuildContext context, int productId, String offerId) {
+      BuildContext context, int productId, String offerId, int sku) {
     return OzonProductCardViewModel(
       context: context,
       productsService: _makeOzonProductsService(),
@@ -470,7 +492,9 @@ class _DIContainer {
           tokenRepo: _makeSecureTokenRepo()),
       productInfoService: _makeOzonProductInfoService(),
       productCostService: _makeProductCostService(),
+      ozonPriceService: _makeOzonPriceService(),
       offerId: offerId,
+      sku: sku,
       productId: productId,
     );
   }
@@ -676,12 +700,14 @@ class ScreenFactoryDefault implements ScreenFactory {
   Widget makeOzonProductCardScreen({
     required int productId,
     required String offerId,
+    required int sku,
   }) {
     return ChangeNotifierProvider(
       create: (context) => _diContainer._makeOzonProductCardViewModel(
         context,
         productId,
         offerId,
+        sku,
       ),
       child: const OzonProductCardScreen(),
     );

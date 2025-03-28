@@ -47,6 +47,7 @@ abstract class ScreenFactory {
   Widget makeOzonProductCardScreen({
     required int productId,
     required String offerId,
+    required int sku,
   });
 }
 
@@ -172,6 +173,7 @@ class MainNavigation implements AppNavigation {
           builder: (context) => screenFactory.makeOzonProductCardScreen(
             productId: args['productId'] as int,
             offerId: args['offerId'] as String,
+            sku: args['sku'] as int,
           ),
         );
       default:

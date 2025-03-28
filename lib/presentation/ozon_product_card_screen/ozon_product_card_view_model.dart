@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
 import 'package:mc_dashboard/domain/entities/ozon_product.dart';
 import 'package:mc_dashboard/domain/entities/ozon_price.dart';
@@ -26,14 +27,20 @@ abstract class OzonProductCardProductCostService {
   Future<void> saveProductCost(ProductCostData costData);
 }
 
+abstract class OzonProductCardOzonPriceService {
+  Future<Map<String, dynamic>> updatePrices(List<Map<String, dynamic>> prices);
+}
+
 class OzonProductCardViewModel extends ViewModelBase {
   final OzonProductsService _productsService;
   final OzonProductCardOzonPricesService _pricesService;
   final OzonProductCardOzonProductInfoService _productInfoService;
   final OzonProductCardProductCostService _productCostService;
+  final OzonProductCardOzonPriceService _ozonPriceService;
 
   final String offerId;
   final int productId;
+  final int sku;
   OzonProduct? _product;
   OzonPrice? _price;
   OzonProductInfo? _productInfo;
@@ -47,13 +54,16 @@ class OzonProductCardViewModel extends ViewModelBase {
     required OzonProductCardOzonPricesService pricesService,
     required OzonProductCardOzonProductInfoService productInfoService,
     required OzonProductCardProductCostService productCostService,
+    required OzonProductCardOzonPriceService ozonPriceService,
     required this.offerId,
     required this.productId,
+    required this.sku,
     required super.context,
   })  : _productsService = productsService,
         _pricesService = pricesService,
         _productInfoService = productInfoService,
-        _productCostService = productCostService;
+        _productCostService = productCostService,
+        _ozonPriceService = ozonPriceService;
 
   OzonProduct? get product => _product;
   OzonPrice? get price => _price;
@@ -65,6 +75,9 @@ class OzonProductCardViewModel extends ViewModelBase {
 
   void setDeliveryType(bool isFBO) {
     _isFBO = isFBO;
+    if (_productCostData != null) {
+      saveProductCost(_productCostData!);
+    }
     notifyListeners();
   }
 
@@ -236,25 +249,39 @@ class OzonProductCardViewModel extends ViewModelBase {
     required double desiredMargin2,
     required double desiredMargin3,
   }) async {
-    if (_productCostData == null) return;
-
-    final updatedCostData = ProductCostData(
-      nmID: _productCostData!.nmID,
-      mpType: _productCostData!.mpType,
-      costPrice: costPrice,
-      delivery: delivery,
-      packaging: packaging,
-      paidAcceptance: paidAcceptance,
-      returnRate: returnRate,
-      taxRate: taxRate,
-      desiredMargin1: desiredMargin1,
-      desiredMargin2: desiredMargin2,
-      desiredMargin3: desiredMargin3,
-    );
+    if (_productCostData == null) {
+      // Если данных нет, создаем новые
+      _productCostData = ProductCostData(
+        nmID: productId,
+        mpType: "ozon",
+        costPrice: costPrice,
+        delivery: delivery,
+        packaging: packaging,
+        paidAcceptance: paidAcceptance,
+        returnRate: returnRate,
+        taxRate: taxRate,
+        desiredMargin1: desiredMargin1,
+        desiredMargin2: desiredMargin2,
+        desiredMargin3: desiredMargin3,
+      );
+    } else {
+      // Если данные есть, обновляем их
+      _productCostData = _productCostData!.copyWith(
+        costPrice: costPrice,
+        delivery: delivery,
+        packaging: packaging,
+        paidAcceptance: paidAcceptance,
+        returnRate: returnRate,
+        taxRate: taxRate,
+        desiredMargin1: desiredMargin1,
+        desiredMargin2: desiredMargin2,
+        desiredMargin3: desiredMargin3,
+        mpType: "ozon",
+      );
+    }
 
     try {
-      await _productCostService.saveProductCost(updatedCostData);
-      _productCostData = updatedCostData;
+      await _productCostService.saveProductCost(_productCostData!);
       notifyListeners();
     } catch (e) {
       _errorMessage = "Error updating product cost: ${e.toString()}";
@@ -264,9 +291,8 @@ class OzonProductCardViewModel extends ViewModelBase {
 
   Future<void> saveProductCost(ProductCostData costData) async {
     try {
-      await _productCostService.saveProductCost(costData);
-      _productCostData = costData;
-
+      _productCostData = costData.copyWith(mpType: "ozon");
+      await _productCostService.saveProductCost(_productCostData!);
       notifyListeners();
     } catch (e) {
       _errorMessage = "Error saving product cost: ${e.toString()}";
@@ -277,33 +303,85 @@ class OzonProductCardViewModel extends ViewModelBase {
   double? calcProfitFbs() {
     if (_price == null || _productCostData == null) return null;
     final price = _price!.price.price;
-    final cost = _productCostData!.costPrice;
-    final commission = _price!.commissions.salesPercentFbs;
-    final delivery = _price!.commissions.fbsDelivToCustomerAmount;
-    final returnRate = _productCostData!.returnRate / 100;
-    final taxRate = _productCostData!.taxRate / 100;
+    // Вознаграждение Ozon
+    final commissionAmount =
+        price * (_price!.commissions.salesPercentFbs / 100);
+    // Эквайринг
+    final acquiring = _price!.acquiring;
+    // Обработка отправления
+    final firstMileMaxAmount = _price!.commissions.fbsFirstMileMaxAmount;
+    // Логистика
+    final directFlowTransMaxAmaount =
+        _price!.commissions.fbsDirectFlowTransMaxAmount;
+    // Последняя миля
+    final delivToCustomerAmount = _price!.commissions.fbsDelivToCustomerAmount;
+    // Возврат или отмена
+    final double costOfReturns = _price!.commissions.fbsReturnFlowAmount;
+    final double percentOfReturns = _productCostData!.returnRate;
+    final returnFlowAmount = _calculateReturnCost(
+        logistics: firstMileMaxAmount +
+            directFlowTransMaxAmaount +
+            delivToCustomerAmount,
+        costOfReturns: costOfReturns,
+        returnRate: percentOfReturns);
+    // Налог
+    double taxCost = price * (_productCostData!.taxRate / 100);
 
-    return price * (1 - commission / 100) -
-        cost -
-        delivery -
-        (price * returnRate) -
-        (price * taxRate);
+    final costs = _productCostData!.costPrice +
+        _productCostData!.delivery +
+        _productCostData!.packaging +
+        _productCostData!.paidAcceptance;
+
+    final totalCosts = costs +
+        commissionAmount +
+        acquiring +
+        firstMileMaxAmount +
+        directFlowTransMaxAmaount +
+        delivToCustomerAmount +
+        returnFlowAmount +
+        taxCost;
+
+    return price - totalCosts;
   }
 
   double? calcProfitFbo() {
     if (_price == null || _productCostData == null) return null;
     final price = _price!.price.price;
-    final cost = _productCostData!.costPrice;
-    final commission = _price!.commissions.salesPercentFbo;
-    final delivery = _price!.commissions.fboDelivToCustomerAmount;
-    final returnRate = _productCostData!.returnRate / 100;
-    final taxRate = _productCostData!.taxRate / 100;
+    // Вознаграждение Ozon
+    final commissionAmount =
+        price * (_price!.commissions.salesPercentFbo / 100);
+    // Эквайринг
+    final acquiring = _price!.acquiring;
+    // Обработки отправления нет
+    // Логистика
+    final directFlowTransMaxAmount =
+        _price!.commissions.fboDirectFlowTransMaxAmount;
+    // Последняя миля
+    final delivToCustomerAmount = _price!.commissions.fboDelivToCustomerAmount;
+    // Возврат или отмена
+    final double costOfReturns = _price!.commissions.fboReturnFlowAmount;
+    final double percentOfReturns = _productCostData!.returnRate;
+    final returnFlowAmount = _calculateReturnCost(
+        logistics: directFlowTransMaxAmount + delivToCustomerAmount,
+        costOfReturns: costOfReturns,
+        returnRate: percentOfReturns);
+    // Налог
+    final double taxCost = price * (_productCostData!.taxRate / 100);
 
-    return price * (1 - commission / 100) -
-        cost -
-        delivery -
-        (price * returnRate) -
-        (price * taxRate);
+    final costs = _productCostData!.costPrice +
+        _productCostData!.delivery +
+        _productCostData!.packaging +
+        _productCostData!.paidAcceptance;
+
+    final totalCosts = costs +
+        commissionAmount +
+        acquiring +
+        directFlowTransMaxAmount +
+        delivToCustomerAmount +
+        returnFlowAmount +
+        taxCost;
+
+    return price - totalCosts;
   }
 
   double? calcMarginFbs() {
@@ -316,5 +394,99 @@ class OzonProductCardViewModel extends ViewModelBase {
     final profit = calcProfitFbo();
     if (profit == null || _price == null) return null;
     return (profit / _price!.price.price) * 100;
+  }
+
+  double _calculateReturnCost(
+      {required double logistics,
+      required double costOfReturns,
+      required double? returnRate}) {
+    if (returnRate == null || returnRate >= 100 || costOfReturns == 0) return 0;
+
+    return (logistics + costOfReturns) * (returnRate / (100 - returnRate));
+  }
+
+  double get returnCostFbs => _calculateReturnCost(
+        logistics: _price!.commissions.fbsFirstMileMaxAmount +
+            _price!.commissions.fbsDirectFlowTransMaxAmount +
+            _price!.commissions.fbsDelivToCustomerAmount,
+        costOfReturns: _price!.commissions.fbsReturnFlowAmount,
+        returnRate: _productCostData!.returnRate,
+      );
+
+  double get returnCostFbo => _calculateReturnCost(
+        logistics: _price!.commissions.fboDirectFlowTransMaxAmount +
+            _price!.commissions.fboDelivToCustomerAmount,
+        costOfReturns: _price!.commissions.fboReturnFlowAmount,
+        returnRate: _productCostData!.returnRate,
+      );
+
+  Future<void> updatePrice(double newPrice) async {
+    try {
+      // Округляем новую цену до целого числа
+      final roundedNewPrice = newPrice.round();
+
+      // Определяем минимальную разницу между old_price и price согласно требованиям API
+      double minDifference;
+      if (roundedNewPrice < 400) {
+        minDifference = 20;
+      } else if (roundedNewPrice <= 10000) {
+        minDifference = roundedNewPrice * 0.06; // 5% от цены
+      } else {
+        minDifference = 500;
+      }
+
+      // Устанавливаем old_price как новую цену плюс минимальная разница
+      final effectiveOldPrice = (roundedNewPrice + minDifference).round();
+
+      final priceData = {
+        "auto_action_enabled": "UNKNOWN",
+        "currency_code": "RUB",
+        "min_price": "0",
+        "min_price_for_auto_actions_enabled": false,
+        "net_price": "0",
+        "offer_id": offerId,
+        "old_price": effectiveOldPrice.toString(),
+        "price": roundedNewPrice.toString(),
+        "price_strategy_enabled": "UNKNOWN",
+        "product_id": productId,
+        "quant_size": 1,
+        "vat": "0.1"
+      };
+
+      final response = await _ozonPriceService.updatePrices([priceData]);
+
+      if (response['result'] != null && response['result'].isNotEmpty) {
+        final result = response['result'][0];
+        if (result['updated'] == true) {
+          // Обновляем локальное состояние цены
+          if (_price != null) {
+            _price = _price!.copyWith(
+              price: _price!.price.copyWith(
+                price: roundedNewPrice.toDouble(),
+                oldPrice: effectiveOldPrice.toDouble(),
+              ),
+            );
+          }
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("Цена успешно обновлена"),
+              ),
+            );
+          }
+          notifyListeners();
+        } else {
+          _errorMessage =
+              "Ошибка при обновлении цены: ${result['errors'][0]['message']}";
+          notifyListeners();
+        }
+      } else {
+        _errorMessage = "Неожиданный ответ от сервера";
+        notifyListeners();
+      }
+    } catch (e) {
+      _errorMessage = "Ошибка при обновлении цены: ${e.toString()}";
+      notifyListeners();
+    }
   }
 }

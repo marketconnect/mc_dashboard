@@ -37,6 +37,28 @@ class OzonPrice {
       volumeWeight: (json['volume_weight'] ?? 0.0).toDouble(),
     );
   }
+
+  OzonPrice copyWith({
+    int? acquiring,
+    OzonPriceCommissions? commissions,
+    OzonPriceMarketingActions? marketingActions,
+    String? offerId,
+    OzonPriceInfo? price,
+    OzonPriceIndexes? priceIndexes,
+    int? productId,
+    double? volumeWeight,
+  }) {
+    return OzonPrice(
+      acquiring: acquiring ?? this.acquiring,
+      commissions: commissions ?? this.commissions,
+      marketingActions: marketingActions ?? this.marketingActions,
+      offerId: offerId ?? this.offerId,
+      price: price ?? this.price,
+      priceIndexes: priceIndexes ?? this.priceIndexes,
+      productId: productId ?? this.productId,
+      volumeWeight: volumeWeight ?? this.volumeWeight,
+    );
+  }
 }
 
 class OzonPriceCommissions {
@@ -182,6 +204,30 @@ class OzonPriceInfo {
       price: (json['price'] ?? 0.0).toDouble(),
       retailPrice: (json['retail_price'] ?? 0.0).toDouble(),
       vat: (json['vat'] ?? 0.0).toDouble(),
+    );
+  }
+
+  OzonPriceInfo copyWith({
+    bool? autoActionEnabled,
+    String? currencyCode,
+    double? marketingPrice,
+    double? marketingSellerPrice,
+    double? minPrice,
+    double? oldPrice,
+    double? price,
+    double? retailPrice,
+    double? vat,
+  }) {
+    return OzonPriceInfo(
+      autoActionEnabled: autoActionEnabled ?? this.autoActionEnabled,
+      currencyCode: currencyCode ?? this.currencyCode,
+      marketingPrice: marketingPrice ?? this.marketingPrice,
+      marketingSellerPrice: marketingSellerPrice ?? this.marketingSellerPrice,
+      minPrice: minPrice ?? this.minPrice,
+      oldPrice: oldPrice ?? this.oldPrice,
+      price: price ?? this.price,
+      retailPrice: retailPrice ?? this.retailPrice,
+      vat: vat ?? this.vat,
     );
   }
 }

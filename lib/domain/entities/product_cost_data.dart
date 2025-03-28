@@ -108,4 +108,9 @@ class ProductCostData extends HiveObject {
       mpType: mpType ?? this.mpType,
     );
   }
+
+  @override
+  String toString() {
+    return 'ProductCostData(nmID: $nmID, costPrice: $costPrice, delivery: $delivery, packaging: $packaging, paidAcceptance: $paidAcceptance, warehouseName: $warehouseName, returnRate: $returnRate, taxRate: $taxRate, desiredMargin1: $desiredMargin1, desiredMargin2: $desiredMargin2, desiredMargin3: $desiredMargin3, calculatedPrice1: $calculatedPrice1, calculatedPrice2: $calculatedPrice2, calculatedPrice3: $calculatedPrice3, isBox: $isBox, mpType: $mpType)';
+  }
 }
