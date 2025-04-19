@@ -4,6 +4,7 @@ import 'package:mc_dashboard/domain/entities/ozon_product.dart';
 import 'package:mc_dashboard/domain/entities/ozon_price.dart';
 import 'package:mc_dashboard/domain/entities/ozon_product_info.dart';
 import 'package:mc_dashboard/domain/entities/product_cost_data.dart';
+import 'package:mc_dashboard/domain/entities/product_cost_data_details.dart';
 import 'package:mc_dashboard/domain/services/ozon_products_service.dart';
 
 abstract class OzonProductCardOzonPricesService {
@@ -25,6 +26,10 @@ abstract class OzonProductCardOzonProductInfoService {
 abstract class OzonProductCardProductCostService {
   Future<ProductCostData?> getOzonProductCost(int nmID);
   Future<void> saveProductCost(ProductCostData costData);
+  Future<List<ProductCostDataDetails>> getProductCostDetails(int nmID,
+      {String? mpType});
+  Future<void> saveProductCostDetail(ProductCostDataDetails detail);
+  Future<void> deleteProductCostDetail(ProductCostDataDetails detail);
 }
 
 abstract class OzonProductCardOzonPriceService {
@@ -48,6 +53,16 @@ class OzonProductCardViewModel extends ViewModelBase {
   String? _errorMessage;
 
   bool _isFBO = true;
+
+  // Карта для хранения деталей расходов по типу
+  final Map<String, List<ProductCostDataDetails>> _costDetails = {};
+
+  // Геттер для доступа к деталям расходов
+  Map<String, List<ProductCostDataDetails>> get costDetails => _costDetails;
+
+  // Свойства для доступа к расчетам стоимости возвратов
+  double get returnCostFbo => _price?.commissions.fboReturnFlowAmount ?? 0;
+  double get returnCostFbs => _price?.commissions.fbsReturnFlowAmount ?? 0;
 
   OzonProductCardViewModel({
     required OzonProductsService productsService,
@@ -185,6 +200,9 @@ class OzonProductCardViewModel extends ViewModelBase {
         _fetchProductInfo(),
         _fetchProductCost(),
       ]);
+
+      // Добавляем загрузку деталей расходов
+      await _fetchCostDetails();
     } catch (e) {
       _errorMessage = "Error loading product data: ${e.toString()}";
     }
@@ -405,20 +423,27 @@ class OzonProductCardViewModel extends ViewModelBase {
     return (logistics + costOfReturns) * (returnRate / (100 - returnRate));
   }
 
-  double get returnCostFbs => _calculateReturnCost(
-        logistics: _price!.commissions.fbsFirstMileMaxAmount +
-            _price!.commissions.fbsDirectFlowTransMaxAmount +
-            _price!.commissions.fbsDelivToCustomerAmount,
-        costOfReturns: _price!.commissions.fbsReturnFlowAmount,
-        returnRate: _productCostData!.returnRate,
-      );
+  // Методы для расчета стоимости возвратов
+  double calculateFbsReturnCost() {
+    if (_price == null || _productCostData == null) return 0;
+    return _calculateReturnCost(
+      logistics: _price!.commissions.fbsFirstMileMaxAmount +
+          _price!.commissions.fbsDirectFlowTransMaxAmount +
+          _price!.commissions.fbsDelivToCustomerAmount,
+      costOfReturns: _price!.commissions.fbsReturnFlowAmount,
+      returnRate: _productCostData!.returnRate,
+    );
+  }
 
-  double get returnCostFbo => _calculateReturnCost(
-        logistics: _price!.commissions.fboDirectFlowTransMaxAmount +
-            _price!.commissions.fboDelivToCustomerAmount,
-        costOfReturns: _price!.commissions.fboReturnFlowAmount,
-        returnRate: _productCostData!.returnRate,
-      );
+  double calculateFboReturnCost() {
+    if (_price == null || _productCostData == null) return 0;
+    return _calculateReturnCost(
+      logistics: _price!.commissions.fboDirectFlowTransMaxAmount +
+          _price!.commissions.fboDelivToCustomerAmount,
+      costOfReturns: _price!.commissions.fboReturnFlowAmount,
+      returnRate: _productCostData!.returnRate,
+    );
+  }
 
   Future<void> updatePrice(double newPrice) async {
     try {
@@ -486,6 +511,85 @@ class OzonProductCardViewModel extends ViewModelBase {
       }
     } catch (e) {
       _errorMessage = "Ошибка при обновлении цены: ${e.toString()}";
+      notifyListeners();
+    }
+  }
+
+  // Загрузка деталей расходов
+  Future<void> _fetchCostDetails() async {
+    try {
+      if (_productCostData != null) {
+        // Получаем детали из репозитория
+        final details = await _productCostService
+            .getProductCostDetails(_productCostData!.nmID, mpType: 'ozon');
+
+        // Очищаем текущие списки
+        _costDetails.clear();
+
+        // Для каждого типа расходов заполняем соответствующий список
+        for (var detail in details) {
+          if (!_costDetails.containsKey(detail.costType)) {
+            _costDetails[detail.costType] = [];
+          }
+          _costDetails[detail.costType]!.add(detail);
+        }
+
+        // Инициализируем пустыми списками типы, для которых нет деталей
+        if (!_costDetails.containsKey('costPrice')) {
+          _costDetails['costPrice'] = [];
+        }
+        if (!_costDetails.containsKey('delivery')) {
+          _costDetails['delivery'] = [];
+        }
+        if (!_costDetails.containsKey('packaging')) {
+          _costDetails['packaging'] = [];
+        }
+        if (!_costDetails.containsKey('paidAcceptance')) {
+          _costDetails['paidAcceptance'] = [];
+        }
+      }
+    } catch (e) {
+      _errorMessage = "Error fetching cost details: ${e.toString()}";
+    }
+  }
+
+  // Добавление нового элемента детализации расходов
+  Future<void> saveDetailItem(String costType, String name, double amount,
+      {String? description}) async {
+    if (_productCostData == null) return;
+
+    final detail = ProductCostDataDetails(
+      nmID: productId,
+      costType: costType,
+      name: name,
+      amount: amount,
+      description: description,
+      mpType: 'ozon',
+    );
+
+    if (!_costDetails.containsKey(costType)) {
+      _costDetails[costType] = [];
+    }
+
+    _costDetails[costType]!.add(detail);
+
+    // Сохраняем деталь в репозитории
+    await _productCostService.saveProductCostDetail(detail);
+
+    notifyListeners();
+  }
+
+  // Удаление элемента детализации расходов
+  Future<void> deleteDetailItem(ProductCostDataDetails detail) async {
+    if (_costDetails.containsKey(detail.costType)) {
+      _costDetails[detail.costType]!.removeWhere((item) =>
+          item.nmID == detail.nmID &&
+          item.name == detail.name &&
+          item.amount == detail.amount);
+
+      // Удаляем деталь из репозитория
+      await _productCostService.deleteProductCostDetail(detail);
+
       notifyListeners();
     }
   }

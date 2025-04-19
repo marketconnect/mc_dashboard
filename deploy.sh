@@ -12,20 +12,24 @@ if [[ -z "$DEPLOY_SERVER_USER" || -z "$DEPLOY_SERVER_IP" || -z "$DEPLOY_REMOTE_P
   exit 1
 fi
 
-echo "Начинаю сборку Flutter веб-приложения..."
-flutter build web --release
-if [[ $? -ne 0 ]]; then
-  echo "Ошибка при сборке Flutter веб-приложения."
-  exit 1
-fi
-echo "Сборка завершена успешно!"
+echo "🔨  Flutter build (без PWA)…"
+flutter build web --release --pwa-strategy=none
+echo "✅  Build ok"
 
-echo "Начинаю деплой на $DEPLOY_SERVER_USER@$DEPLOY_SERVER_IP через порт $DEPLOY_SERVER_PORT..."
-sshpass -p "$DEPLOY_SERVER_PASSWORD" rsync -av --delete -e "ssh -p $DEPLOY_SERVER_PORT" "$DEPLOY_LOCAL_PATH" "$DEPLOY_SERVER_USER@$DEPLOY_SERVER_IP:$DEPLOY_REMOTE_PATH"
+BUILD_DIR="$DEPLOY_LOCAL_PATH"
 
-if [[ $? -eq 0 ]]; then
-  echo "Деплой успешно завершён!"
-else
-  echo "Ошибка во время деплоя."
-  exit 1
-fi
+echo "🗑  Удаляю service‑worker файлы (на случай кэша)…"
+rm -f "$BUILD_DIR/flutter_service_worker.js" "$BUILD_DIR/version.json"
+
+echo "🚫  Глушу регистрацию service‑воркера в JS…"
+for f in "$BUILD_DIR/flutter.js" "$BUILD_DIR/flutter_bootstrap.js"; do
+  [[ -f "$f" ]] \
+    && sed -i 's/navigator\.serviceWorker\.register/void 0 \&\& navigator.serviceWorker.register/' "$f"
+done
+
+echo "🚀  Rsync → $DEPLOY_SERVER_USER@$DEPLOY_SERVER_IP …"
+sshpass -p "$DEPLOY_SERVER_PASSWORD" rsync -av --delete \
+  -e "ssh -p $DEPLOY_SERVER_PORT" \
+  "$BUILD_DIR/" "$DEPLOY_SERVER_USER@$DEPLOY_SERVER_IP:$DEPLOY_REMOTE_PATH"
+
+echo "✅  Деплой завершён без Service Worker"

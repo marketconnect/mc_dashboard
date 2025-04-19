@@ -65,7 +65,10 @@ Future<CardInfo> fetchCardInfo(String cardUrl) async {
     final response = await http.get(Uri.parse(cardUrl));
 
     if (response.statusCode == 200) {
-      return CardInfo.fromJson(jsonDecode(response.body));
+      final responseBytes = response.bodyBytes;
+      final decodedString = utf8.decode(responseBytes);
+
+      return CardInfo.fromJson(jsonDecode(decodedString));
     } else {
       throw Exception('Failed to fetch card info: ${response.statusCode}');
     }

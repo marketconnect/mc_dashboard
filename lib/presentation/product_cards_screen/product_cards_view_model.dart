@@ -436,9 +436,22 @@ class ProductCardsViewModel extends ViewModelBase {
   // Navigations
 
   void navTo(int imtID, int nmID) {
+    // Создаем списки всех ID из productCards
+    final List<int> allImtIDs = productCards.map((card) => card.imtID).toList();
+    final List<int> allNmIDs = productCards.map((card) => card.nmID).toList();
+
+    // Находим индекс текущего товара
+    final currentIndex = allNmIDs.indexOf(nmID);
+
     Navigator.of(context).pushNamed(
       MainNavigationRouteNames.productCard,
-      arguments: {'imtID': imtID, 'nmID': nmID},
+      arguments: {
+        'imtID': imtID,
+        'nmID': nmID,
+        'allImtIDs': allImtIDs,
+        'allNmIDs': allNmIDs,
+        'currentIndex': currentIndex
+      },
     );
   }
 

@@ -3,9 +3,12 @@ import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
 import 'package:mc_dashboard/domain/entities/good.dart';
 import 'package:mc_dashboard/domain/entities/product_card.dart';
 import 'package:mc_dashboard/domain/entities/product_cost_data.dart';
+import 'package:mc_dashboard/domain/entities/product_cost_data_details.dart';
 import 'package:mc_dashboard/domain/entities/wb_box_tariff.dart';
 import 'package:mc_dashboard/domain/entities/wb_pallet_tariff.dart';
 import 'package:mc_dashboard/domain/entities/wb_tariff.dart';
+import 'package:mc_dashboard/presentation/product_card_screen/product_card_screen.dart';
+import 'package:provider/provider.dart';
 
 abstract class ProductCardWbContentApiService {
   Future<ProductCard> fetchProductCard({required int imtID, required int nmID});
@@ -33,14 +36,29 @@ abstract class ProductCardGoodsService {
   });
 }
 
+abstract class ProductCardCostDetailsService {
+  Future<void> saveDetail(ProductCostDataDetails detail);
+  Future<List<ProductCostDataDetails>> getDetailsByCostType(
+      int nmID, String costType, String mpType);
+  Future<List<ProductCostDataDetails>> getAllDetailsByNmID(
+      int nmID, String mpType);
+  Future<void> deleteDetail(ProductCostDataDetails detail);
+}
+
 class ProductCardViewModel extends ViewModelBase {
   final ProductCardWbContentApiService contentApiService;
   final ProductCardWbTariffsService tariffsService;
   final ProductCardWbProductCostService productCostService;
   final ProductCardWbPriceService wbPriceService;
   final ProductCardGoodsService goodsService;
+  final ProductCardCostDetailsService costDetailsService;
   final int imtID;
   final int nmID;
+
+  // Списки ID для навигации
+  final List<int> allImtIDs;
+  final List<int> allNmIDs;
+  final int currentIndex;
 
   ProductCard? productCard;
   WbTariff? wbTariff;
@@ -54,16 +72,59 @@ class ProductCardViewModel extends ViewModelBase {
 
   double? goodPrice;
 
+  // Добавляем переменную для хранения деталей расходов
+  Map<String, List<ProductCostDataDetails>> costDetails = {};
+
   ProductCardViewModel({
     required this.contentApiService,
     required this.tariffsService,
     required this.productCostService,
     required this.goodsService,
+    required this.wbPriceService,
+    required this.costDetailsService,
     required this.imtID,
     required this.nmID,
-    required this.wbPriceService,
     required super.context,
+    this.allImtIDs = const [],
+    this.allNmIDs = const [],
+    this.currentIndex = -1,
   });
+
+  // Проверка, есть ли следующий товар в списке
+  bool get hasNextProduct =>
+      currentIndex >= 0 && currentIndex < allImtIDs.length - 1;
+
+  // Метод для перехода к следующему товару
+  void navigateToNextProduct() {
+    if (!hasNextProduct) return;
+
+    final nextIndex = currentIndex + 1;
+    final nextImtID = allImtIDs[nextIndex];
+    final nextNmID = allNmIDs[nextIndex];
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChangeNotifierProvider(
+          create: (context) => ProductCardViewModel(
+            contentApiService: contentApiService,
+            tariffsService: tariffsService,
+            productCostService: productCostService,
+            wbPriceService: wbPriceService,
+            goodsService: goodsService,
+            costDetailsService: costDetailsService,
+            imtID: nextImtID,
+            nmID: nextNmID,
+            context: context,
+            allImtIDs: allImtIDs,
+            allNmIDs: allNmIDs,
+            currentIndex: nextIndex,
+          ),
+          child: const ProductCardScreen(),
+        ),
+      ),
+    );
+  }
 
   @override
   Future<void> asyncInit() async {
@@ -75,6 +136,7 @@ class ProductCardViewModel extends ViewModelBase {
       await fetchPalletTariffs();
       await loadProductCost();
       await fetchGoodPrice();
+      await loadCostDetails();
     } catch (e) {
       errorMessage = "Ошибка: ${e.toString()}";
     }
@@ -251,6 +313,43 @@ class ProductCardViewModel extends ViewModelBase {
       saveProductCost(productCostData!);
     }
     super.dispose();
+  }
+
+  // Методы для работы с деталями расходов
+  Future<void> loadCostDetails() async {
+    if (productCard == null) return;
+
+    final nmID = productCard!.nmID;
+    final details = await costDetailsService.getAllDetailsByNmID(nmID, "wb");
+
+    costDetails.clear();
+    for (var detail in details) {
+      costDetails[detail.costType] = costDetails[detail.costType] ?? [];
+      costDetails[detail.costType]!.add(detail);
+    }
+
+    notifyListeners();
+  }
+
+  Future<void> saveDetailItem(String costType, String name, double amount,
+      {String? description}) async {
+    if (productCard == null) return;
+
+    final detail = ProductCostDataDetails(
+      nmID: productCard!.nmID,
+      costType: costType,
+      name: name,
+      amount: amount,
+      description: description,
+    );
+
+    await costDetailsService.saveDetail(detail);
+    await loadCostDetails();
+  }
+
+  Future<void> deleteDetailItem(ProductCostDataDetails detail) async {
+    await costDetailsService.deleteDetail(detail);
+    await loadCostDetails();
   }
 }
 

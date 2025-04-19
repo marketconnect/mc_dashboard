@@ -5,6 +5,7 @@ import 'package:mc_dashboard/core/utils/open_url.dart';
 
 import 'package:mc_dashboard/domain/entities/ozon_product.dart';
 import 'package:mc_dashboard/domain/entities/ozon_product_info.dart';
+import 'package:mc_dashboard/domain/entities/product_cost_data_details.dart';
 
 import 'package:mc_dashboard/presentation/ozon_product_card_screen/ozon_product_card_view_model.dart';
 import 'package:mc_dashboard/presentation/widgets/progress_bar.dart';
@@ -389,6 +390,73 @@ class _OzonProductCardScreenState extends State<OzonProductCardScreen> {
               ),
               const SizedBox(height: 16),
 
+              // Добавляем новую карточку с детализацией расходов
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SectionTitle("Детализация расходов"),
+                      const SizedBox(height: 8),
+
+                      // Себестоимость
+                      _ProductCostItemCard(
+                        title: 'Себестоимость',
+                        value: '₽ ${costPrice.toStringAsFixed(2)}',
+                        details: model.costDetails['costPrice'],
+                        costType: 'costPrice',
+                        currentAmount: costPrice,
+                        onSyncPressed: _updateCostAmount,
+                        onAddDetail: model.saveDetailItem,
+                        onDeleteDetail: model.deleteDetailItem,
+                      ),
+
+                      // Доставка
+                      _ProductCostItemCard(
+                        title: 'Доставка',
+                        value: '₽ ${delivery.toStringAsFixed(2)}',
+                        details: model.costDetails['delivery'],
+                        costType: 'delivery',
+                        currentAmount: delivery,
+                        onSyncPressed: _updateCostAmount,
+                        onAddDetail: model.saveDetailItem,
+                        onDeleteDetail: model.deleteDetailItem,
+                      ),
+
+                      // Упаковка
+                      _ProductCostItemCard(
+                        title: 'Упаковка',
+                        value: '₽ ${packaging.toStringAsFixed(2)}',
+                        details: model.costDetails['packaging'],
+                        costType: 'packaging',
+                        currentAmount: packaging,
+                        onSyncPressed: _updateCostAmount,
+                        onAddDetail: model.saveDetailItem,
+                        onDeleteDetail: model.deleteDetailItem,
+                      ),
+
+                      // Платный прием
+                      _ProductCostItemCard(
+                        title: 'Платная приемка',
+                        value: '₽ ${paidAcceptance.toStringAsFixed(2)}',
+                        details: model.costDetails['paidAcceptance'],
+                        costType: 'paidAcceptance',
+                        currentAmount: paidAcceptance,
+                        onSyncPressed: _updateCostAmount,
+                        onAddDetail: model.saveDetailItem,
+                        onDeleteDetail: model.deleteDetailItem,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
               // Commissions Card
               Card(
                 elevation: 2,
@@ -635,8 +703,9 @@ class _OzonProductCardScreenState extends State<OzonProductCardScreen> {
     final commissionValues = model.getCurrentCommissionValues();
     final String deliveryType = model.isFBO ? "FBO" : "FBS";
     final double commissionPercent = commissionValues["commissionPercent"] ?? 0;
-    final double returnCost =
-        model.isFBO ? model.returnCostFbo : model.returnCostFbs;
+    final double returnCost = model.isFBO
+        ? model.calculateFboReturnCost()
+        : model.calculateFbsReturnCost();
     final double deliveryCost = commissionValues["deliveryCost"] ?? 0;
 
     final double totalOzonFees =
@@ -932,12 +1001,31 @@ class _OzonProductCardScreenState extends State<OzonProductCardScreen> {
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+              ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  // Обновление суммы расходов при синхронизации с деталями
+  void _updateCostAmount(String costType, double amount) {
+    final text = amount.toString();
+    if (costType == 'costPrice') {
+      _costController.text = text;
+    } else if (costType == 'delivery') {
+      _deliveryController.text = text;
+    } else if (costType == 'packaging') {
+      _packageController.text = text;
+    } else if (costType == 'paidAcceptance') {
+      _paidAcceptanceController.text = text;
+    }
+
+    // Вызываем метод для обновления данных в модели и сохранения изменений
+    _onInputChanged();
   }
 }
 
@@ -980,5 +1068,340 @@ class CalculationRow extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _ProductCostItemCard extends StatefulWidget {
+  final String title;
+  final String value;
+  final String costType;
+  final List<ProductCostDataDetails>? details;
+  final double currentAmount;
+  final Function(String, String, double, {String? description}) onAddDetail;
+  final Function(ProductCostDataDetails) onDeleteDetail;
+  final Function(String, double) onSyncPressed;
+
+  const _ProductCostItemCard({
+    Key? key,
+    required this.title,
+    required this.value,
+    required this.costType,
+    required this.details,
+    required this.currentAmount,
+    required this.onAddDetail,
+    required this.onDeleteDetail,
+    required this.onSyncPressed,
+  }) : super(key: key);
+
+  @override
+  State<_ProductCostItemCard> createState() => _ProductCostItemCardState();
+}
+
+class _ProductCostItemCardState extends State<_ProductCostItemCard> {
+  double _detailsSum = 0;
+  late TextEditingController _nameController;
+  late TextEditingController _amountController;
+  late TextEditingController _descriptionController;
+  bool _isExpanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController();
+    _amountController = TextEditingController();
+    _descriptionController = TextEditingController();
+    _calculateDetailsSum();
+  }
+
+  @override
+  void didUpdateWidget(_ProductCostItemCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.details != widget.details ||
+        oldWidget.currentAmount != widget.currentAmount) {
+      _calculateDetailsSum();
+    }
+  }
+
+  void _calculateDetailsSum() {
+    double sum = 0;
+    if (widget.details != null && widget.details!.isNotEmpty) {
+      for (var detail in widget.details!) {
+        sum += detail.amount;
+      }
+    }
+
+    setState(() {
+      _detailsSum = sum;
+    });
+  }
+
+  bool get _hasDifference {
+    // Сравниваем с точностью до 2 знаков после запятой
+    final roundedCurrent = (widget.currentAmount * 100).round() / 100;
+    final roundedSum = (_detailsSum * 100).round() / 100;
+    return roundedCurrent != roundedSum;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _isExpanded = !_isExpanded;
+          });
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        widget.title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        _isExpanded ? Icons.expand_less : Icons.expand_more,
+                        size: 20,
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      if (_hasDifference)
+                        const Icon(
+                          Icons.warning_amber_rounded,
+                          color: Colors.orange,
+                        ),
+                      Text(
+                        widget.value,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: _hasDifference ? Colors.orange : Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              if (_isExpanded) ...[
+                const SizedBox(height: 16),
+                if (widget.details != null && widget.details!.isNotEmpty)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Детали:',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...widget.details!.map((detail) => Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    detail.name,
+                                    style: const TextStyle(fontSize: 14),
+                                  ),
+                                ),
+                                Text(
+                                  '${detail.amount.toStringAsFixed(2)} ₽',
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline,
+                                      size: 20),
+                                  onPressed: () {
+                                    widget.onDeleteDetail(detail);
+                                    // Также пересчитываем сумму после удаления
+                                    WidgetsBinding.instance
+                                        .addPostFrameCallback((_) {
+                                      if (mounted) {
+                                        _calculateDetailsSum();
+                                      }
+                                    });
+                                  },
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                ),
+                              ],
+                            ),
+                          )),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Итого:',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              '${_detailsSum.toStringAsFixed(2)} ₽',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: _hasDifference
+                                    ? Colors.orange
+                                    : Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton.icon(
+                      icon: const Icon(Icons.add, size: 16),
+                      label: const Text('Добавить'),
+                      onPressed: _showAddDetailDialog,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
+                    ),
+                    if (_hasDifference)
+                      TextButton.icon(
+                        icon: const Icon(Icons.sync, size: 16),
+                        label: const Text('Применить'),
+                        onPressed: () {
+                          widget.onSyncPressed(widget.costType, _detailsSum);
+                        },
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showAddDetailDialog() {
+    _nameController.clear();
+    _amountController.clear();
+    _descriptionController.clear();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Добавить деталь'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                labelText: 'Название',
+                hintText: 'Введите название детали расхода',
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _amountController,
+              decoration: const InputDecoration(
+                labelText: 'Сумма (₽)',
+                hintText: 'Введите сумму',
+              ),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _descriptionController,
+              decoration: const InputDecoration(
+                labelText: 'Описание (опционально)',
+                hintText: 'Введите описание',
+              ),
+              maxLines: 2,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Отмена'),
+          ),
+          TextButton(
+            onPressed: () {
+              // Validate inputs
+              final name = _nameController.text.trim();
+              final amountText = _amountController.text.trim();
+
+              if (name.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Введите название')),
+                );
+                return;
+              }
+
+              double? amount = double.tryParse(amountText);
+              if (amount == null || amount <= 0) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Введите корректную сумму')),
+                );
+                return;
+              }
+
+              final description = _descriptionController.text.trim();
+
+              Navigator.of(context).pop();
+              widget.onAddDetail(
+                widget.costType,
+                name,
+                amount,
+                description: description.isNotEmpty ? description : null,
+              );
+
+              // Важно: вызываем пересчет суммы и обновляем UI после добавления детали
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  _calculateDetailsSum();
+                }
+              });
+            },
+            child: const Text('Добавить'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _amountController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
   }
 }

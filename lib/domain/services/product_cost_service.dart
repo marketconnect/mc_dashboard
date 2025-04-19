@@ -1,4 +1,5 @@
 import 'package:mc_dashboard/domain/entities/product_cost_data.dart';
+import 'package:mc_dashboard/domain/entities/product_cost_data_details.dart';
 import 'package:mc_dashboard/presentation/ozon_product_card_screen/ozon_product_card_view_model.dart';
 import 'package:mc_dashboard/presentation/ozon_product_cards_screen/ozon_product_cards_view_model.dart';
 import 'package:mc_dashboard/presentation/product_card_screen/product_card_view_model.dart';
@@ -10,6 +11,10 @@ abstract class ProductCostServiceRepository {
   Future<ProductCostData?> getCostData(int nmID, String mpType);
   Future<void> deleteCostData(int nmID, String mpType);
   Future<List<ProductCostData>> getAllCostData();
+  Future<List<ProductCostDataDetails>> getDetailsForProduct(
+      int nmID, String mpType);
+  Future<void> saveProductCostDetail(ProductCostDataDetails detail);
+  Future<void> deleteProductCostDetail(ProductCostDataDetails detail);
 }
 
 class ProductCostService
@@ -36,6 +41,22 @@ class ProductCostService
   @override
   Future<ProductCostData?> getOzonProductCost(int nmID) async {
     return await storage.getCostData(nmID, "ozon");
+  }
+
+  @override
+  Future<List<ProductCostDataDetails>> getProductCostDetails(int nmID,
+      {String? mpType}) async {
+    return await storage.getDetailsForProduct(nmID, mpType ?? "ozon");
+  }
+
+  @override
+  Future<void> saveProductCostDetail(ProductCostDataDetails detail) async {
+    await storage.saveProductCostDetail(detail);
+  }
+
+  @override
+  Future<void> deleteProductCostDetail(ProductCostDataDetails detail) async {
+    await storage.deleteProductCostDetail(detail);
   }
 
   Future<void> deleteProductCost(int nmID, String mpType) async {

@@ -118,6 +118,12 @@ import 'package:mc_dashboard/infrastructure/api/ozon_fbs_stocks_api_client.dart'
 import 'package:mc_dashboard/domain/services/wb_stocks_reports_service.dart';
 import 'package:mc_dashboard/infrastructure/api/wb_stocks_reports_api_client.dart';
 
+import 'package:mc_dashboard/domain/entities/product_cost_data_details.dart';
+import 'package:mc_dashboard/domain/repositories/product_cost_details_repository.dart';
+import 'package:mc_dashboard/domain/services/product_cost_details_service.dart';
+import 'package:mc_dashboard/infrastructure/repositories/product_cost_details_repo.dart';
+import 'package:mc_dashboard/infrastructure/services/product_cost_details_service.dart';
+
 AppFactory makeAppFactory() => _AppFactoryDefault();
 
 class _AppFactoryDefault implements AppFactory {
@@ -294,6 +300,16 @@ class _DIContainer {
         tokenRepository: _makeSecureTokenRepo(),
       );
 
+  // Репозиторий для деталей расходов
+  ProductCostDetailsRepository _makeProductCostDetailsRepository() {
+    return const ProductCostDetailsRepo();
+  }
+
+  // Сервис для деталей расходов
+  ProductCostDetailsService _makeProductCostDetailsService() {
+    return ProductCostDetailsServiceImpl(_makeProductCostDetailsRepository());
+  }
+
   // ViewModels ////////////////////////////////////////////////////////////////
   ChoosingNicheViewModel _makeChoosingNicheViewModel(
           BuildContext context,
@@ -393,7 +409,7 @@ class _DIContainer {
       AddCardsViewModel(cardsService: _makeProductService(), context: context);
 
   ProductDetailViewModel _makeProductDetailViewModel(
-      BuildContext context, Product product) {
+      BuildContext context, ProductData product) {
     return ProductDetailViewModel(
       wbApiContentService: _makeWbApiContentService(),
       product: product,
@@ -418,16 +434,28 @@ class _DIContainer {
   }
 
   ProductCardViewModel _makeProductCardViewModel(
-      BuildContext context, int imtID, int nmID) {
+    BuildContext context,
+    Map<String, dynamic> arguments,
+  ) {
+    final imtID = arguments['imtID'] as int;
+    final nmID = arguments['nmID'] as int;
+    final allImtIDs = arguments['allImtIDs'] as List<int>;
+    final allNmIDs = arguments['allNmIDs'] as List<int>;
+    final currentIndex = arguments['currentIndex'] as int;
+
     return ProductCardViewModel(
       contentApiService: _makeWbApiContentService(),
       tariffsService: wbTariffsService,
-      imtID: imtID,
       productCostService: _makeProductCostService(),
       wbPriceService: _makeWbPriceService(),
       goodsService: _makeWbGoodsService(),
+      costDetailsService: _makeProductCostDetailsService(),
+      imtID: imtID,
       nmID: nmID,
       context: context,
+      allImtIDs: allImtIDs,
+      allNmIDs: allNmIDs,
+      currentIndex: currentIndex,
     );
   }
 
@@ -630,7 +658,7 @@ class ScreenFactoryDefault implements ScreenFactory {
   // }
 
   @override
-  Widget makeProductDetailScreen({required Product product}) {
+  Widget makeProductDetailScreen({required ProductData product}) {
     return ChangeNotifierProvider(
       create: (context) =>
           _diContainer._makeProductDetailViewModel(context, product),
@@ -647,18 +675,20 @@ class ScreenFactoryDefault implements ScreenFactory {
   }
 
   @override
-  // Widget makeProductCardsScreen() {
-  //   return ChangeNotifierProvider(
-  //     create: (context) => _diContainer._makeProductCardsViewModel(context),
-  //     child: const ProductCardsScreen(),
-  //   );
-  // }
-
-  @override
-  Widget makeProductCardScreen({required int imtID, required int nmID}) {
+  Widget makeProductCardScreen(
+      {required int imtID,
+      required int nmID,
+      List<int>? allImtIDs,
+      List<int>? allNmIDs,
+      int currentIndex = -1}) {
     return ChangeNotifierProvider(
-      create: (context) =>
-          _diContainer._makeProductCardViewModel(context, imtID, nmID),
+      create: (context) => _diContainer._makeProductCardViewModel(context, {
+        'imtID': imtID,
+        'nmID': nmID,
+        'allImtIDs': allImtIDs,
+        'allNmIDs': allNmIDs,
+        'currentIndex': currentIndex
+      }),
       child: const ProductCardScreen(),
     );
   }

@@ -30,7 +30,7 @@ class ProductDetailViewModel extends ViewModelBase {
   final ProductDetailWbContentApi wbApiContentService;
   final ProductDetailApiProductsService productSource;
   final ProductDetailCardInfoService cardInfoService;
-  final Product product;
+  final ProductData product;
 
   List<Charc> charcs = [];
   List<ProductItem> products = [];

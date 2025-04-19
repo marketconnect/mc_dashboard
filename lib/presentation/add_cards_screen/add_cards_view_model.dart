@@ -4,15 +4,14 @@ import 'package:mc_dashboard/domain/entities/product.dart';
 import 'package:mc_dashboard/routes/main_navigation_route_names.dart';
 
 abstract class CardsService {
-  Future<List<Product>> fetchProducts();
+  Future<List<ProductData>> fetchProducts();
 }
 
 class AddCardsViewModel extends ViewModelBase {
   AddCardsViewModel({required this.cardsService, required super.context});
 
   final CardsService cardsService;
-
-  List<Product> products = List.empty(growable: true);
+  List<ProductData> products = [];
 
   @override
   Future<void> asyncInit() async {
@@ -23,7 +22,7 @@ class AddCardsViewModel extends ViewModelBase {
     // }
   }
 
-  Future<void> loadProductsFromZip() async {
+  Future<void> loadProductsFromExcel() async {
     try {
       setLoading();
       products = await cardsService.fetchProducts();
@@ -34,7 +33,7 @@ class AddCardsViewModel extends ViewModelBase {
   }
 
   // Navigation
-  Future<void> routeToProductDetail(Product product) async {
+  Future<void> routeToProductDetail(ProductData product) async {
     await Navigator.of(context)
         .pushNamed(MainNavigationRouteNames.productDetail, arguments: product);
   }

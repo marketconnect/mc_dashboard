@@ -11,6 +11,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:mc_dashboard/core/base_classes/view_model_base_class.dart';
 import 'package:mc_dashboard/domain/entities/product_cost_data.dart';
 
+import 'package:collection/collection.dart';
+
 abstract class ProductCostImportProductCostService {
   Future<void> saveProductCost(ProductCostData costData);
   Future<ProductCostData?> getWbProductCost(int nmID);
@@ -218,22 +220,28 @@ class ProductCostImportViewModel extends ViewModelBase {
       String identifier;
       if (mpType == 'wb') {
         // Find the corresponding ProductCard by nmID
-        final productCard = wbProductCards.where(
-          (card) => card.nmID == data.nmID,
-        );
-        if (productCard.isEmpty) {
-          identifier = 'N/A';
-        }
-        identifier = productCard.first.vendorCode;
+        // final productCard = wbProductCards.where(
+        //   (card) => card.nmID == data.nmID,
+        // );
+        // if (productCard.isEmpty) {
+        //   identifier = 'N/A';
+        // }
+        // identifier = productCard.first.vendorCode;
+        final productCard =
+            wbProductCards.firstWhereOrNull((card) => card.nmID == data.nmID);
+        identifier = productCard?.vendorCode ?? 'N/A';
       } else {
         // Find the corresponding OzonProduct by nmID
-        final ozonProduct = ozonProductCardsResponse.items.where(
-          (product) => product.productId == data.nmID,
-        );
-        if (ozonProduct.isEmpty) {
-          identifier = 'N/A';
-        }
-        identifier = ozonProduct.first.offerId;
+        // final ozonProduct = ozonProductCardsResponse.items.where(
+        //   (product) => product.productId == data.nmID,
+        // );
+        // if (ozonProduct.isEmpty) {
+        //   identifier = 'N/A';
+        // }
+        // identifier = ozonProduct.first.offerId;
+        final ozonProduct = ozonProductCardsResponse.items
+            .firstWhereOrNull((p) => p.productId == data.nmID);
+        identifier = ozonProduct?.offerId ?? 'N/A';
       }
 
       sheet.appendRow(<CellValue?>[

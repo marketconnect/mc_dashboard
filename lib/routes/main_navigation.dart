@@ -9,11 +9,16 @@ abstract class ScreenFactory {
   Widget makeChoosingNicheScreen(
       {required void Function(int subjectId, String subjectName)
           onNavigateToSubjectProducts});
-  Widget makeProductDetailScreen({required Product product});
+  Widget makeProductDetailScreen({required ProductData product});
   Widget makeAddCardsScreen();
 
   Widget makeProductCardsContainerScreen();
-  Widget makeProductCardScreen({required int imtID, required int nmID});
+  Widget makeProductCardScreen(
+      {required int imtID,
+      required int nmID,
+      List<int>? allImtIDs,
+      List<int>? allNmIDs,
+      int currentIndex = -1});
   Widget makeProductCostImportScreen();
   Widget makeTokensScreen();
   Widget makeSubjectProductsScreen({
@@ -77,7 +82,7 @@ class MainNavigation implements AppNavigation {
       case MainNavigationRouteNames.productDetail:
         return MaterialPageRoute(
           builder: (context) => screenFactory.makeProductDetailScreen(
-            product: settings.arguments as Product,
+            product: settings.arguments as ProductData,
           ),
         );
       case MainNavigationRouteNames.choosingNicheScreen:
@@ -155,6 +160,9 @@ class MainNavigation implements AppNavigation {
           builder: (context) => screenFactory.makeProductCardScreen(
             imtID: args['imtID'] as int,
             nmID: args['nmID'] as int,
+            allImtIDs: args['allImtIDs'] as List<int>?,
+            allNmIDs: args['allNmIDs'] as List<int>?,
+            currentIndex: args['currentIndex'] as int? ?? -1,
           ),
         );
 
@@ -176,6 +184,7 @@ class MainNavigation implements AppNavigation {
             sku: args['sku'] as int,
           ),
         );
+
       default:
         return MaterialPageRoute(
           builder: (context) => MainScreen(
